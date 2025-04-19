@@ -1,0 +1,101 @@
+from game_logic.resource_manager import ResourceManager
+from definitions.character import Character
+
+class TurnBasedCombat:
+    def __init__(self, player, enemy):
+        """
+        Initialisiert den Kampf zwischen Spieler und Gegner.
+
+        :param player: Spielercharakter (Character-Objekt)
+        :param enemy: Gegnercharakter (Character-Objekt)
+        """
+        self.player = player
+        self.enemy = enemy
+        self.turn = 1  # Aktuelle Runde
+
+    def player_turn(self):
+        """
+        Führt die Runde des Spielers aus.
+        """
+        print(f"\n--- Runde {self.turn}: Spieler ist am Zug ---")
+        print(f"{self.player.name}'s Ressourcen: {self.player.resource_manager}")
+        print(f"{self.enemy.name}'s HP: {self.enemy.attributes['health']}")
+
+        # Beispiel: Spieler wählt eine Fähigkeit
+        skill = self.player.skills[0]  # Wählt die erste Fähigkeit
+        if self.player.use_skill(skill):
+            # Fähigkeit wird auf den Gegner angewendet
+            damage = skill["damage"]
+            self.enemy.attributes["health"] -= damage
+            print(f"{self.player.name} nutzt {skill['name']} und verursacht {damage} Schaden!")
+        else:
+            print("Angriff fehlgeschlagen! Nicht genügend Ressourcen.")
+
+    def enemy_turn(self):
+        """
+        Führt die Runde des Gegners aus.
+        """
+        print(f"\n--- Runde {self.turn}: Gegner ist am Zug ---")
+        print(f"{self.enemy.name}'s Ressourcen: {self.enemy.resource_manager}")
+        print(f"{self.player.name}'s HP: {self.player.attributes['health']}")
+
+        # Beispiel: Gegner wählt eine Fähigkeit
+        skill = self.enemy.skills[0]  # Wählt die erste Fähigkeit
+        if self.enemy.use_skill(skill):
+            # Fähigkeit wird auf den Spieler angewendet
+            damage = skill["damage"]
+            self.player.attributes["health"] -= damage
+            print(f"{self.enemy.name} nutzt {skill['name']} und verursacht {damage} Schaden!")
+        else:
+            print("Angriff fehlgeschlagen! Nicht genügend Ressourcen.")
+
+    def regenerate_resources(self):
+        """
+        Regeneriert die Ressourcen beider Charaktere.
+        """
+        self.player.regenerate_resources()
+        self.enemy.regenerate_resources()
+
+    def start_combat(self):
+        """
+        Startet den Kampf und führt ihn rundenbasiert aus.
+        """
+        print("Der Kampf beginnt!")
+        while self.player.attributes["health"] > 0 and self.enemy.attributes["health"] > 0:
+            self.player_turn()
+            if self.enemy.attributes["health"] <= 0:
+                print(f"\n{self.enemy.name} wurde besiegt! {self.player.name} gewinnt!")
+                break
+
+            self.enemy_turn()
+            if self.player.attributes["health"] <= 0:
+                print(f"\n{self.player.name} wurde besiegt! {self.enemy.name} gewinnt!")
+                break
+
+            self.regenerate_resources()
+            self.turn += 1
+        else:
+            print("\nDer Kampf ist vorbei!")
+
+# Beispielverwendung
+if __name__ == "__main__":
+    # Charaktere erstellen
+    player = Character(
+        name="Held",
+        char_class="Magier",
+        attributes={"health": 100, "mana": 50},
+        skills=[{"name": "Feuerball", "cost": 20, "damage": 30, "resource": "mana", "cooldown": 1}],
+        resource_type="mana"
+    )
+
+    enemy = Character(
+        name="Goblin",
+        char_class="Krieger",
+        attributes={"health": 80, "stamina": 40},
+        skills=[{"name": "Schlag", "cost": 10, "damage": 15, "resource": "stamina", "cooldown": 1}],
+        resource_type="stamina"
+    )
+
+    # Kampf starten
+    combat = TurnBasedCombat(player, enemy)
+    combat.start_combat()
