@@ -1,0 +1,122 @@
+[
+    {
+        "id": 1,
+        "name": "Feuerball",
+        "type": "Magie",
+        "power": 50,
+        "cost": 20,
+        "resource": "mana",
+        "cooldown": 2,
+        "description": "Ein mächtiger Feuerball, der Schaden verursacht."
+    },
+    {
+        "id": 2,
+        "name": "Blitzschlag",
+        "type": "Magie",
+        "power": 40,
+        "cost": 15,
+        "resource": "mana",
+        "cooldown": 3,
+        "description": "Ein Blitz, der den Gegner trifft und betäubt."
+    },
+    {
+        "id": 3,
+        "name": "Arkane Explosion",
+        "type": "Magie",
+        "power": 60,
+        "cost": 30,
+        "resource": "mana",
+        "cooldown": 5,
+        "description": "Verursacht Flächenschaden in einem bestimmten Bereich."
+    },
+    {
+        "id": 4,
+        "name": "Schwertstoß",
+        "type": "Physisch",
+        "power": 20,
+        "cost": 10,
+        "resource": "stamina",
+        "cooldown": 1,
+        "description": "Ein schneller Angriff mit der Waffe."
+    },
+    {
+        "id": 5,
+        "name": "Wirbelwind",
+        "type": "Physisch",
+        "power": 35,
+        "cost": 20,
+        "resource": "stamina",
+        "cooldown": 3,
+        "description": "Ein rotierender Angriff, der mehrere Gegner trifft."
+    },
+    {
+        "id": 6,
+        "name": "Kriegsruf",
+        "type": "Buff",
+        "power": 0,
+        "cost": 15,
+        "resource": "stamina",
+        "cooldown": 5,
+        "description": "Erhöht die Stärke und Moral des Kriegers für kurze Zeit."
+    },
+    {
+        "id": 7,
+        "name": "Dolchstoß",
+        "type": "Physisch",
+        "power": 25,
+        "cost": 10,
+        "resource": "energy",
+        "cooldown": 1,
+        "description": "Ein schneller Angriff mit einem Dolch."
+    },
+    {
+        "id": 8,
+        "name": "Schattenhieb",
+        "type": "Physisch",
+        "power": 30,
+        "cost": 20,
+        "resource": "energy",
+        "cooldown": 3,
+        "description": "Ein Angriff aus den Schatten, der zusätzlichen Schaden verursacht."
+    },
+    {
+        "id": 9,
+        "name": "Rückzug",
+        "type": "Utility",
+        "power": 0,
+        "cost": 15,
+        "resource": "energy",
+        "cooldown": 2,
+        "description": "Erhöht die Beweglichkeit und ermöglicht es, Angriffen auszuweichen."
+    },
+    {
+        "id": 10,
+        "name": "Heilung",
+        "type": "Magie",
+        "power": 30,
+        "cost": 15,
+        "resource": "mana",
+        "cooldown": 3,
+        "description": "Heilt einen Verbündeten um eine bestimmte Menge."
+    },
+    {
+        "id": 11,
+        "name": "Segnung",
+        "type": "Buff",
+        "power": 0,
+        "cost": 20,
+        "resource": "mana",
+        "cooldown": 5,
+        "description": "Erhöht die Weisheit und Mana-Regeneration eines Verbündeten."
+    },
+    {
+        "id": 12,
+        "name": "Lichtschutz",
+        "type": "Magie",
+        "power": 0,
+        "cost": 25,
+        "resource": "mana",
+        "cooldown": 4,
+        "description": "Erzeugt einen Schild, der Schaden absorbiert."
+    }
+]
