@@ -1,0 +1,55 @@
+[
+    {
+        "id": 1,
+        "name": "Magier",
+        "class": "Zauberer",
+        "attributes": {
+            "health": 60,
+            "mana": 100,
+            "strength": 10,
+            "intelligence": 30,
+            "agility": 15
+        },
+        "skills": [1, 2, 3]
+    },
+    {
+        "id": 2,
+        "name": "Krieger",
+        "class": "Nahkämpfer",
+        "attributes": {
+            "health": 100,
+            "stamina": 50,
+            "strength": 30,
+            "intelligence": 10,
+            "agility": 20
+        },
+        "skills": [4, 5, 6]
+    },
+    {
+        "id": 3,
+        "name": "Schurke",
+        "class": "Dieb",
+        "attributes": {
+            "health": 80,
+            "energy": 60,
+            "strength": 20,
+            "intelligence": 15,
+            "agility": 30
+        },
+        "skills": [7, 8, 9]
+    },
+    {
+        "id": 4,
+        "name": "Kleriker",
+        "class": "Heiler",
+        "attributes": {
+            "health": 70,
+            "mana": 80,
+            "strength": 15,
+            "intelligence": 20,
+            "agility": 10,
+            "wisdom": 35
+        },
+        "skills": [10, 11, 12]
+    }
+]
