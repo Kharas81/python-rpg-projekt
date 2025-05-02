@@ -1,0 +1,7 @@
+[
+    {
+      "id": "IS_UNDEAD",
+      "name": "Untot-Status",
+      "description": "Gibt an, ob der Charakter als untot gilt (beeinflusst Anfälligkeiten/Effekte)."
+    }
+]

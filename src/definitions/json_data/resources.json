@@ -1,0 +1,22 @@
+[
+    {
+      "id": "HP",
+      "name": "Lebenspunkte",
+      "description": "Gesundheit des Charakters. Bei 0 ist er besiegt."
+    },
+    {
+      "id": "MANA",
+      "name": "Mana",
+      "description": "Ressource für magische Fähigkeiten."
+    },
+    {
+      "id": "STAMINA",
+      "name": "Ausdauer",
+      "description": "Ressource für anstrengende physische Fähigkeiten."
+    },
+    {
+      "id": "ENERGY",
+      "name": "Energie",
+      "description": "Ressource für geschicklichkeitsbasierte Fähigkeiten (Schurke etc.)."
+    }
+  ]
