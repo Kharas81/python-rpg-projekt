@@ -1,0 +1,344 @@
+[
+    {
+      "id": "basic_strike_phys",
+      "name": "Waffenschlag",
+      "description": "Ein normaler Angriff mit der Waffe, skaliert mit Stärke.",
+      "cost": {},
+      "target": "ENEMY",
+      "effects": [
+        {
+          "type": "DAMAGE",
+          "damage_type": "PHYSICAL",
+          "base_value": 0,
+          "use_weapon_damage": true,
+          "scaling_stat": "STR",
+          "bonus_multiplier": 1,
+          "hit_multiplier": 1
+        }
+      ]
+    },
+    {
+      "id": "basic_strike_finesse",
+      "name": "Schneller Stich",
+      "description": "Ein schneller Angriff mit einer leichten Waffe, skaliert mit Geschicklichkeit.",
+      "cost": {},
+      "target": "ENEMY",
+      "effects": [
+        {
+          "type": "DAMAGE",
+          "damage_type": "PHYSICAL",
+          "base_value": 0,
+          "use_weapon_damage": true,
+          "scaling_stat": "DEX",
+          "bonus_multiplier": 1,
+          "hit_multiplier": 1
+        }
+      ]
+    },
+    {
+      "id": "basic_magic_bolt",
+      "name": "Magisches Geschoss",
+      "description": "Ein schwacher magischer Energiepuls, skaliert mit Intelligenz.",
+      "cost": { "MANA": 1 },
+      "target": "ENEMY",
+      "effects": [
+        {
+          "type": "DAMAGE",
+          "damage_type": "MAGIC",
+          "base_value": 2,
+          "use_weapon_damage": false,
+          "scaling_stat": "INT",
+          "bonus_multiplier": 1,
+          "hit_multiplier": 1
+        }
+      ]
+    },
+    {
+      "id": "basic_holy_spark",
+      "name": "Heiliger Funke",
+      "description": "Ein schwacher heiliger Energiepuls, skaliert mit Weisheit.",
+      "cost": { "MANA": 1 },
+      "target": "ENEMY",
+      "effects": [
+        {
+          "type": "DAMAGE",
+          "damage_type": "HOLY",
+          "base_value": 2,
+          "use_weapon_damage": false,
+          "scaling_stat": "WIS",
+          "bonus_multiplier": 1,
+          "hit_multiplier": 1
+        }
+      ]
+    },
+    {
+      "id": "power_strike",
+      "name": "Mächtiger Schlag",
+      "description": "Ein wuchtiger Angriff, der zusätzlichen Schaden verursacht.",
+      "cost": { "STAMINA": 20 },
+      "target": "ENEMY",
+      "effects": [
+        {
+          "type": "DAMAGE",
+          "damage_type": "PHYSICAL",
+          "base_value": 0,
+          "use_weapon_damage": true,
+          "scaling_stat": "STR",
+          "bonus_multiplier": 1,
+          "hit_multiplier": 1.5
+        }
+      ]
+    },
+    {
+      "id": "shield_bash",
+      "name": "Schildschlag",
+      "description": "Ein Angriff mit dem Schild, der betäuben kann.",
+      "cost": { "STAMINA": 15 },
+      "target": "ENEMY",
+      "effects": [
+        {
+          "type": "DAMAGE",
+          "damage_type": "PHYSICAL",
+          "base_value": 2,
+          "use_weapon_damage": false, // Annahme: Schild macht fixen Schaden + Bonus
+          "scaling_stat": "STR",
+          "bonus_multiplier": 1,
+          "hit_multiplier": 1
+        },
+        {
+          "type": "APPLY_STATUS",
+          "status_id": "STUNNED", // Muss später definiert werden
+          "chance": 0.5, // Annahme: 50% Chance? Du sagtest "kann betäuben"
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "cleave",
+      "name": "Spalten",
+      "description": "Trifft das Hauptziel und ein weiteres Ziel in der Nähe.",
+      "cost": { "STAMINA": 25 },
+      "target": "AREA", // Spezielle Behandlung in der Logik nötig
+      "effects": [
+        {
+          "type": "DAMAGE",
+          "damage_type": "PHYSICAL",
+          "base_value": 0,
+          "use_weapon_damage": true,
+          "scaling_stat": "STR",
+          "bonus_multiplier": 1,
+          "hit_multiplier": 1,
+          "applies_to": "PRIMARY" // Markierung für Hauptziel
+        },
+        {
+          "type": "DAMAGE",
+          "damage_type": "PHYSICAL",
+          "base_value": 0,
+          "use_weapon_damage": true,
+          "scaling_stat": "STR",
+          "bonus_multiplier": 1,
+          "hit_multiplier": 0.5, // Sekundärziel erleidet 50%
+          "applies_to": "SECONDARY", // Markierung für Nebenziele
+          "num_secondary_targets": 1 // Anzahl Nebenziele
+        }
+      ]
+    },
+    {
+      "id": "fireball",
+      "name": "Feuerball",
+      "description": "Schleudert einen Feuerball auf ein Ziel, der verbrennen kann.",
+      "cost": { "MANA": 20 },
+      "target": "ENEMY",
+      "effects": [
+        {
+          "type": "DAMAGE",
+          "damage_type": "FIRE",
+          "base_value": 10,
+          "use_weapon_damage": false,
+          "scaling_stat": "INT",
+          "bonus_multiplier": 2, // War "Bonus multipliziert mit 2" -> Annahme: (INT Bonus)*2
+          "hit_multiplier": 1 // Oder war der Gesamtschaden *2? Interpretationssache. Ändere ggf. hit_multiplier auf 2
+        },
+        {
+          "type": "APPLY_STATUS",
+          "status_id": "BURNING", // Muss später definiert werden
+          "chance": 0.3, // Annahme: 30% Chance? "kann [...] in Brand setzen"
+          "duration": 2
+        }
+      ]
+    },
+    {
+      "id": "frostbolt",
+      "name": "Frostblitz",
+      "description": "Verschießt einen eisigen Blitz, der verlangsamt.",
+      "cost": { "MANA": 15 },
+      "target": "ENEMY",
+      "effects": [
+        {
+          "type": "DAMAGE",
+          "damage_type": "FROST",
+          "base_value": 8,
+          "use_weapon_damage": false,
+          "scaling_stat": "INT",
+          "bonus_multiplier": 2, // Siehe Kommentar bei Fireball
+          "hit_multiplier": 1
+        },
+        {
+          "type": "APPLY_STATUS",
+          "status_id": "SLOWED", // Muss später definiert werden
+          "chance": 1.0, // Annahme: Verlangsamt immer
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "arcane_barrier",
+      "name": "Arkane Barriere",
+      "description": "Erschafft einen Schild, der Schaden absorbiert.",
+      "cost": { "MANA": 25 },
+      "target": "SELF", // Oder ALLY? User schrieb SELF
+      "effects": [
+        {
+          "type": "ABSORB_SHIELD",
+          "base_value": 20,
+          "scaling_stat": "INT",
+          "bonus_multiplier": 5,
+          "duration": 3
+        }
+      ]
+    },
+    {
+      "id": "precise_stab",
+      "name": "Präziser Stich",
+      "description": "Ein gezielter Stich, der Rüstung teilweise ignoriert.",
+      "cost": { "ENERGY": 20 },
+      "target": "ENEMY",
+      "effects": [
+        {
+          "type": "DAMAGE",
+          "damage_type": "PHYSICAL",
+          "base_value": 0,
+          "use_weapon_damage": true,
+          "scaling_stat": "DEX",
+          "bonus_multiplier": 1,
+          "hit_multiplier": 1,
+          "special": {"armor_penetration_percentage": 0.3} // Beispiel für Special
+        }
+      ]
+    },
+    {
+      "id": "distraction",
+      "name": "Ablenkung",
+      "description": "Lenkt den Gegner ab und reduziert seine Treffsicherheit.",
+      "cost": { "ENERGY": 15 },
+      "target": "ENEMY",
+      "effects": [
+        {
+          "type": "MODIFY_STAT",
+          "stat_id": "ACCURACY", // Muss später definiert werden
+          "value": -10,
+          "duration": 2
+        }
+      ]
+    },
+    {
+      "id": "sprint",
+      "name": "Sprint",
+      "description": "Erhöht kurzzeitig die Initiative.",
+      "cost": { "ENERGY": 25 },
+      "target": "SELF",
+      "effects": [
+        {
+          "type": "MODIFY_STAT",
+          "stat_id": "INITIATIVE", // Muss später definiert werden
+          "value": 20,
+          "duration": 1
+        }
+      ]
+    },
+    {
+      "id": "heal",
+      "name": "Heilung",
+      "description": "Stellt Lebenspunkte eines verbündeten Ziels wieder her.",
+      "cost": { "MANA": 25 },
+      "target": "ALLY",
+      "effects": [
+        {
+          "type": "HEAL",
+          "base_value": 15,
+          "scaling_stat": "WIS",
+          "bonus_multiplier": 5
+        }
+      ]
+    },
+    {
+      "id": "holy_light",
+      "name": "Heiliges Licht",
+      "description": "Verursacht heiligen Schaden, besonders gegen Untote.",
+      "cost": { "MANA": 20 },
+      "target": "ENEMY",
+      "effects": [
+        {
+          "type": "DAMAGE",
+          "damage_type": "HOLY",
+          "base_value": 8,
+          "use_weapon_damage": false,
+          "scaling_stat": "WIS",
+          "bonus_multiplier": 2, // Siehe Kommentar bei Fireball
+          "hit_multiplier": 1,
+          "special": {"vs_undead_multiplier": 1.5} // Beispiel für Special
+        }
+      ]
+    },
+    {
+      "id": "protective_ward",
+      "name": "Schutzsegen",
+      "description": "Segnet ein Ziel und erhöht seine Verteidigung.",
+      "cost": { "MANA": 20 },
+      "target": "ALLY", // User schrieb "Ziel", ALLY passt hier gut
+      "effects": [
+        {
+          "type": "MODIFY_STAT",
+          "stat_id": "ARMOR",
+          "value": 2,
+          "duration": 3
+        },
+         {
+          "type": "MODIFY_STAT",
+          "stat_id": "MAGIC_RES",
+          "value": 2,
+          "duration": 3
+        }
+      ]
+    },
+     {
+      "id": "weakening_curse",
+      "name": "Schwächefluch",
+      "description": "Verringert die Stärke des Ziels für einige Runden.",
+      "cost": { "MANA": 15 },
+      "target": "ENEMY",
+      "effects": [
+         {
+          "type": "MODIFY_STAT",
+          "stat_id": "STR",
+          "value": -3,
+          "duration": 3
+        }
+      ]
+    },
+     {
+      "id": "heal_lesser",
+      "name": "Geringe Heilung",
+      "description": "Heilt den Wirker um einen geringen Betrag, skaliert mit Weisheit.",
+      "cost": { "MANA": 10 },
+      "target": "SELF",
+      "effects": [
+        {
+          "type": "HEAL",
+          "base_value": 25,
+          "scaling_stat": "WIS",
+          "bonus_multiplier": 2
+        }
+      ]
+    }
+  ]
