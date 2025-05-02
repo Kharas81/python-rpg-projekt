@@ -1,0 +1,12 @@
+# Core Reinforcement Learning Libraries
+stable-baselines3[extra]>=2.0.0 # Haupt-RL-Bibliothek (PPO etc.) + Extras (Tensorboard, ...)
+sb3-contrib>=2.0.0             # Zusätzliche Algorithmen wie MaskablePPO
+gymnasium>=0.29.0              # Das Toolkit für RL-Umgebungen (Nachfolger von OpenAI Gym)
+shimmy>=1.0.0                  # Kompatibilitäts-Layer für Gymnasium
+
+# Testing Framework
+pytest>=8.0.0                  # Framework für automatisierte Tests
+
+# Optional: Linting & Formatting (Gute Praxis)
+# flake8                       # Code-Style-Checker (PEP8 etc.)
+# black                        # Kompromissloser Code-Formatierer
