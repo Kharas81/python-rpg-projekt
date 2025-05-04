@@ -1,0 +1,19 @@
+name: Hello World Workflow
+
+# Wann soll der Workflow starten? Hier: Bei jedem Push ins Repository.
+on:
+  push:
+    branches:
+      - main
+
+# Was soll der Workflow tun?
+jobs:
+  say-hello:
+    runs-on: ubuntu-latest # Nutze ein Linux-System als Umgebung.
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3 # Holt den Code aus dem Repository.
+
+      - name: Print Hello World
+        run: echo "Hello, World! GitHub Actions funktioniert!"
