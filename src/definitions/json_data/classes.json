@@ -2,89 +2,49 @@
   "warrior": {
     "name": "Krieger",
     "description": "Ein robuster Nahkämpfer, der sich auf Stärke und Ausdauer verlässt.",
-    "starting_attributes": {
-      "STR": 15, "DEX": 10, "INT": 5, "CON": 14, "WIS": 6
-    },
+    "starting_attributes": { "STR": 15, "DEX": 10, "INT": 5, "CON": 14, "WIS": 6 },
     "starting_combat_stats": {
-      "base_armor": 5,
-      "base_magic_resist": 1,
-      "max_stamina": 100,
-      "max_energy": null,
-      "max_mana": null
+      "base_armor": 5, "base_magic_resist": 1,
+      "max_stamina": 100, "max_energy": null, "max_mana": null
     },
     "primary_resource": "STAMINA",
-    "starting_skills": [
-      "basic_strike_phys",
-      "power_strike",
-      "shield_bash",
-      "cleave"
-    ],
+    "starting_skills": [ "basic_strike_phys", "power_strike", "shield_bash", "cleave" ],
     "key_attributes": ["STR", "CON"]
   },
   "mage": {
     "name": "Magier",
     "description": "Ein Wirker mächtiger Zauber, der Intelligenz nutzt, um Schaden zu verursachen und zu kontrollieren.",
-    "starting_attributes": {
-      "STR": 5, "DEX": 10, "INT": 15, "CON": 8, "WIS": 12
-    },
+    "starting_attributes": { "STR": 5, "DEX": 10, "INT": 15, "CON": 8, "WIS": 12 },
     "starting_combat_stats": {
-      "base_armor": 1,
-      "base_magic_resist": 4,
-      "max_stamina": null,
-      "max_energy": null,
-      "max_mana": 100
+      "base_armor": 1, "base_magic_resist": 4,
+      "max_stamina": null, "max_energy": null, "max_mana": 100
     },
     "primary_resource": "MANA",
-    "starting_skills": [
-      "basic_magic_bolt",
-      "fireball",
-      "frostbolt",
-      "arcane_barrier"
-    ],
+    "starting_skills": [ "basic_magic_bolt", "fireball", "frostbolt", "arcane_barrier" ],
     "key_attributes": ["INT", "WIS"]
   },
   "rogue": {
     "name": "Schurke",
     "description": "Ein agiler Kämpfer, der auf Geschicklichkeit setzt, um präzise Angriffe auszuführen und Feinde auszutricksen.",
-    "starting_attributes": {
-      "STR": 10, "DEX": 15, "INT": 8, "CON": 10, "WIS": 7
-    },
+    "starting_attributes": { "STR": 10, "DEX": 15, "INT": 8, "CON": 10, "WIS": 7 },
     "starting_combat_stats": {
-      "base_armor": 2,
-      "base_magic_resist": 2,
-      "max_stamina": null,
-      "max_energy": 100,
-      "max_mana": null
+      "base_armor": 2, "base_magic_resist": 2,
+      "max_stamina": null, "max_energy": 100, "max_mana": null
     },
     "primary_resource": "ENERGY",
-    "starting_skills": [
-      "basic_strike_finesse",
-      "precise_stab",
-      "distraction",
-      "sprint"
-    ],
-    "key_attributes": ["DEX", "CON"] // CON vielleicht auch für HP?
+    "starting_skills": [ "basic_strike_finesse", "precise_stab", "distraction", "sprint" ],
+    "key_attributes": ["DEX", "CON"]
   },
   "cleric": {
     "name": "Kleriker",
     "description": "Ein göttlicher Wirker, der Weisheit nutzt, um Verbündete zu heilen und Feinde mit heiliger Macht zu bekämpfen.",
-    "starting_attributes": {
-      "STR": 8, "DEX": 7, "INT": 12, "CON": 10, "WIS": 13
-    },
+    "starting_attributes": { "STR": 8, "DEX": 7, "INT": 12, "CON": 10, "WIS": 13 },
     "starting_combat_stats": {
-      "base_armor": 3,
-      "base_magic_resist": 3,
-      "max_stamina": null,
-      "max_energy": null,
-      "max_mana": 100
+      "base_armor": 3, "base_magic_resist": 3,
+      "max_stamina": null, "max_energy": null, "max_mana": 100
     },
     "primary_resource": "MANA",
-    "starting_skills": [
-      "basic_holy_spark",
-      "heal",
-      "holy_light",
-      "protective_ward"
-    ],
-    "key_attributes": ["WIS", "CON", "INT"] // INT auch für Mana?
+    "starting_skills": [ "basic_holy_spark", "heal", "holy_light", "protective_ward" ],
+    "key_attributes": ["WIS", "CON", "INT"]
   }
 }
