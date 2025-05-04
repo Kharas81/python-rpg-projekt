@@ -8,6 +8,8 @@ import logging
 import os
 import sys
 import time
+import json
+import random
 from typing import Dict, List, Any, Optional
 
 from src.game_logic.entity.player import Player
@@ -34,25 +36,105 @@ class CLIManager:
         self.running: bool = False
         self.current_player: Optional[Player] = None
         self.combat_cli = CombatCLI()
+        self.mode = "auto"  # Standardmäßig auto-Modus
+        
+        # Lade die Charakterdaten aus der JSON-Datei
+        self.character_data = self._load_character_data()
+        self.enemy_data = self._load_enemy_data()
         
         logger.info("CLI Manager initialisiert")
     
-    def start(self) -> None:
+    def _load_character_data(self) -> Dict[str, Any]:
+        """
+        Lädt die Charakterdaten aus der JSON-Datei.
+        
+        Returns:
+            Dictionary mit den Charakterdaten
+        """
+        try:
+            with open('src/definitions/json_data/characters.json', 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                logger.info("Charakterdaten erfolgreich geladen")
+                return data
+        except FileNotFoundError:
+            # Falls die Datei nicht im regulären Pfad ist, versuche einen alternativen Pfad
+            try:
+                with open('characters.json', 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    logger.info("Charakterdaten aus alternativem Pfad geladen")
+                    return data
+            except FileNotFoundError:
+                logger.warning("Charakterdaten konnten nicht geladen werden")
+                return {"character_classes": {
+                    "warrior": {
+                        "name": "Krieger",
+                        "level": 1,
+                        "attributes": {"strength": 15, "dexterity": 10, "intelligence": 5, "constitution": 14, "wisdom": 6},
+                        "defenses": {"armor": 5, "magic_resistance": 1},
+                        "resources": {"max_stamina": 100, "max_energy": None, "max_mana": None},
+                        "known_skills": ["basic_strike_phys"]
+                    }
+                }}
+    
+    def _load_enemy_data(self) -> Dict[str, Any]:
+        """
+        Lädt die Gegnerdaten aus der JSON-Datei.
+        
+        Returns:
+            Dictionary mit den Gegnerdaten
+        """
+        try:
+            with open('src/definitions/json_data/enemies.json', 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                logger.info("Gegnerdaten erfolgreich geladen")
+                return data
+        except FileNotFoundError:
+            # Falls die Datei nicht im regulären Pfad ist, versuche einen alternativen Pfad
+            try:
+                with open('enemies.json', 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    logger.info("Gegnerdaten aus alternativem Pfad geladen")
+                    return data
+            except FileNotFoundError:
+                logger.warning("Gegnerdaten konnten nicht geladen werden")
+                return {"enemies": {
+                    "goblin": {
+                        "id": "goblin",
+                        "name": "Goblin",
+                        "level": 1,
+                        "attributes": {"strength": 8, "dexterity": 12, "intelligence": 5, "constitution": 9, "wisdom": 5},
+                        "defenses": {"armor": 2, "magic_resistance": 0},
+                        "resources": {"max_stamina": 50, "max_energy": None, "max_mana": None},
+                        "known_skills": ["basic_strike_phys"]
+                    }
+                }}
+    
+    def start(self, mode: str = "auto") -> None:
         """
         Startet die CLI und zeigt das Hauptmenü an.
+        
+        Args:
+            mode: Betriebsmodus ('auto' für KI-Training, 'manual' für interaktiven Modus)
         """
         self.running = True
+        self.mode = mode
         self.show_welcome_screen()
         
-        while self.running:
-            self.show_main_menu()
+        if mode == "auto":
+            # Auto-Start eines Testszenarios für KI-gesteuertes Gameplay
+            self.create_character_auto()
+            self.start_auto_test_combat()
+        else:
+            # Manueller Modus - zeige Hauptmenü
+            while self.running:
+                self.show_main_menu()
     
     def stop(self) -> None:
         """
         Beendet die CLI.
         """
         self.running = False
-        print("\nDanke fürs Spielen! Bis zum nächsten Mal.")
+        print("\nProgramm wird beendet.")
         logger.info("Spiel beendet")
     
     def show_welcome_screen(self) -> None:
@@ -60,12 +142,21 @@ class CLIManager:
         Zeigt den Willkommensbildschirm an.
         """
         clear_screen()
-        print_title("Python RPG")
-        print(colorize("\nWillkommen im Python RPG Testmodus!\n", "cyan"))
-        print("Diese CLI-Version dient zum Testen des Kampfsystems.")
-        print("Du kannst verschiedene Charaktere erstellen und gegen Gegner kämpfen.")
-        print("\nDrücke Enter, um fortzufahren...")
-        input()
+        
+        if self.mode == "auto":
+            print_title("Python RPG - KI-Trainingsmodus")
+            print(colorize("\nWillkommen im Python RPG KI-Trainingsmodus!\n", "cyan"))
+            print("Diese Sitzung wird automatisch einen Testkampf starten und durchführen.")
+            print("Das Kampfsystem ist für das Reinforcement Learning vorbereitet.")
+            print("\nInitialisierung läuft...")
+            time.sleep(2)  # Kurze Pause für Lesbarkeit
+        else:
+            print_title("Python RPG - Interaktiver Modus")
+            print(colorize("\nWillkommen im Python RPG Testmodus!\n", "cyan"))
+            print("Diese CLI-Version dient zum Testen des Kampfsystems.")
+            print("Du kannst verschiedene Charaktere erstellen und gegen Gegner kämpfen.")
+            print("\nDrücke Enter, um fortzufahren...")
+            input()
     
     def show_main_menu(self) -> None:
         """
@@ -130,23 +221,93 @@ class CLIManager:
         class_choice = get_input("Wähle eine Klasse (1-4): ", valid_range=(1, 4))
         character_class = class_options[class_choice]
         
-        # Erzeuge einen neuen Spieler mit Basisattributen
-        self.current_player = Player(
-            name=name,
-            character_class=character_class,
-            level=1
-        )
+        # Erstelle den Player mit den Daten aus der JSON-Datei
+        try:
+            # Erstelle Player-ID
+            player_id = f"{character_class}_{name.lower().replace(' ', '_')}"
+            
+            # Bereite Daten aus character_classes und setze den Namen
+            if character_class in self.character_data["character_classes"]:
+                data_dict = self.character_data["character_classes"][character_class].copy()
+                data_dict["name"] = name
+                data_dict["character_class"] = character_class
+            else:
+                # Fallback, falls die Klasse nicht gefunden wird
+                logger.warning(f"Klasse {character_class} nicht gefunden, verwende Standard-Werte")
+                data_dict = {
+                    "name": name,
+                    "character_class": character_class,
+                    "level": 1,
+                    "attributes": {"strength": 10, "dexterity": 10, "intelligence": 10, "constitution": 10, "wisdom": 10},
+                    "defenses": {"armor": 2, "magic_resistance": 2},
+                    "resources": {"max_stamina": 50, "max_energy": None, "max_mana": 50},
+                    "known_skills": ["basic_strike_phys"]
+                }
+            
+            # Erstelle den Spieler
+            self.current_player = Player(player_id, data_dict)
+            
+            logger.info(f"Charakter '{name}' der Klasse {character_class} erfolgreich erstellt")
+            print(f"\n{colorize('Charakter erstellt!', 'green')}")
+            print(f"Name: {name}")
+            print(f"Klasse: {character_class.capitalize()}")
+            print(f"Level: 1")
+            print("\nDrücke Enter, um fortzufahren...")
+            input()
         
-        print(f"\n{colorize('Charakter erstellt!', 'green')}")
-        print(f"Name: {name}")
-        print(f"Klasse: {character_class.capitalize()}")
-        print(f"Level: 1")
-        print("\nDrücke Enter, um fortzufahren...")
-        input()
+        except Exception as e:
+            logger.exception(f"Fehler bei der Charaktererstellung: {str(e)}")
+            print(f"\n{colorize('Fehler bei der Charaktererstellung:', 'red')} {str(e)}")
+            print("Bitte überprüfe die Player-Klassen-Implementation.")
+            time.sleep(3)
+    
+    def create_character_auto(self) -> None:
+        """
+        Erstellt automatisch einen Testcharakter für KI-Training.
+        """
+        # Wähle automatisch einen Krieger für einfache Tests
+        character_class = "warrior"
+        name = "KI-Trainingscharakter"
+        
+        # Erstelle den Player mit den Daten aus der JSON-Datei
+        try:
+            # Erstelle Player-ID
+            player_id = "test_player_1"
+            
+            # Bereite Daten aus character_classes und setze den Namen
+            if character_class in self.character_data["character_classes"]:
+                data_dict = self.character_data["character_classes"][character_class].copy()
+                data_dict["name"] = name
+                data_dict["character_class"] = character_class
+            else:
+                # Fallback, falls die Klasse nicht gefunden wird
+                logger.warning(f"Klasse {character_class} nicht gefunden, verwende Standard-Werte")
+                data_dict = {
+                    "name": name,
+                    "character_class": character_class,
+                    "level": 1,
+                    "attributes": {"strength": 10, "dexterity": 10, "intelligence": 10, "constitution": 10, "wisdom": 10},
+                    "defenses": {"armor": 2, "magic_resistance": 2},
+                    "resources": {"max_stamina": 50, "max_energy": None, "max_mana": 50},
+                    "known_skills": ["basic_strike_phys"]
+                }
+            
+            # Erstelle den Spieler
+            self.current_player = Player(player_id, data_dict)
+            
+            logger.info(f"Auto-Charakter '{name}' der Klasse {character_class} erfolgreich erstellt")
+            print(f"\n{colorize('Charakter erstellt:', 'green')} {name} (Level 1 {character_class.capitalize()})")
+            time.sleep(1)
+        
+        except Exception as e:
+            logger.exception(f"Fehler bei der Auto-Charaktererstellung: {str(e)}")
+            print(f"\n{colorize('Fehler bei der Auto-Charaktererstellung:', 'red')} {str(e)}")
+            print("Bitte überprüfe die Player-Klassen-Implementation.")
+            time.sleep(3)
     
     def start_test_combat(self) -> None:
         """
-        Startet einen Testkampf mit dem aktuellen Charakter.
+        Startet einen Testkampf mit dem aktuellen Charakter (manueller Modus).
         """
         if not self.current_player:
             logger.error("Versuch, einen Kampf ohne Spieler zu starten.")
@@ -170,8 +331,39 @@ class CLIManager:
         # Generiere Gegner basierend auf der Schwierigkeit
         enemies = self._generate_enemies(difficulty)
         
-        # Starte den Kampf in der CombatCLI
-        self.combat_cli.start_combat(self.current_player, enemies)
+        # Starte den Kampf in der CombatCLI mit manuellem Modus
+        self.combat_cli.start_combat(self.current_player, enemies, ai_mode=False)
+    
+    def start_auto_test_combat(self) -> None:
+        """
+        Startet automatisch einen Testkampf für KI-Training.
+        """
+        if not self.current_player:
+            logger.error("Versuch, einen Kampf ohne Spieler zu starten.")
+            return
+        
+        clear_screen()
+        print_title("KI-Trainings-Kampf")
+        print("\nEin Trainingskampf wird für die KI automatisch generiert...")
+        
+        # Wähle automatisch mittlere Schwierigkeit
+        difficulty = 2
+        
+        # Generiere Gegner basierend auf der Schwierigkeit
+        enemies = self._generate_enemies(difficulty)
+        
+        # Ausgabe der generierten Gegner
+        print(f"\nGenerierte Gegner für Schwierigkeitsstufe {difficulty}:")
+        for enemy in enemies:
+            print(f"- {enemy.name} (Level {enemy.level})")
+        
+        time.sleep(2)
+        
+        # Starte den Kampf in der CombatCLI mit KI-Modus
+        self.combat_cli.start_combat(self.current_player, enemies, ai_mode=True)
+        
+        # Nach dem Kampf beenden
+        self.stop()
     
     def _generate_enemies(self, difficulty: int) -> List[Enemy]:
         """
@@ -185,89 +377,47 @@ class CLIManager:
         """
         enemies = []
         
-        if difficulty == 1:
-            # Leicht: Eine Ratte
-            enemies.append(Enemy(
-                name="Aggressive Ratte",
-                id="ratte_wild_1",
-                level=1,
-                hp=15,
-                attack=3,
-                defense=1
-            ))
-        
-        elif difficulty == 2:
-            # Mittel: Zwei Goblins
-            enemies.append(Enemy(
-                name="Goblin Kämpfer",
-                id="goblin_kaempfer_1",
-                level=2,
-                hp=25,
-                attack=4,
-                defense=2
-            ))
+        try:
+            enemy_types = {
+                1: ["giant_rat"],
+                2: ["goblin", "goblin_warrior"],
+                3: ["goblin_warrior", "skeleton_archer", "goblin_shaman"]
+            }
             
-            enemies.append(Enemy(
-                name="Goblin Plünderer",
-                id="goblin_pluenderer_1",
-                level=2,
-                hp=20,
-                attack=5,
-                defense=1
-            ))
-        
-        elif difficulty == 3:
-            # Schwer: Zwei Goblins und ein Skelettkrieger
-            enemies.append(Enemy(
-                name="Goblin Anführer",
-                id="goblin_anfuehrer_1",
-                level=3,
-                hp=30,
-                attack=5,
-                defense=3
-            ))
+            selected_enemy_types = enemy_types.get(difficulty, ["goblin"])
             
-            enemies.append(Enemy(
-                name="Goblin Bogenschütze",
-                id="goblin_bogenschuetze_1",
-                level=2,
-                hp=18,
-                attack=6,
-                defense=1
-            ))
+            for enemy_type in selected_enemy_types:
+                if enemy_type in self.enemy_data["enemies"]:
+                    # Erstelle Enemy-ID
+                    enemy_id = f"{enemy_type}_{random.randint(1000, 9999)}"
+                    
+                    # Kopiere die Gegnerdaten
+                    data_dict = self.enemy_data["enemies"][enemy_type].copy()
+                    
+                    # Erstelle den Gegner
+                    enemy = Enemy(enemy_id, data_dict)
+                    enemies.append(enemy)
+                else:
+                    logger.warning(f"Gegnertyp {enemy_type} nicht gefunden")
             
-            enemies.append(Enemy(
-                name="Skelettkrieger",
-                id="skelett_krieger_1",
-                level=3,
-                hp=40,
-                attack=6,
-                defense=4
-            ))
+            if not enemies:
+                # Fallback: Erstelle einen generischen Goblin
+                enemy_id = "goblin_fallback"
+                data_dict = {
+                    "name": "Goblin (Fallback)",
+                    "level": difficulty,
+                    "attributes": {"strength": 8, "dexterity": 10, "intelligence": 5, "constitution": 8, "wisdom": 5},
+                    "defenses": {"armor": 2, "magic_resistance": 1},
+                    "resources": {"max_stamina": 40, "max_energy": None, "max_mana": None},
+                    "known_skills": ["basic_strike_phys"]
+                }
+                enemy = Enemy(enemy_id, data_dict)
+                enemies.append(enemy)
+            
+        except Exception as e:
+            logger.exception(f"Fehler beim Generieren von Gegnern: {str(e)}")
+            print(f"\n{colorize('Fehler beim Generieren von Gegnern:', 'red')} {str(e)}")
+            print("Bitte überprüfe die Enemy-Klassen-Implementation.")
+            time.sleep(3)
         
         return enemies
-
-
-if __name__ == "__main__":
-    # Konfiguriere das Logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.FileHandler("game.log"),
-            logging.StreamHandler()
-        ]
-    )
-    
-    # Starte die CLI
-    cli = CLIManager()
-    try:
-        cli.start()
-    except KeyboardInterrupt:
-        print("\nSpiel durch Benutzer beendet.")
-    except Exception as e:
-        logger.exception(f"Unerwarteter Fehler: {str(e)}")
-        print(f"\nEs ist ein Fehler aufgetreten: {str(e)}")
-        print("Bitte überprüfe die Logdatei für mehr Informationen.")
-    
-    sys.exit(0)

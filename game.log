@@ -1,0 +1,136 @@
+2025-05-04 11:01:06,637 - __main__ - INFO - Spiel gestartet
+2025-05-04 11:01:06,637 - src.game_logic.combat.combat_manager - INFO - Combat Manager initialisiert
+2025-05-04 11:01:06,637 - src.ui.cli.combat_cli - INFO - Combat CLI initialisiert
+2025-05-04 11:01:06,637 - src.ui.cli.cli_manager - INFO - CLI Manager initialisiert
+2025-05-04 11:01:14,212 - __main__ - ERROR - Unerwarteter Fehler: Player.__init__() got an unexpected keyword argument 'name'
+Traceback (most recent call last):
+  File "/workspaces/python-rpg-projekt/main.py", line 28, in <module>
+    cli.start()
+  File "/workspaces/python-rpg-projekt/src/ui/cli/cli_manager.py", line 48, in start
+    self.show_main_menu()
+  File "/workspaces/python-rpg-projekt/src/ui/cli/cli_manager.py", line 98, in show_main_menu
+    self.create_character()
+  File "/workspaces/python-rpg-projekt/src/ui/cli/cli_manager.py", line 134, in create_character
+    self.current_player = Player(
+                          ^^^^^^^
+TypeError: Player.__init__() got an unexpected keyword argument 'name'
+2025-05-04 11:12:49,605 - __main__ - INFO - Spiel gestartet im auto-Modus
+2025-05-04 11:12:49,605 - src.game_logic.combat.combat_manager - INFO - Combat Manager initialisiert
+2025-05-04 11:12:49,605 - src.ui.cli.combat_cli - INFO - Combat CLI initialisiert
+2025-05-04 11:12:49,605 - src.ui.cli.cli_manager - INFO - CLI Manager initialisiert
+2025-05-04 11:12:51,607 - __main__ - ERROR - Unerwarteter Fehler: Player.__init__() got an unexpected keyword argument 'id'
+Traceback (most recent call last):
+  File "/workspaces/python-rpg-projekt/main.py", line 35, in <module>
+    cli.start(mode=args.mode)
+  File "/workspaces/python-rpg-projekt/src/ui/cli/cli_manager.py", line 54, in start
+    self.create_character_auto()
+  File "/workspaces/python-rpg-projekt/src/ui/cli/cli_manager.py", line 177, in create_character_auto
+    self.current_player = Player(
+                          ^^^^^^^
+TypeError: Player.__init__() got an unexpected keyword argument 'id'
+2025-05-04 11:13:01,112 - __main__ - INFO - Spiel gestartet im manual-Modus
+2025-05-04 11:13:01,113 - src.game_logic.combat.combat_manager - INFO - Combat Manager initialisiert
+2025-05-04 11:13:01,113 - src.ui.cli.combat_cli - INFO - Combat CLI initialisiert
+2025-05-04 11:13:01,113 - src.ui.cli.cli_manager - INFO - CLI Manager initialisiert
+2025-05-04 11:13:07,544 - __main__ - ERROR - Unerwarteter Fehler: Player.__init__() got an unexpected keyword argument 'id'
+Traceback (most recent call last):
+  File "/workspaces/python-rpg-projekt/main.py", line 35, in <module>
+    cli.start(mode=args.mode)
+  File "/workspaces/python-rpg-projekt/src/ui/cli/cli_manager.py", line 59, in start
+    self.show_main_menu()
+  File "/workspaces/python-rpg-projekt/src/ui/cli/cli_manager.py", line 118, in show_main_menu
+    self.create_character()
+  File "/workspaces/python-rpg-projekt/src/ui/cli/cli_manager.py", line 154, in create_character
+    self.current_player = Player(
+                          ^^^^^^^
+TypeError: Player.__init__() got an unexpected keyword argument 'id'
+2025-05-04 12:06:10,085 - __main__ - INFO - Spiel gestartet im manual-Modus
+2025-05-04 12:06:10,085 - src.game_logic.combat.combat_manager - INFO - Combat Manager initialisiert
+2025-05-04 12:06:10,086 - src.ui.cli.combat_cli - INFO - Combat CLI initialisiert
+2025-05-04 12:06:10,086 - src.ui.cli.cli_manager - INFO - Player Konstruktor-Parameter: Erforderlich=['player_id', 'data_dict'], Optional=[]
+2025-05-04 12:06:10,086 - src.ui.cli.cli_manager - INFO - Enemy Konstruktor-Parameter: Erforderlich=['enemy_id', 'data_dict'], Optional=[]
+2025-05-04 12:06:10,086 - src.ui.cli.cli_manager - INFO - CLI Manager initialisiert
+2025-05-04 12:06:15,899 - src.ui.cli.cli_manager - ERROR - Fehler bei der Charaktererstellung: Player.__init__() missing 2 required positional arguments: 'player_id' and 'data_dict'
+Traceback (most recent call last):
+  File "/workspaces/python-rpg-projekt/src/ui/cli/cli_manager.py", line 219, in create_character
+    self.current_player = Player(**player_kwargs)
+                          ^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: Player.__init__() missing 2 required positional arguments: 'player_id' and 'data_dict'
+2025-05-04 12:06:25,540 - src.ui.cli.cli_manager - ERROR - Fehler bei der Charaktererstellung: Player.__init__() missing 2 required positional arguments: 'player_id' and 'data_dict'
+Traceback (most recent call last):
+  File "/workspaces/python-rpg-projekt/src/ui/cli/cli_manager.py", line 219, in create_character
+    self.current_player = Player(**player_kwargs)
+                          ^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: Player.__init__() missing 2 required positional arguments: 'player_id' and 'data_dict'
+2025-05-04 12:06:33,987 - src.ui.cli.cli_manager - ERROR - Fehler bei der Charaktererstellung: Player.__init__() missing 2 required positional arguments: 'player_id' and 'data_dict'
+Traceback (most recent call last):
+  File "/workspaces/python-rpg-projekt/src/ui/cli/cli_manager.py", line 219, in create_character
+    self.current_player = Player(**player_kwargs)
+                          ^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: Player.__init__() missing 2 required positional arguments: 'player_id' and 'data_dict'
+2025-05-04 12:11:22,579 - __main__ - INFO - Spiel durch Benutzer beendet (KeyboardInterrupt)
+2025-05-04 12:12:09,960 - __main__ - INFO - Spiel gestartet im manual-Modus
+2025-05-04 12:12:09,960 - src.game_logic.combat.combat_manager - INFO - Combat Manager initialisiert
+2025-05-04 12:12:09,960 - src.ui.cli.combat_cli - INFO - Combat CLI initialisiert
+2025-05-04 12:12:09,960 - src.ui.cli.cli_manager - WARNING - Charakterdaten konnten nicht geladen werden
+2025-05-04 12:12:09,960 - src.ui.cli.cli_manager - WARNING - Gegnerdaten konnten nicht geladen werden
+2025-05-04 12:12:09,960 - src.ui.cli.cli_manager - INFO - CLI Manager initialisiert
+2025-05-04 12:12:13,248 - src.game_logic.entity.base_entity - INFO - Entität erstellt: 1 (Level 1, HP: 120)
+2025-05-04 12:12:13,248 - src.game_logic.entity.player - INFO - Spieler erstellt: 1 (Level 1, Klasse: warrior)
+2025-05-04 12:12:13,248 - src.ui.cli.cli_manager - INFO - Charakter '1' der Klasse warrior erfolgreich erstellt
+2025-05-04 12:12:27,219 - src.ui.cli.cli_manager - WARNING - Klasse mage nicht gefunden, verwende Standard-Werte
+2025-05-04 12:12:27,220 - src.game_logic.entity.base_entity - INFO - Entität erstellt: Mark (Level 1, HP: 100)
+2025-05-04 12:12:27,220 - src.game_logic.entity.player - INFO - Spieler erstellt: Mark (Level 1, Klasse: mage)
+2025-05-04 12:12:27,220 - src.ui.cli.cli_manager - INFO - Charakter 'Mark' der Klasse mage erfolgreich erstellt
+2025-05-04 12:12:31,526 - src.ui.cli.cli_manager - WARNING - Gegnertyp giant_rat nicht gefunden
+2025-05-04 12:12:31,526 - src.game_logic.entity.base_entity - INFO - Entität erstellt: Goblin (Fallback) (Level 1, HP: 90)
+2025-05-04 12:12:31,526 - src.game_logic.entity.enemy - INFO - Feind erstellt: Goblin (Fallback) (Level 1, HP: 90)
+2025-05-04 12:12:31,526 - src.game_logic.combat.combat_manager - INFO - Kampf gestartet: 1 Spieler gegen 1 Gegner
+2025-05-04 12:12:33,028 - src.definitions.loaders.base_loader - INFO - Lade Daten aus skills.json...
+2025-05-04 12:12:33,030 - src.definitions.loaders.base_loader - INFO - Lade Daten aus characters.json...
+2025-05-04 12:12:33,030 - src.definitions.loaders.base_loader - ERROR - JSON-Datei nicht gefunden: characters.json
+2025-05-04 12:12:33,030 - __main__ - ERROR - Unerwarteter Fehler: [Errno 2] No such file or directory: '/workspaces/python-rpg-projekt/src/definitions/json_data/characters.json'
+Traceback (most recent call last):
+  File "/workspaces/python-rpg-projekt/main.py", line 35, in <module>
+    cli.start(mode=args.mode)
+  File "/workspaces/python-rpg-projekt/src/ui/cli/cli_manager.py", line 130, in start
+    self.show_main_menu()
+  File "/workspaces/python-rpg-projekt/src/ui/cli/cli_manager.py", line 192, in show_main_menu
+    self.start_test_combat()
+  File "/workspaces/python-rpg-projekt/src/ui/cli/cli_manager.py", line 335, in start_test_combat
+    self.combat_cli.start_combat(self.current_player, enemies, ai_mode=False)
+  File "/workspaces/python-rpg-projekt/src/ui/cli/combat_cli.py", line 59, in start_combat
+    self._combat_loop()
+  File "/workspaces/python-rpg-projekt/src/ui/cli/combat_cli.py", line 92, in _combat_loop
+    self._handle_enemy_turn(current_entity)
+  File "/workspaces/python-rpg-projekt/src/ui/cli/combat_cli.py", line 246, in _handle_enemy_turn
+    result = self.combat_manager.execute_action(action_data)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/python-rpg-projekt/src/game_logic/combat/combat_manager.py", line 106, in execute_action
+    results = self.action_resolver.resolve_action(action, current_entity, all_entities)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/python-rpg-projekt/src/game_logic/combat/actions/action_resolver.py", line 76, in resolve_action
+    return self._execute_attack(entity, target)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/python-rpg-projekt/src/game_logic/combat/actions/action_resolver.py", line 159, in _execute_attack
+    skill_results = attacker.use_skill(skill_id, [target])
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/python-rpg-projekt/src/game_logic/entity/skills/skill_user.py", line 115, in use_skill
+    results["message"] += damage_effect.apply(self, effect, targets, results)  # type: ignore
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/python-rpg-projekt/src/game_logic/entity/skills/damage_effect.py", line 44, in apply
+    base_damage = data_service.get_base_weapon_damage()
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/python-rpg-projekt/src/definitions/data_service.py", line 145, in get_base_weapon_damage
+    return self._character_loader.get_base_weapon_damage()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/python-rpg-projekt/src/definitions/loaders/character_loader.py", line 61, in get_base_weapon_damage
+    data = self.get_data()
+           ^^^^^^^^^^^^^^^
+  File "/workspaces/python-rpg-projekt/src/definitions/loaders/base_loader.py", line 71, in get_data
+    self._data_cache = self._load_json_file()
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/python-rpg-projekt/src/definitions/loaders/base_loader.py", line 49, in _load_json_file
+    with open(file_path, 'r', encoding='utf-8') as file:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/workspaces/python-rpg-projekt/src/definitions/json_data/characters.json'

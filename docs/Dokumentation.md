@@ -3,7 +3,7 @@
 Diese Dokumentation bietet eine Übersicht über die Struktur und Funktionalität des Python-RPG-Projekts. Sie soll als Referenz dienen und die Navigation durch den Code erleichtern.
 
 ## Projektstruktur
-python-rpg-projekt/ ├── docs/ │ ├── ENTSCHEIDUNGEN.md # Protokoll wichtiger Designentscheidungen mit Zeitstempeln ├── src/ │ ├── game_logic/ │ │ ├── entity/ # Entity-Klassen für Spieler, Feinde und NPCs │ │ ├── skills/ # Skill-Effekte und -Mechaniken │ │ ├── combat/ # Kampfsystem-Komponenten │ │ │ ├── actions/ # Aktionsverarbeitung im Kampf │ │ │ ├── initiative/ # Initiative-Management │ │ │ ├── rewards/ # Belohnungssystem │ ├── ui/ # Benutzeroberflächen (CLI, zukünftig eventuell GUI) │ ├── utils/ # Hilfsklassen und -funktionen
+python-rpg-projekt/ ├── docs/ │ ├── ENTSCHEIDUNGEN.md # Protokoll wichtiger Designentscheidungen mit Zeitstempeln ├── src/ │ ├── game_logic/ │ │ ├── entity/ # Entity-Klassen für Spieler, Feinde und NPCs │ │ ├── skills/ # Skill-Effekte und -Mechaniken │ │ ├── combat/ # Kampfsystem-Komponenten │ │ │ ├── actions/ # Aktionsverarbeitung im Kampf │ │ │ ├── initiative/ # Initiative-Management │ │ │ ├── rewards/ # Belohnungssystem │ ├── ui/ # Benutzeroberflächen (CLI, zukünftig eventuell GUI) │ │ ├── cli/ # Kommandozeileninterface │ ├── utils/ # Hilfsklassen und -funktionen ├── main.py # Haupteinstiegspunkt für das Spiel
 
 
 ## Komponentenübersicht
@@ -57,6 +57,18 @@ Das Kampfsystem ist in spezialisierte Komponenten aufgeteilt, die jeweils eine e
 |-------|-------------|
 | `reward_calculator.py` | Berechnet und verteilt EP und Beute nach erfolgreichen Kämpfen |
 
+### Benutzeroberfläche (`src/ui/`)
+
+Die UI-Komponente ist für die Interaktion mit dem Benutzer verantwortlich.
+
+#### CLI (`src/ui/cli/`)
+
+| Datei | Beschreibung |
+|-------|-------------|
+| `cli_manager.py` | Hauptklasse für die CLI-Steuerung und Navigation zwischen Spielbereichen |
+| `combat_cli.py` | Spezialisierte Benutzeroberfläche für Kampfsituationen |
+| `cli_utils.py` | Hilfsfunktionen für Formatierung, Farbausgabe und Eingabevalidierung |
+
 ## Hauptfunktionalitäten
 
 ### Entity-System
@@ -76,14 +88,35 @@ Das Kampfsystem ist in spezialisierte Komponenten aufgeteilt, die jeweils eine e
 - **Kampfstatistiken**: Tracking von Schaden, Heilung und Bedrohung
 - **Belohnungen**: EP- und Loot-Berechnung nach Kampfende
 
+### CLI-System
+
+- **Automatisierter Modus**: CLI kann vollständig KI-gesteuert laufen für RL-Training
+- **Statusanzeigen**: Farbige Darstellung von Kampfinformationen und Statistiken
+- **Logging**: Umfangreiches Logging zur Fehleranalyse und Debugging
+
+## Reinforcement Learning Integration
+
+Das System ist für die Integration mit Reinforcement Learning (RL) vorbereitet:
+
+- **KI-Modus**: Die CLI kann automatisch ohne menschliche Eingaben laufen
+- **Automatisierte Entscheidungen**: Aktionen werden für KI-Trainings automatisch ausgewählt
+- **Statistiken**: Kampfergebnisse und -verlauf werden für das Training erfasst
+
+### RL-Schnittstelle
+
+Die Hauptschnittstelle für RL-Integration ist in `combat_cli.py` implementiert:
+
+- `_handle_ai_player_turn()`: Methode für die KI-Entscheidungsfindung
+- Diese Methode kann durch einen RL-Agenten ersetzt werden, der Aktionen basierend auf dem aktuellen Spielzustand auswählt
+
 ## Nächste Schritte
 
-1. **UI-Implementierung**: Entwicklung einer CLI oder GUI für die Interaktion mit dem Spiel
-2. **Quest-System**: Implementierung von Quests mit Fortschritt und Belohnungen
-3. **Item-System**: Erweiterung des Inventarsystems mit verschiedenen Ausrüstungsgegenständen
-4. **Speichersystem**: Speichern und Laden von Spielständen
-5. **Welt-System**: Implementierung einer Spielwelt mit verschiedenen Bereichen
-6. **KI-Verbesserungen**: Erweiterung der Gegner-KI für taktischere Kämpfe
+1. **Reinforcement Learning**: Integration eines RL-Agenten zur Optimierung der Kampfentscheidungen
+2. **Erweitertes Item-System**: Implementierung von verschiedenen Ausrüstungsgegenständen
+3. **Welt-System**: Entwicklung einer Spielwelt mit verschiedenen Bereichen
+4. **Quest-System**: Implementierung von Quests mit Fortschritt und Belohnungen
+5. **Speichersystem**: Speichern und Laden von Spielständen
+6. **KI-Verbesserungen**: Erweiterte Gegner-KI für taktischere Kämpfe
 7. **Balancing**: Feinabstimmung von Kampfwerten, EP und Belohnungen
 
 ## Entwicklungshinweise
@@ -92,3 +125,10 @@ Das Kampfsystem ist in spezialisierte Komponenten aufgeteilt, die jeweils eine e
 - **Modularität**: Komponenten sind so entworfen, dass sie unabhängig voneinander erweitert werden können
 - **Testbarkeit**: Logik ist von UI getrennt, um Unit-Tests zu erleichtern
 - **Dokumentation**: Wichtige Entscheidungen in ENTSCHEIDUNGEN.md festhalten mit Datum und Begründung
+
+## Ausführung
+
+Um das Spiel zu starten:
+
+```bash
+python main.py
