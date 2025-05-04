@@ -1,0 +1,42 @@
+{
+  "HP": {
+    "name": "Lebenspunkte",
+    "description": "Die Gesundheit einer Einheit. Sinkt sie auf 0, ist die Einheit besiegt. Wird oft durch Konstitution beeinflusst."
+  },
+  "MANA": {
+    "name": "Mana",
+    "description": "Ressource für magische Zauber und Fähigkeiten, typischerweise von Magiern und Klerikern genutzt."
+  },
+  "STAMINA": {
+    "name": "Ausdauer",
+    "description": "Ressource für physische Anstrengungen und Fähigkeiten, typischerweise von Kriegern genutzt."
+  },
+  "ENERGY": {
+    "name": "Energie",
+    "description": "Ressource für spezielle Manöver und Fähigkeiten, typischerweise von Schurken genutzt."
+  },
+  "ARMOR": {
+    "name": "Rüstung",
+    "description": "Reduziert den erlittenen physischen Schaden um einen festen Betrag."
+  },
+  "MAGIC_RESIST": {
+    "name": "Magieresistenz",
+    "description": "Reduziert den erlittenen magischen Schaden um einen festen Betrag."
+  },
+  "HIT_CHANCE": {
+    "name": "Trefferchance",
+    "description": "Basis-Wahrscheinlichkeit (in %), ein Ziel mit einem Angriff oder einer Fähigkeit zu treffen. Wird durch Genauigkeit des Angreifers und Ausweichen des Ziels modifiziert."
+  },
+  "EVASION": {
+    "name": "Ausweichen",
+    "description": "Fähigkeit, Angriffen auszuweichen, was die Trefferchance des Angreifers reduziert. Beeinflusst durch Geschicklichkeit."
+  },
+  "ACCURACY": {
+    "name": "Genauigkeit",
+    "description": "Fähigkeit, Ziele präzise zu treffen, was die eigene Trefferchance erhöht. Beeinflusst durch Geschicklichkeit."
+  },
+  "INITIATIVE": {
+    "name": "Initiative",
+    "description": "Bestimmt die Reihenfolge der Aktionen im Kampf. Höhere Initiative bedeutet früher handeln. Kann durch Fähigkeiten beeinflusst werden (z.B. Sprint)."
+  }
+}

@@ -1,0 +1,110 @@
+{
+  "goblin_lvl1": {
+    "name": "Goblin",
+    "level": 1,
+    "tags": ["GOBLINOID", "MELEE"],
+    "attributes": {
+      "STR": 8, "DEX": 12, "INT": 5, "CON": 9, "WIS": 5
+    },
+    "combat_stats": {
+      "base_hp": 95,  # Berechnet: 50 + (9 * 5)
+      "max_stamina": 50,
+      "max_energy": null,
+      "max_mana": null,
+      "base_armor": 2,
+      "base_magic_resist": 0
+    },
+    "skills": ["basic_strike_phys"],
+    "xp_reward": 50
+  },
+  "skeleton_lvl1": {
+    "name": "Skelett",
+    "level": 1,
+    "tags": ["UNDEAD", "MELEE"],
+    "attributes": {
+      "STR": 10, "DEX": 8, "INT": 4, "CON": 10, "WIS": 6
+    },
+    "combat_stats": {
+      "base_hp": 100, # Berechnet: 50 + (10 * 5)
+      "max_stamina": 40, // Annahme: Stamina, da physischer Angreifer
+      "max_energy": null,
+      "max_mana": null,
+      "base_armor": 3,
+      "base_magic_resist": 1
+    },
+    "skills": ["basic_strike_phys"],
+    "xp_reward": 60
+  },
+  "giant_rat_lvl1": {
+    "name": "Riesenratte",
+    "level": 1,
+    "tags": ["BEAST", "MELEE"],
+    "attributes": {
+      "STR": 6, "DEX": 14, "INT": 3, "CON": 7, "WIS": 5
+    },
+    "combat_stats": {
+      "base_hp": 85,  # Berechnet: 50 + (7 * 5)
+      "max_stamina": null,
+      "max_energy": 40,
+      "max_mana": null,
+      "base_armor": 1,
+      "base_magic_resist": 0
+    },
+    "skills": ["basic_strike_finesse"], // Nutzt geschicklichkeitsbasierten Angriff
+    "xp_reward": 35
+  },
+  "goblin_warrior_lvl2": {
+    "name": "Goblin-Krieger",
+    "level": 2,
+    "tags": ["GOBLINOID", "MELEE"],
+    "attributes": {
+      "STR": 12, "DEX": 10, "INT": 5, "CON": 11, "WIS": 6
+    },
+    "combat_stats": {
+      "base_hp": 105, # Berechnet: 50 + (11 * 5)
+      "max_stamina": 60,
+      "max_energy": null,
+      "max_mana": null,
+      "base_armor": 4,
+      "base_magic_resist": 1
+    },
+    "skills": ["basic_strike_phys", "power_strike"],
+    "xp_reward": 75
+  },
+  "skeleton_archer_lvl2": {
+    "name": "Skelett-Bogenschütze",
+    "level": 2,
+    "tags": ["UNDEAD", "RANGED"],
+    "attributes": {
+      "STR": 8, "DEX": 14, "INT": 5, "CON": 9, "WIS": 6
+    },
+    "combat_stats": {
+      "base_hp": 95,  # Berechnet: 50 + (9 * 5)
+      "max_stamina": null,
+      "max_energy": 50, // Annahme: Energy für Bogenschützen-Skills
+      "max_mana": null,
+      "base_armor": 2,
+      "base_magic_resist": 1
+    },
+    "skills": ["basic_shot_phys"],
+    "xp_reward": 80
+  },
+  "goblin_shaman_lvl3": {
+    "name": "Goblin-Schamane",
+    "level": 3,
+    "tags": ["GOBLINOID", "MAGE", "SUPPORT"],
+    "attributes": {
+      "STR": 5, "DEX": 8, "INT": 14, "CON": 8, "WIS": 12
+    },
+    "combat_stats": {
+      "base_hp": 90,  # Berechnet: 50 + (8 * 5)
+      "max_stamina": null,
+      "max_energy": null,
+      "max_mana": 80,
+      "base_armor": 1,
+      "base_magic_resist": 3
+    },
+    "skills": ["basic_magic_bolt", "weakening_curse", "heal_lesser"],
+    "xp_reward": 100
+  }
+}

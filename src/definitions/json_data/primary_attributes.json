@@ -1,0 +1,22 @@
+{
+  "STR": {
+    "name": "Stärke",
+    "description": "Beeinflusst physischen Schaden und Tragkraft."
+  },
+  "DEX": {
+    "name": "Geschicklichkeit",
+    "description": "Beeinflusst Angriffsgeschwindigkeit, Ausweichen und Fernkampfschaden."
+  },
+  "INT": {
+    "name": "Intelligenz",
+    "description": "Beeinflusst magischen Schaden und die Menge an Mana."
+  },
+  "CON": {
+    "name": "Konstitution",
+    "description": "Beeinflusst die maximalen Lebenspunkte (HP)."
+  },
+  "WIS": {
+    "name": "Weisheit",
+    "description": "Beeinflusst Willenskraft, Magieresistenz und Effektivität von Heilzaubern."
+  }
+}
