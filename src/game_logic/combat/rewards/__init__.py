@@ -1,0 +1,1 @@
+"""Combat rewards module initialization."""
