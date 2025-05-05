@@ -1,6 +1,7 @@
-# Core RL Libraries
-gymnasium
-stable-baselines3[extra] # Enthält Extras wie PPO etc.
-
-# Testing (für später)
-# pytest
+# Core dependencies
+json5 # Für das Laden von .json5 Konfigurations- und Datendateien
+# Reinforcement Learning
+stable-baselines3[extra] # RL Algorithmen (inkl. Gymnasium, PyTorch etc.)
+gymnasium # Die RL-Umgebungs-API
+# Testing
+pytest # Für automatisierte Tests

@@ -1,0 +1,73 @@
+{
+  "_comment": "Definitionen aller Gegner-Templates im Spiel.",
+  "opponents": [
+    // --- Level 1 Gegner ---
+    {
+      "id": "goblin_lvl1",
+      "name": "Goblin",
+      "level": 1,
+      "attributes": {"STR": 8, "DEX": 12, "INT": 5, "CON": 9, "WIS": 6},
+      "combat_stats": {"max_hp_base": 95, "armor": 2, "magic_resist": 0, "hit_chance_base": 90, "evasion_base_mod": 1, "accuracy_base_mod": 1, "initiative_base": 12},
+      "skills": ["basic_strike_phys"],
+      "ai_strategy": "basic_melee",
+      "xp_value": 50
+    },
+    {
+      "id": "skeleton_lvl1",
+      "name": "Skelett",
+      "level": 1,
+      "attributes": {"STR": 10, "DEX": 8, "INT": 3, "CON": 10, "WIS": 5},
+      "combat_stats": {"max_hp_base": 100, "armor": 3, "magic_resist": 1, "hit_chance_base": 90, "evasion_base_mod": -1, "accuracy_base_mod": -1, "initiative_base": 8},
+      "skills": ["basic_strike_phys"],
+      "ai_strategy": "basic_melee",
+      "_comment": "Könnte eine 'UNDEAD' Eigenschaft haben",
+      "tags": ["UNDEAD"],
+      "xp_value": 60
+    },
+    {
+      "id": "giant_rat_lvl1",
+      "name": "Riesenratte",
+      "level": 1,
+      "attributes": {"STR": 6, "DEX": 14, "INT": 2, "CON": 7, "WIS": 4},
+      "combat_stats": {"max_hp_base": 85, "armor": 1, "magic_resist": 0, "hit_chance_base": 90, "evasion_base_mod": 2, "accuracy_base_mod": 2, "initiative_base": 14},
+      "skills": ["basic_strike_finesse"],
+      "ai_strategy": "basic_melee",
+      "xp_value": 35
+    },
+    // --- Level 2 Gegner ---
+    {
+      "id": "goblin_warrior_lvl2",
+      "name": "Goblin-Krieger",
+      "level": 2,
+      "attributes": {"STR": 12, "DEX": 10, "INT": 5, "CON": 11, "WIS": 6},
+      "combat_stats": {"max_hp_base": 105, "_comment": "50 + 11*5 = 105", "armor": 4, "magic_resist": 1, "hit_chance_base": 90, "evasion_base_mod": 0, "accuracy_base_mod": 0, "initiative_base": 10},
+      "skills": ["basic_strike_phys", "power_strike"],
+      "ai_strategy": "warrior_basic", "_comment": "Nutzt ggf. Stamina-Skills",
+      "xp_value": 75
+    },
+    {
+      "id": "skeleton_archer_lvl2",
+      "name": "Skelett-Bogenschütze",
+      "level": 2,
+      "attributes": {"STR": 8, "DEX": 14, "INT": 5, "CON": 9, "WIS": 6},
+      "combat_stats": {"max_hp_base": 95, "_comment": "50 + 9*5 = 95", "armor": 2, "magic_resist": 1, "hit_chance_base": 90, "evasion_base_mod": 2, "accuracy_base_mod": 2, "initiative_base": 14},
+      "skills": ["basic_shot_phys"],
+      "ai_strategy": "basic_ranged",
+      "tags": ["UNDEAD"],
+      "xp_value": 80
+    },
+    // --- Level 3 Gegner ---
+    {
+      "id": "goblin_shaman_lvl3",
+      "name": "Goblin-Schamane",
+      "level": 3,
+      "attributes": {"STR": 5, "DEX": 8, "INT": 14, "CON": 8, "WIS": 12},
+      "combat_stats": {"max_hp_base": 90, "_comment": "50 + 8*5 = 90", "armor": 1, "magic_resist": 3, "hit_chance_base": 90, "evasion_base_mod": -1, "accuracy_base_mod": -1, "initiative_base": 8},
+      "_comment": "Verfügt über Mana",
+      "resources": {"MANA": {"max_base": 70, "_comment": "Basis z.B. INT*5?"}},
+      "skills": ["basic_magic_bolt", "weakening_curse", "heal_lesser"],
+      "ai_strategy": "support_caster", "_comment": "Heilt Verbündete, schwächt Gegner",
+      "xp_value": 100
+    }
+  ]
+}

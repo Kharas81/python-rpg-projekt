@@ -1,0 +1,193 @@
+{
+  "_comment": "Definitionen aller Skills im Spiel. IDs müssen einzigartig sein.",
+  "skills": [
+    // --- Krieger Skills ---
+    {
+      "_comment": "Basis-Angriff für physische Klassen (z.B. Krieger)",
+      "id": "basic_strike_phys",
+      "name": "Basic Strike",
+      "description": "Ein einfacher Waffenschlag.",
+      "target": "enemy",
+      "cost": {"resource": null, "amount": 0},
+      "effects": [{"type": "damage", "damage_type": "physical", "base_value": 5, "modifier": "STR", "multiplier": 1.0}]
+    },
+    {
+      "_comment": "Mächtiger Schlag des Kriegers",
+      "id": "power_strike",
+      "name": "Power Strike",
+      "description": "Ein kräftiger Schlag, der mehr Schaden verursacht.",
+      "target": "enemy",
+      "cost": {"resource": "STAMINA", "amount": 20},
+      "effects": [{"type": "damage", "damage_type": "physical", "base_value": 5, "modifier": "STR", "multiplier": 1.5}]
+    },
+    {
+      "_comment": "Schildschlag des Kriegers mit Betäubungseffekt",
+      "id": "shield_bash",
+      "name": "Shield Bash",
+      "description": "Schlägt mit dem Schild zu und betäubt das Ziel kurzzeitig.",
+      "target": "enemy",
+      "cost": {"resource": "STAMINA", "amount": 15},
+      "effects": [
+        {"type": "damage", "damage_type": "physical", "base_value": 2, "modifier": "STR", "multiplier": 1.0},
+        {"type": "apply_effect", "effect_id": "STUNNED", "duration": 1, "chance": 1.0}
+      ]
+    },
+    {
+      "_comment": "Spaltangriff des Kriegers, trifft mehrere Ziele",
+      "id": "cleave",
+      "name": "Cleave",
+      "description": "Trifft das Hauptziel und ein weiteres Ziel in der Nähe für reduzierten Schaden.",
+      "target": "area_enemy", "_comment": "Zieltyp 'area_enemy' muss noch implementiert werden, betrifft max 2 Ziele",
+      "cost": {"resource": "STAMINA", "amount": 25},
+      "effects": [
+        {"type": "damage", "damage_type": "physical", "base_value": 5, "modifier": "STR", "multiplier": 1.0, "target_scope": "primary"},
+        {"type": "damage", "damage_type": "physical", "base_value": 5, "modifier": "STR", "multiplier": 0.5, "target_scope": "secondary"}
+      ]
+    },
+    // --- Magier Skills ---
+    {
+      "_comment": "Magisches Basisgeschoss",
+      "id": "basic_magic_bolt",
+      "name": "Magic Bolt",
+      "description": "Ein schwaches magisches Geschoss.",
+      "target": "enemy",
+      "cost": {"resource": "MANA", "amount": 1},
+      "effects": [{"type": "damage", "damage_type": "magic", "base_value": 2, "modifier": "INT", "multiplier": 1.0}]
+    },
+    {
+      "_comment": "Feuerball mit Brennen-Effekt",
+      "id": "fireball",
+      "name": "Fireball",
+      "description": "Schleudert einen Feuerball, der das Ziel verbrennt.",
+      "target": "enemy",
+      "cost": {"resource": "MANA", "amount": 20},
+      "effects": [
+        {"type": "damage", "damage_type": "fire", "base_value": 10, "modifier": "INT", "multiplier": 2.0},
+        {"type": "apply_effect", "effect_id": "BURNING", "duration": 2, "potency": 3, "chance": 1.0, "_comment": "Potency = Schaden pro Tick"}
+      ]
+    },
+    {
+      "_comment": "Frostblitz mit Verlangsamen-Effekt",
+      "id": "frostbolt",
+      "name": "Frostbolt",
+      "description": "Ein eisiger Blitz, der das Ziel verlangsamt.",
+      "target": "enemy",
+      "cost": {"resource": "MANA", "amount": 15},
+      "effects": [
+        {"type": "damage", "damage_type": "frost", "base_value": 8, "modifier": "INT", "multiplier": 2.0},
+        {"type": "apply_effect", "effect_id": "SLOWED", "duration": 1, "potency": 2, "chance": 1.0, "_comment": "Potency = Reduzierung Evasion Mod"}
+      ]
+    },
+    {
+      "_comment": "Schutzschild, der Schaden absorbiert",
+      "id": "arcane_barrier",
+      "name": "Arcane Barrier",
+      "description": "Erzeugt eine Barriere, die Schaden absorbiert.",
+      "target": "self",
+      "cost": {"resource": "MANA", "amount": 25},
+      "effects": [{"type": "apply_absorb_shield", "attribute": "INT", "base_value": 20, "multiplier": 5.0, "duration": 3}]
+    },
+    // --- Schurke Skills ---
+    {
+      "_comment": "Schneller Basisangriff des Schurken",
+      "id": "basic_strike_finesse",
+      "name": "Finesse Strike",
+      "description": "Ein schneller Stich mit einer leichten Waffe.",
+      "target": "enemy",
+      "cost": {"resource": null, "amount": 0},
+      "effects": [{"type": "damage", "damage_type": "physical", "base_value": 4, "_comment": "Etwas geringerer Basisschaden als STR-Waffen?", "modifier": "DEX", "multiplier": 1.0}]
+    },
+    {
+      "_comment": "Präziser Stich, ignoriert teilweise Rüstung",
+      "id": "precise_stab",
+      "name": "Precise Stab",
+      "description": "Ein gezielter Stich, der einen Teil der Rüstung ignoriert.",
+      "target": "enemy",
+      "cost": {"resource": "ENERGY", "amount": 20},
+      "effects": [{"type": "damage", "damage_type": "physical", "base_value": 4, "modifier": "DEX", "multiplier": 1.0, "armor_penetration": 0.25}]
+    },
+    {
+      "_comment": "Ablenkung, reduziert gegnerische Genauigkeit",
+      "id": "distraction",
+      "name": "Distraction",
+      "description": "Lenkt den Gegner ab und reduziert seine Genauigkeit.",
+      "target": "enemy",
+      "cost": {"resource": "ENERGY", "amount": 15},
+      "effects": [{"type": "apply_effect", "effect_id": "ACCURACY_DOWN", "duration": 2, "potency": 3, "chance": 1.0, "_comment": "Potency = Reduzierung Accuracy Mod"}]
+    },
+    {
+      "_comment": "Sprint, erhöht eigene Initiative",
+      "id": "sprint",
+      "name": "Sprint",
+      "description": "Ein kurzer Sprint, um im Kampf schneller handeln zu können.",
+      "target": "self",
+      "cost": {"resource": "ENERGY", "amount": 25},
+      "effects": [{"type": "apply_effect", "effect_id": "INITIATIVE_UP", "duration": 1, "potency": 20, "chance": 1.0, "_comment": "Potency = Erhöhung Initiative"}]
+    },
+    // --- Kleriker Skills ---
+    {
+      "_comment": "Heiliger Basisangriff",
+      "id": "basic_holy_spark",
+      "name": "Holy Spark",
+      "description": "Ein Funke heiliger Energie.",
+      "target": "enemy",
+      "cost": {"resource": "MANA", "amount": 1},
+      "effects": [{"type": "damage", "damage_type": "holy", "base_value": 2, "modifier": "WIS", "multiplier": 1.0}]
+    },
+    {
+      "_comment": "Standard-Heilzauber",
+      "id": "heal",
+      "name": "Heal",
+      "description": "Heilt die Wunden eines Verbündeten.",
+      "target": "ally",
+      "cost": {"resource": "MANA", "amount": 25},
+      "effects": [{"type": "heal", "base_value": 15, "modifier": "WIS", "multiplier": 5.0}]
+    },
+    {
+      "_comment": "Heiliger Schaden, effektiv gegen Untote",
+      "id": "holy_light",
+      "name": "Holy Light",
+      "description": "Ein Strahl heiligen Lichts, der Gegnern schadet, besonders Untoten.",
+      "target": "enemy",
+      "cost": {"resource": "MANA", "amount": 20},
+      "effects": [{"type": "damage", "damage_type": "holy", "base_value": 8, "modifier": "WIS", "multiplier": 2.0, "bonus_vs_type": {"type": "UNDEAD", "multiplier": 1.5}}]
+    },
+    {
+      "_comment": "Schutzsegen, erhöht Verteidigung",
+      "id": "protective_ward",
+      "name": "Protective Ward",
+      "description": "Ein Segen, der die Rüstung und Magieresistenz eines Verbündeten erhöht.",
+      "target": "ally",
+      "cost": {"resource": "MANA", "amount": 20},
+      "effects": [{"type": "apply_effect", "effect_id": "DEFENSE_UP", "duration": 3, "potency": 3, "chance": 1.0, "_comment": "Potency = Erhöhung Armor/MagicRes"}]
+    },
+    // --- Gegner-spezifische / Sonstige Skills ---
+    {
+      "_comment": "Physischer Fernkampfangriff (z.B. für Skelett-Bogenschütze)",
+      "id": "basic_shot_phys",
+      "name": "Basic Shot",
+      "description": "Ein einfacher Pfeilschuss.",
+      "target": "enemy",
+      "cost": {"resource": null, "amount": 0},
+      "effects": [{"type": "damage", "damage_type": "physical", "base_value": 4, "_comment": "Basis-Schaden, skaliert mit DEX", "modifier": "DEX", "multiplier": 1.0}]
+    },
+    {
+      "_comment": "Fluch des Goblin-Schamanen, reduziert Stärke",
+      "id": "weakening_curse",
+      "name": "Weakening Curse",
+      "description": "Ein Fluch, der die körperliche Kraft des Ziels schwächt.",
+      "target": "enemy",
+      "cost": {"resource": "MANA", "amount": 15},
+      "effects": [{"type": "apply_effect", "effect_id": "WEAKENED", "duration": 3, "potency": 3, "chance": 0.9, "_comment": "Potency = Reduzierung STR Mod"}]
+    },
+    {
+      "_comment": "Kleine Heilung des Goblin-Schamanen",
+      "id": "heal_lesser",
+      "name": "Lesser Heal",
+      "description": "Heilt geringfügige Wunden.",
+      "target": "ally", "_comment": "Kann auch auf sich selbst wirken",
+      "cost": {"resource": "MANA", "amount": 10},
+      "effects": [{"type": "heal", "base_value": 10, "modifier": "WIS", "multiplier": 3.0}]
+    }
+  ]
+}
