@@ -1,0 +1,6 @@
+# Core RL Libraries
+gymnasium
+stable-baselines3[extra] # Enthält Extras wie PPO etc.
+
+# Testing (für später)
+# pytest
