@@ -1,0 +1,46 @@
+{
+  "short_sword": {
+    "id": "short_sword",
+    "name": "Kurzschwert",
+    "description": "Eine einfache, kurze Klinge. Standardausrüstung für viele Kämpfer.",
+    "item_type": "WEAPON",
+    "slot": "WEAPON_MAIN",
+    "stats": {
+      "damage": 5
+    },
+    "allowed_classes": ["warrior", "rogue"]
+  },
+  "dagger": {
+    "id": "dagger",
+    "name": "Dolch",
+    "description": "Eine kleine, schnelle Klinge, bevorzugt von Schurken.",
+    "item_type": "WEAPON",
+    "slot": "WEAPON_MAIN",
+    "stats": {
+      "damage": 4
+    },
+    "allowed_classes": ["rogue"]
+  },
+  "wooden_staff": {
+    "id": "wooden_staff",
+    "name": "Holzstab",
+    "description": "Ein einfacher Stab aus Holz. Oft von Magieanwendern genutzt.",
+    "item_type": "WEAPON",
+    "slot": "WEAPON_MAIN",
+    "stats": {
+      "damage": 3
+    },
+    "allowed_classes": ["mage", "cleric"]
+  },
+  "rusty_mace": {
+    "id": "rusty_mace",
+    "name": "Rostiger Streitkolben",
+    "description": "Ein einfacher, aber schwerer Streitkolben.",
+    "item_type": "WEAPON",
+    "slot": "WEAPON_MAIN",
+    "stats": {
+      "damage": 6
+    },
+    "allowed_classes": ["cleric", "warrior"]
+  }
+}
