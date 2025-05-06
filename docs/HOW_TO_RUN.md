@@ -18,3 +18,10 @@ Trainingsmodus starten (Kurzform):
 python src/main.py -m train
 Hilfe anzeigen (zeigt alle Optionen):
 python src/main.py --help
+
+Teste die verschiedenen Modi:
+Führe python src/main.py aus (sollte den Default-Modus starten, wahrscheinlich "auto").
+Führe python src/main.py --mode manual aus.
+Führe python src/main.py --mode train aus.
+Führe python src/main.py --mode evaluate aus.
+Führe python src/main.py --help aus, um die Hilfe anzuzeigen.
