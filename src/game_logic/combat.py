@@ -8,29 +8,69 @@ try:
     from src.game_logic.entities import CharacterInstance
     from src.definitions.skill import Skill
     from src.config import config
-    from src.game_logic import leveling
-    if typing.TYPE_CHECKING: from src.game_logic.effects import StatusEffect
+    from src.game_logic import leveling # Import leveling für Type Checking / Klarheit
+    if typing.TYPE_CHECKING:
+         from src.game_logic.effects import StatusEffect # Nur für Type Checking
 except ModuleNotFoundError:
     print("WARNUNG: combat.py - Module nicht direkt geladen, versuche relativen Import (nur für Test)")
     from .entities import CharacterInstance
     from ..definitions.skill import Skill
     from ..config import config
     from . import leveling
-    if typing.TYPE_CHECKING: from .effects import StatusEffect
+    if typing.TYPE_CHECKING:
+         from .effects import StatusEffect
+
 
 logger = logging.getLogger(__name__)
 
-# --- calculate_skill_base_damage, apply_damage_reduction, check_hit_success (unverändert) ---
-def calculate_skill_base_damage(attacker: CharacterInstance, skill: Skill, effect_index: int = 0) -> int:
-    if not skill.effects or effect_index >= len(skill.effects): return 0; effect = skill.effects[effect_index]
-    if effect.get("type") != "DAMAGE": return 0
+def calculate_skill_base_damage(attacker: CharacterInstance,
+                                skill: Skill,
+                                effect_index: int = 0) -> int:
+    """
+    Berechnet den Basis-Schaden eines spezifischen Effekts eines Skills,
+    bevor Rüstung etc. berücksichtigt wird.
+    """
+    if not skill.effects: # Zuerst prüfen, ob überhaupt Effekte da sind
+        logger.warning(f"Skill '{skill.name}' hat keine Effekte definiert.")
+        return 0
+
+    if effect_index >= len(skill.effects) or effect_index < 0: # Dann Index prüfen
+        logger.warning(f"Skill '{skill.name}' hat keinen Effekt an Index {effect_index}. Verfügbare Indizes: 0 bis {len(skill.effects)-1}.")
+        return 0
+
+    # Jetzt ist sicher, dass skill.effects[effect_index] existiert
+    effect = skill.effects[effect_index]
+
+    if effect.get("type") != "DAMAGE":
+        logger.debug(f"Effekt '{effect.get('type')}' (Index {effect_index}) von Skill '{skill.name}' ist kein 'DAMAGE'-Effekt. Verursacht 0 Basisschaden.")
+        return 0
+
+    # Ab hier ist 'effect' sicher ein 'DAMAGE'-Effekt
     skill_base_val = effect.get("base_damage")
-    actual_base_damage = int(skill_base_val) if skill_base_val is not None else config.get_setting("game_settings.base_weapon_damage", 5)
+    if skill_base_val is None:
+        actual_base_damage = config.get_setting("game_settings.base_weapon_damage", 5)
+        # logger.debug(f"Skill '{skill.name}' Effekt {effect_index} hat keinen base_damage, verwende globalen default_weapon_damage: {actual_base_damage}") # Gekürzt für weniger Logs
+    else:
+        actual_base_damage = int(skill_base_val)
+        # logger.debug(f"Skill '{skill.name}' Effekt {effect_index} base_damage: {actual_base_damage}") # Gekürzt
+
     relevant_attribute: typing.Optional[str] = effect.get("attribute")
-    attribute_bonus = attacker.get_attribute_bonus(relevant_attribute) if relevant_attribute else 0
+    attribute_bonus = 0
+    if relevant_attribute:
+        attribute_bonus = attacker.get_attribute_bonus(relevant_attribute)
+        # logger.debug(f"Angreifer '{attacker.name}' Attribut-Bonus für '{relevant_attribute}': {attribute_bonus}") # Gekürzt
+    # else:
+        # logger.debug(f"Skill '{skill.name}' Effekt {effect_index} spezifiziert kein Attribut für Bonus, Bonus ist 0.") # Gekürzt
+
     multiplier = float(effect.get("multiplier", 1.0))
+    # logger.debug(f"Skill '{skill.name}' Effekt {effect_index} Multiplikator: {multiplier}") # Gekürzt
+
     raw_damage = (actual_base_damage + attribute_bonus) * multiplier
-    calculated_damage = math.floor(raw_damage); logger.info(f"Basisschaden... -> {calculated_damage}"); return calculated_damage
+    calculated_damage = math.floor(raw_damage)
+
+    logger.info(f"Basisschaden für '{attacker.name}' mit Skill '{skill.name}' (Effekt {effect_index}): "
+                f"({actual_base_damage} [Base] + {attribute_bonus} [Bonus]) * {multiplier} [Mult] = {raw_damage:.2f} -> {calculated_damage}")
+    return calculated_damage
 
 def apply_damage_reduction(defender: CharacterInstance, incoming_damage: int, damage_type: str) -> int:
     if incoming_damage <= 0: return 0
@@ -39,7 +79,7 @@ def apply_damage_reduction(defender: CharacterInstance, incoming_damage: int, da
     if damage_type_upper == "PHYSICAL": defense_value = defender.get_current_armor(); defense_type_str = "Rüstung"
     else: defense_value = defender.get_current_magic_resist(); defense_type_str = "Magieresistenz"
     reduced_damage = incoming_damage - defense_value; min_damage = config.get_setting("game_settings.min_damage", 1)
-    final_damage = max(min_damage, reduced_damage); logger.info(f"Schadensreduktion... -> {final_damage}"); return final_damage
+    final_damage = max(min_damage, reduced_damage); logger.info(f"Schadensreduktion für '{defender.name}': {incoming_damage} [Roh] - {defense_value} [{defense_type_str}] = {reduced_damage} -> {final_damage} [Final] (Minimalschaden: {min_damage})"); return final_damage
 
 def check_hit_success(attacker: CharacterInstance, defender: CharacterInstance) -> bool:
     base_chance = config.get_setting("game_settings.hit_chance_base", 90); accuracy_factor = config.get_setting("game_settings.hit_chance_accuracy_factor", 3)
@@ -52,10 +92,9 @@ def check_hit_success(attacker: CharacterInstance, defender: CharacterInstance) 
     hit_chance = max(min_hit_chance, min(max_hit_chance, hit_chance)); logger.info(f"  Finale Trefferchance (begrenzt auf {min_hit_chance}%-{max_hit_chance}%): {hit_chance}%")
     roll = random.randint(1, 100); hit = roll <= hit_chance; logger.info(f"  Wurf: {roll} -> {'TREFFER!' if hit else 'Verfehlt!'} (Benötigt: <= {hit_chance})"); return hit
 
-# --- execute_attack_action (unverändert von letzter Version) ---
 def execute_attack_action(attacker: CharacterInstance, defender: CharacterInstance, skill_to_use: Skill) -> typing.Dict[str, typing.Any]:
     action_log = []; action_log.append(f"'{attacker.name}' (HP {attacker.current_hp}, Lvl {attacker.level}, XP {attacker.current_xp}/{attacker.xp_to_next_level}) versucht '{skill_to_use.name}' auf '{defender.name}'...")
-    result: typing.Dict[str, typing.Any] = { # Init result
+    result: typing.Dict[str, typing.Any] = {
         "hit": False, "damage_dealt": 0, "defender_hp_after": defender.current_hp, "defender_is_alive": defender.is_alive(),
         "log_messages": action_log, "reason": None, "xp_awarded": 0, "applied_effects": [],
         "attacker_lvl_after": attacker.level, "attacker_xp_after": attacker.current_xp, "attacker_xp_next_after": attacker.xp_to_next_level }
@@ -98,41 +137,25 @@ def execute_attack_action(attacker: CharacterInstance, defender: CharacterInstan
             xp_to_award = defender.definition.xp_reward
             if xp_to_award > 0: action_log.append(f"'{attacker.name}' erhält {xp_to_award} XP."); attacker.gain_xp(xp_to_award); result["xp_awarded"] = xp_to_award
             else: action_log.append(f"'{defender.name}' gibt keine XP.")
-        # ... (andere Fälle für XP)
     result["attacker_lvl_after"]=attacker.level; result["attacker_xp_after"]=attacker.current_xp; result["attacker_xp_next_after"]=attacker.xp_to_next_level
     return result
 
-# --- Testblock (Import-Handling korrigiert) ---
+# --- Testblock (Import-Handling korrigiert in vorheriger Iteration, Rest bleibt gleich) ---
 if __name__ == '__main__':
     try:
-        # Versuche zuerst die normalen Imports
-        from src.utils.logging_setup import setup_logging
-        setup_logging()
+        from src.utils.logging_setup import setup_logging; setup_logging()
         from src.definitions import loader
     except ImportError:
-        # Wenn das fehlschlägt (z.B. bei direktem Lauf ohne korrektes PYTHONPATH),
-        # versuche den Pfad anzupassen und erneut zu importieren.
         print("WARNUNG: Setup-Module für Test nicht gefunden. Passe sys.path an und versuche erneut...")
-        import sys
-        from pathlib import Path
-        # Korrekte Pfad-Anpassung und Importe auf separaten Zeilen:
-        project_dir = Path(__file__).parent.parent.parent # Sollte Projekt-Root sein
-        if str(project_dir) not in sys.path:
-            sys.path.insert(0, str(project_dir))
-        # Versuche Imports erneut NACH Pfadanpassung
+        import sys; from pathlib import Path
+        project_dir = Path(__file__).parent.parent.parent
+        if str(project_dir) not in sys.path: sys.path.insert(0, str(project_dir))
         try:
-            from src.utils.logging_setup import setup_logging
-            setup_logging()
+            from src.utils.logging_setup import setup_logging; setup_logging()
             from src.definitions import loader
         except ImportError as e_inner:
-             # Wenn es immer noch fehlschlägt, ist etwas grundlegend falsch
-             print(f"FATAL: Konnte Module auch nach Pfadanpassung nicht laden: {e_inner}")
-             print("Stelle sicher, dass das Skript im Kontext des Projekts ausgeführt wird (z.B. python -m ...)")
-             # Fallback zu Dummy-Loader etc. wäre möglich, aber besser ist, den Fehler zu melden.
-             exit(1) # Beende Test bei Import-Problem
-
+             print(f"FATAL: Konnte Module auch nach Pfadanpassung nicht laden: {e_inner}"); exit(1)
     logger.info("Starte Tests für combat.py (mit Effekt-Auswirkungen)...")
-    # Rest des Testblocks bleibt unverändert von der vorherigen Version...
     krieger_def=loader.get_character_class("krieger"); goblin_def=loader.get_opponent("goblin_lv1")
     schurke_def=loader.get_character_class("schurke"); shield_bash_skill = loader.get_skill("shield_bash")
     frostbolt_skill = loader.get_skill("frostbolt"); distraction_skill = loader.get_skill("distraction")
