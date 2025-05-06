@@ -1,0 +1,240 @@
+{
+  // Dieses Objekt enthält alle Skill-Definitionen des Spiels.
+  // Der Schlüssel ist die eindeutige Skill-ID.
+
+  // --- Krieger Skills ---
+  "basic_strike_phys": {
+    "name": "Basic Strike Phys", // Name des Skills
+    "description": "Ein einfacher Waffenschlag.", // Beschreibung
+    "cost": { "resource": "NONE", "amount": 0 }, // Kosten (Ressource und Menge)
+    "target": "ENEMY", // Zieltyp (ENEMY, ALLY, SELF, AREA)
+    "effects": [ // Liste der Effekte
+      { "type": "DAMAGE", "damage_type": "PHYSICAL", "base_damage": null, "attribute": "STR", "multiplier": 1.0 } // Schaden: Waffe + STR Bonus
+    ],
+    "applies_effects": [], // Status-Effekte, die dieser Skill verursacht
+    "allowed_classes": ["Krieger"] // Klassen, die diesen Skill nutzen können (optional für Basis-Skills)
+  },
+  "power_strike": {
+    "name": "Power Strike",
+    "description": "Ein mächtiger Schlag, der viel Stamina kostet.",
+    "cost": { "resource": "STAMINA", "amount": 20 },
+    "target": "ENEMY",
+    "effects": [
+      { "type": "DAMAGE", "damage_type": "PHYSICAL", "base_damage": null, "attribute": "STR", "multiplier": 1.5 } // Schaden: (Waffe + STR Bonus) * 1.5
+    ],
+    "applies_effects": [],
+    "allowed_classes": ["Krieger"]
+  },
+  "shield_bash": {
+    "name": "Shield Bash",
+    "description": "Schlägt mit dem Schild zu und betäubt das Ziel.",
+    "cost": { "resource": "STAMINA", "amount": 15 },
+    "target": "ENEMY",
+    "effects": [
+      { "type": "DAMAGE", "damage_type": "PHYSICAL", "base_damage": 2, "attribute": "STR", "multiplier": 1.0 } // Schaden: 2 + STR Bonus
+    ],
+    "applies_effects": [ // Verursacht den Status-Effekt STUNNED
+      { "id": "STUNNED", "duration": 1 } // Dauer in Runden
+    ],
+    "allowed_classes": ["Krieger"]
+  },
+  "cleave": {
+    "name": "Cleave",
+    "description": "Trifft das Hauptziel und einen weiteren Gegner.",
+    "cost": { "resource": "STAMINA", "amount": 25 },
+    "target": "AREA", // Trifft mehrere Ziele
+    "target_count": 2, // Anzahl der Ziele
+    "effects": [
+      // Schaden für Hauptziel
+      { "type": "DAMAGE", "damage_type": "PHYSICAL", "base_damage": null, "attribute": "STR", "multiplier": 1.0, "target_index": 0 },
+      // Schaden für Sekundärziel (50%)
+      { "type": "DAMAGE", "damage_type": "PHYSICAL", "base_damage": null, "attribute": "STR", "multiplier": 0.5, "target_index": 1 }
+    ],
+    "applies_effects": [],
+    "allowed_classes": ["Krieger"]
+  },
+
+  // --- Magier Skills ---
+  "basic_magic_bolt": {
+    "name": "Basic Magic Bolt",
+    "description": "Ein schwacher magischer Geschoss.",
+    "cost": { "resource": "MANA", "amount": 1 },
+    "target": "ENEMY",
+    "effects": [
+      { "type": "DAMAGE", "damage_type": "MAGICAL", "base_damage": 2, "attribute": "INT", "multiplier": 1.0 } // Schaden: 2 + INT Bonus
+    ],
+    "applies_effects": [],
+    "allowed_classes": ["Magier", "Goblin-Schamane"] // Auch Gegner können Skills haben
+  },
+  "fireball": {
+    "name": "Fireball",
+    "description": "Schleudert einen Feuerball, der Feuerschaden verursacht und das Ziel verbrennt.",
+    "cost": { "resource": "MANA", "amount": 20 },
+    "target": "ENEMY",
+    "effects": [
+      { "type": "DAMAGE", "damage_type": "FIRE", "base_damage": 10, "attribute": "INT", "multiplier": 2.0 } // Schaden: (10 + INT Bonus) * 2
+    ],
+    "applies_effects": [
+      { "id": "BURNING", "duration": 2, "potency": 3 } // Dauer 2 Runden, 3 Feuerschaden pro Runde
+    ],
+    "allowed_classes": ["Magier"]
+  },
+  "frostbolt": {
+    "name": "Frostbolt",
+    "description": "Verschießt einen Frostblitz, der Frostschaden verursacht und das Ziel verlangsamt.",
+    "cost": { "resource": "MANA", "amount": 15 },
+    "target": "ENEMY",
+    "effects": [
+      { "type": "DAMAGE", "damage_type": "FROST", "base_damage": 8, "attribute": "INT", "multiplier": 2.0 } // Schaden: (8 + INT Bonus) * 2
+    ],
+    "applies_effects": [
+      { "id": "SLOWED", "duration": 1, "potency": 2 } // Dauer 1 Runde, reduziert Evasion Mod um 2
+    ],
+    "allowed_classes": ["Magier"]
+  },
+  "arcane_barrier": {
+    "name": "Arcane Barrier",
+    "description": "Erzeugt eine magische Barriere, die Schaden absorbiert.",
+    "cost": { "resource": "MANA", "amount": 25 },
+    "target": "SELF", // Ziel ist der Anwender selbst
+    "effects": [], // Kein direkter Effekt, nur Status-Effekt
+    "applies_effects": [
+      // Absorbiert Schaden (20 + INT * 5) für 3 Runden. Stärke wird beim Anwenden berechnet.
+      { "id": "ARCANE_BARRIER", "duration": 3, "potency_attribute": "INT", "potency_multiplier": 5, "base_potency": 20 }
+    ],
+    "allowed_classes": ["Magier"]
+  },
+
+  // --- Schurke Skills ---
+  "basic_strike_finesse": {
+    "name": "Basic Strike Finesse",
+    "description": "Ein schneller Stich mit einer Finesse-Waffe.",
+    "cost": { "resource": "NONE", "amount": 0 },
+    "target": "ENEMY",
+    "effects": [
+      { "type": "DAMAGE", "damage_type": "PHYSICAL", "base_damage": null, "attribute": "DEX", "multiplier": 1.0 } // Schaden: Waffe + DEX Bonus
+    ],
+    "applies_effects": [],
+    "allowed_classes": ["Schurke", "Riesenratte"]
+  },
+  "precise_stab": {
+    "name": "Precise Stab",
+    "description": "Ein gezielter Stich, der teilweise die Rüstung ignoriert.",
+    "cost": { "resource": "ENERGY", "amount": 20 },
+    "target": "ENEMY",
+    "effects": [
+      // Schaden: Waffe + DEX Bonus, ignoriert 25% der Rüstung
+      { "type": "DAMAGE", "damage_type": "PHYSICAL", "base_damage": null, "attribute": "DEX", "multiplier": 1.0, "armor_penetration": 0.25 }
+    ],
+    "applies_effects": [],
+    "allowed_classes": ["Schurke"]
+  },
+  "distraction": {
+    "name": "Distraction",
+    "description": "Lenkt den Gegner ab und verringert seine Genauigkeit.",
+    "cost": { "resource": "ENERGY", "amount": 15 },
+    "target": "ENEMY",
+    "effects": [],
+    "applies_effects": [
+      { "id": "ACCURACY_DOWN", "duration": 2, "potency": 3 } // Dauer 2 Runden, reduziert Accuracy Mod um 3
+    ],
+    "allowed_classes": ["Schurke"]
+  },
+  "sprint": {
+    "name": "Sprint",
+    "description": "Erhöht kurzzeitig die Initiative für den nächsten Zug.",
+    "cost": { "resource": "ENERGY", "amount": 25 },
+    "target": "SELF",
+    "effects": [],
+    "applies_effects": [
+      { "id": "INITIATIVE_UP", "duration": 1, "potency": 20 } // Dauer 1 Runde, erhöht Initiative um 20
+    ],
+    "allowed_classes": ["Schurke"]
+  },
+
+  // --- Kleriker Skills ---
+  "basic_holy_spark": {
+    "name": "Basic Holy Spark",
+    "description": "Ein kleiner Funke heiliger Energie.",
+    "cost": { "resource": "MANA", "amount": 1 },
+    "target": "ENEMY",
+    "effects": [
+      { "type": "DAMAGE", "damage_type": "HOLY", "base_damage": 2, "attribute": "WIS", "multiplier": 1.0 } // Schaden: 2 + WIS Bonus
+    ],
+    "applies_effects": [],
+    "allowed_classes": ["Kleriker"]
+  },
+  "heal": {
+    "name": "Heal",
+    "description": "Heilt Lebenspunkte eines Verbündeten.",
+    "cost": { "resource": "MANA", "amount": 25 },
+    "target": "ALLY", // Ziel ist ein Verbündeter
+    "effects": [
+      // Heilung: 15 + WIS * 5
+      { "type": "HEAL", "base_heal": 15, "attribute": "WIS", "multiplier": 5.0 }
+    ],
+    "applies_effects": [],
+    "allowed_classes": ["Kleriker", "Goblin-Schamane"] // Auch Schamane kann heilen (heal_lesser ist hier nicht definiert)
+  },
+  "holy_light": {
+    "name": "Holy Light",
+    "description": "Blendet einen Gegner mit heiligem Licht, besonders effektiv gegen Untote.",
+    "cost": { "resource": "MANA", "amount": 20 },
+    "target": "ENEMY",
+    "effects": [
+      // Schaden: (8 + WIS Bonus) * 2, Bonus vs UNDEAD muss in Logik geprüft werden
+      { "type": "DAMAGE", "damage_type": "HOLY", "base_damage": 8, "attribute": "WIS", "multiplier": 2.0, "bonus_vs_type": "UNDEAD", "bonus_multiplier": 1.5 }
+    ],
+    "applies_effects": [],
+    "allowed_classes": ["Kleriker"]
+  },
+  "protective_ward": {
+    "name": "Protective Ward",
+    "description": "Segnet einen Verbündeten und erhöht dessen Verteidigung.",
+    "cost": { "resource": "MANA", "amount": 20 },
+    "target": "ALLY",
+    "effects": [],
+    "applies_effects": [
+      // Erhöht Rüstung und Magieresistenz um 3 für 3 Runden
+      { "id": "DEFENSE_UP", "duration": 3, "potency": 3 }
+    ],
+    "allowed_classes": ["Kleriker"]
+  },
+
+  // --- Gegner-spezifische Skills (Beispiele) ---
+   "basic_shot_phys": {
+    "name": "Basic Shot Phys",
+    "description": "Ein einfacher Pfeilschuss.",
+    "cost": { "resource": "NONE", "amount": 0 },
+    "target": "ENEMY",
+    "effects": [
+      // Schaden: Waffe (angenommen Bogen) + DEX Bonus
+      { "type": "DAMAGE", "damage_type": "PHYSICAL", "base_damage": null, "attribute": "DEX", "multiplier": 1.0 }
+    ],
+    "applies_effects": [],
+    "allowed_classes": ["Skelett-Bogenschütze"] // Beispiel
+  },
+  "weakening_curse": {
+    "name": "Weakening Curse",
+    "description": "Ein Fluch, der die Stärke des Ziels reduziert.",
+    "cost": { "resource": "MANA", "amount": 15 }, // Annahme
+    "target": "ENEMY",
+    "effects": [],
+    "applies_effects": [
+       { "id": "WEAKENED", "duration": 3, "potency": 3 } // Reduziert STR um 3 für 3 Runden
+    ],
+    "allowed_classes": ["Goblin-Schamane"] // Beispiel
+  },
+   "heal_lesser": { // Explizite Definition für den Schamanen, falls er sich von 'heal' unterscheidet
+    "name": "Heal Lesser",
+    "description": "Heilt geringe Lebenspunkte eines Verbündeten.",
+    "cost": { "resource": "MANA", "amount": 15 }, // Geringere Kosten als Kleriker-Heilung
+    "target": "ALLY",
+    "effects": [
+      { "type": "HEAL", "base_heal": 10, "attribute": "WIS", "multiplier": 3.0 } // Geringere Heilung
+    ],
+    "applies_effects": [],
+    "allowed_classes": ["Goblin-Schamane"]
+  }
+
+} // Ende des Haupt-Objekts

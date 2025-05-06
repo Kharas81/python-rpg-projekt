@@ -1,7 +1,10 @@
 # Core dependencies
-json5 # Für das Laden von .json5 Konfigurations- und Datendateien
-# Reinforcement Learning
-stable-baselines3[extra] # RL Algorithmen (inkl. Gymnasium, PyTorch etc.)
-gymnasium # Die RL-Umgebungs-API
-# Testing
-pytest # Für automatisierte Tests
+json5
+
+# Reinforcement Learning dependencies
+stable-baselines3[extra]>=2.0.0
+gymnasium>=0.28.1
+
+# Optional: Add other dependencies here as needed, e.g., for testing or specific utilities
+# pytest
+
