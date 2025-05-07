@@ -1,0 +1,1 @@
+* **[2025-05-07]:** Initiales Projekt-Setup begonnen. `requirements.txt` mit der Abhängigkeit `json5` erstellt. `.gitignore` Datei mit Standard-Python-Ignorierungen und projektspezifischen Einträgen (logs, reports, saves, src/ai/models/) angelegt.

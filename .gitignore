@@ -6,11 +6,9 @@ __pycache__/
 .Python
 env/
 venv/
-.venv/
-pip-selfcheck.json
-*.egg-info/
-dist/
-build/
+ENV/
+env.bak/
+venv.bak/
 
 # IDEs and editors
 .vscode/
@@ -18,14 +16,27 @@ build/
 *.swp
 *.swo
 
-# Eigenes
-logs/
-src/ai/models/
-saves/
-reports/
-*.prof
-.pytest_cache/
+# Build and distribution
+build/
+dist/
+*.egg-info/
+*.egg
 
-# OS specific
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage
+*.prof
+*.lprof
+
+# Logs and data
+logs/
+reports/
+saves/
+
+# AI Models
+src/ai/models/
+
+# OS generated files
 .DS_Store
 Thumbs.db

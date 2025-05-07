@@ -1,21 +1,32 @@
 {
   // Globale Spieleinstellungen
-  "game_title": "Python RPG Projekt",
-  "version": "0.0.1",
+  "game_settings": {
+    // Mindestschaden, der immer verursacht wird, auch nach Schadensreduktion
+    "min_damage": 1,
+    // Basiswaffenschaden, der für Skills verwendet wird, die keinen eigenen base_damage haben
+    "base_weapon_damage": 5,
 
-  // Pfade (relativ zum Projekt-Root oder src/)
-  // Werden später ggf. durch Python dynamisch angepasst oder validiert
-  "paths": {
-    "definitions_base": "src/definitions/json_data/",
-    "logs": "logs/",
-    "reports": "reports/",
-    "saves": "saves/",
-    "ai_models": "src/ai/models/"
+    // Einstellungen für die Trefferchance-Berechnung
+    "hit_chance_base": 90,          // Basis-Trefferchance in Prozent
+    "hit_chance_accuracy_factor": 3,// Multiplikator für den Genauigkeitsmodifikator des Angreifers
+    "hit_chance_evasion_factor": 2, // Multiplikator für den Ausweichmodifikator des Ziels
+    "hit_chance_min": 5,            // Minimale Trefferchance in Prozent
+    "hit_chance_max": 95,           // Maximale Trefferchance in Prozent
+
+    // Einstellungen für Erfahrungspunkte und Levelaufstiege
+    "xp_level_base": 100,           // Basis-XP benötigt für das erste Level-Up (von Lvl 1 zu Lvl 2)
+    "xp_level_factor": 1.5,         // Faktor, mit dem die benötigten XP pro Level multipliziert werden
   },
 
-  // Einstellungen für das Logging
-  "logging": {
+  // Platzhalter für zukünftige Logging-spezifische Einstellungen
+  "logging_settings": {
     "log_level": "INFO", // Mögliche Werte: DEBUG, INFO, WARNING, ERROR, CRITICAL
-    "log_file": "game.log" // Name der Logdatei im "logs" Verzeichnis
+    "log_file_path": "logs/rpg_game.log" // Pfad zur Log-Datei
+  },
+
+  // Platzhalter für zukünftige RL-spezifische Einstellungen
+  "rl_settings": {
+    "agent_model_path": "src/ai/models/" // Pfad zum Speichern/Laden von RL-Agentenmodellen
   }
+  // Ein Komma am Ende des Top-Level-Objekts ist in JSON5 erlaubt
 }

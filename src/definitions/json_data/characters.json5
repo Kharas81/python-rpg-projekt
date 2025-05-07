@@ -1,35 +1,110 @@
 [
   {
-    "id": "player_warrior",
+    "id": "krieger",
     "name": "Krieger",
-    // Basisattribute für einen Krieger
-    "attributes": {
-      "health_max": 100,    // Maximale Lebenspunkte
-      "mana_max": 20,       // Maximale Manapunkte
-      "strength": 15,       // Stärke, beeinflusst physischen Schaden
-      "dexterity": 10,      // Geschicklichkeit, beeinflusst Ausweichen/Treffsicherheit
-      "intelligence": 8,    // Intelligenz, beeinflusst magischen Schaden/Manamenge
-      "vitality": 12        // Vitalität, beeinflusst Lebenspunkte/Regeneration
+    "description": "Ein robuster Nahkämpfer, der sich auf Stärke und Ausdauer verlässt.",
+    // Primärattribute
+    "primary_attributes": {
+      "STR": 14, // Stärke
+      "DEX": 10, // Geschicklichkeit
+      "INT": 8,  // Intelligenz
+      "CON": 12, // Konstitution
+      "WIS": 8   // Weisheit
     },
-    // Start-Skills, die der Krieger besitzt oder früh lernen kann
-    // Die IDs müssen mit den IDs in skills.json5 übereinstimmen
-    "skills": ["skill_basic_attack", "skill_power_strike"]
+    // Basis-Kampfwerte (vor Modifikatoren durch Attribute oder Effekte)
+    "base_combat_values": {
+      "base_hp": 50,        // Basis-Lebenspunkte (CON-Bonus wird später addiert)
+      "base_stamina": 100,  // Hauptressource für Krieger
+      "base_mana": 0,
+      "base_energy": 0,
+      "armor": 5,           // Physische Rüstung
+      "magic_resist": 1     // Magieresistenz
+    },
+    // Start-Skills, die dieser Klasse zur Verfügung stehen
+    "starting_skills": [
+      "basic_strike_phys",
+      "power_strike",
+      "shield_bash",
+      "cleave"
+    ]
   },
   {
-    "id": "opponent_goblin",
-    "name": "Goblin",
-    // Attribute für einen einfachen Goblin-Gegner
-    "attributes": {
-      "health_max": 30,
-      "mana_max": 0,
-      "strength": 8,
-      "dexterity": 12,
-      "intelligence": 5,
-      "vitality": 6
+    "id": "magier",
+    "name": "Magier",
+    "description": "Ein Meister arkaner Energien, der mächtige Zauber aus der Ferne wirkt.",
+    "primary_attributes": {
+      "STR": 8,
+      "DEX": 10,
+      "INT": 14,
+      "CON": 9,
+      "WIS": 11
     },
-    // Skills, die der Goblin typischerweise einsetzt
-    "skills": ["skill_basic_attack", "skill_goblin_scratch"]
+    "base_combat_values": {
+      "base_hp": 50,
+      "base_stamina": 0,
+      "base_mana": 120,     // Hauptressource für Magier
+      "base_energy": 0,
+      "armor": 1,
+      "magic_resist": 4
+    },
+    "starting_skills": [
+      "basic_magic_bolt",
+      "fireball",
+      "frostbolt",
+      "arcane_barrier"
+    ]
+  },
+  {
+    "id": "schurke",
+    "name": "Schurke",
+    "description": "Ein agiler Kämpfer, der aus den Schatten operiert und präzise Angriffe bevorzugt.",
+    "primary_attributes": {
+      "STR": 10,
+      "DEX": 14,
+      "INT": 8,
+      "CON": 10,
+      "WIS": 8
+    },
+    "base_combat_values": {
+      "base_hp": 50,
+      "base_stamina": 0,
+      "base_mana": 0,
+      "base_energy": 100,   // Hauptressource für Schurken
+      "armor": 3,
+      "magic_resist": 2
+    },
+    "starting_skills": [
+      "basic_strike_finesse",
+      "precise_stab",
+      "distraction",
+      "sprint"
+    ]
+  },
+  {
+    "id": "kleriker",
+    "name": "Kleriker",
+    "description": "Ein Diener göttlicher Mächte, der Verbündete heilt und Feinde mit heiliger Energie bestraft.",
+    "primary_attributes": {
+      "STR": 10,
+      "DEX": 8,
+      "INT": 10,
+      "CON": 11,
+      "WIS": 13
+    },
+    "base_combat_values": {
+      "base_hp": 50,
+      "base_stamina": 0,
+      "base_mana": 110,     // Hauptressource für Kleriker
+      "base_energy": 0,
+      "armor": 4,
+      "magic_resist": 3
+    },
+    "starting_skills": [
+      "basic_holy_spark",
+      "heal",
+      "holy_light",
+      "protective_ward"
+    ]
   }
-  // Hier könnten später weitere Charakter-Vorlagen hinzugefügt werden
-  // z.B. Magier, Schurke, verschiedene Gegnertypen etc.
+  // Ein Komma nach dem letzten Element der Liste ist in JSON5 erlaubt.
 ]

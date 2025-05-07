@@ -1,56 +1,363 @@
 [
+  // --- Krieger Skills ---
   {
-    "id": "skill_basic_attack",
-    "name": "Einfacher Angriff",
-    "description": "Ein schneller, grundlegender Angriff.",
-    "cost": 0, // Kostet keine Ressourcen
+    "id": "basic_strike_phys",
+    "name": "Einfacher Schlag",
+    "description": "Ein grundlegender physischer Angriff mit der Waffe.",
+    "cost": { "type": "STAMINA", "value": 5 },
+    "target_type": "ENEMY_SINGLE", // Trifft einen einzelnen Gegner
     "effects": [
       {
-        "type": "damage",       // Art des Effekts
-        "amount_type": "physical", // Schadensart (wichtig für Resistenzen etc.)
-        "base_damage": 5,     // Basisschaden des Skills
-        "scaling_attribute": "strength", // Attribut, das den Schaden skaliert
-        "scaling_factor": 0.5   // Wie stark das Attribut skaliert (z.B. Schaden = base_damage + strength * scaling_factor)
+        "type": "DAMAGE",
+        "damage_type": "PHYSICAL",
+        "base_damage": null, // Nutzt game_settings.base_weapon_damage (aktuell 5)
+        "scaling_attribute": "STR",
+        "attribute_multiplier": 1.0, // Standardskalierung
+        "application_chance": 1.0 // 100% Chance, den Schaden zu verursachen bei Treffer
       }
     ]
   },
   {
-    "id": "skill_power_strike",
+    "id": "power_strike",
     "name": "Mächtiger Schlag",
-    "description": "Ein langsamer, aber kraftvoller Angriff, der mehr Schaden verursacht.",
-    "cost": 10, // Könnte z.B. Ausdauer oder Manapunkte kosten
+    "description": "Ein kraftvoller Hieb, der zusätzlichen Schaden basierend auf Stärke verursacht.",
+    "cost": { "type": "STAMINA", "value": 15 },
+    "target_type": "ENEMY_SINGLE",
     "effects": [
       {
-        "type": "damage",
-        "amount_type": "physical",
-        "base_damage": 12,
-        "scaling_attribute": "strength",
-        "scaling_factor": 0.7
+        "type": "DAMAGE",
+        "damage_type": "PHYSICAL",
+        "base_damage": null,
+        "scaling_attribute": "STR",
+        "attribute_multiplier": 1.5, // Erhöhte Skalierung
+        "application_chance": 1.0
       }
     ]
   },
   {
-    "id": "skill_goblin_scratch",
-    "name": "Goblin-Kratzer",
-    "description": "Ein schneller, fieser Kratzer.",
-    "cost": 0,
+    "id": "shield_bash",
+    "name": "Schildschlag",
+    "description": "Stößt den Gegner mit dem Schild, verursacht leichten Schaden und kann ihn betäuben.",
+    "cost": { "type": "STAMINA", "value": 20 },
+    "target_type": "ENEMY_SINGLE",
     "effects": [
       {
-        "type": "damage",
-        "amount_type": "physical",
-        "base_damage": 3,
-        "scaling_attribute": "strength", // Goblins sind nicht sehr stark
-        "scaling_factor": 0.3
+        "type": "DAMAGE",
+        "damage_type": "PHYSICAL",
+        "base_damage": 2, // Geringer Basisschaden
+        "scaling_attribute": "STR",
+        "attribute_multiplier": 0.5, // Geringe Skalierung
+        "application_chance": 1.0
+      },
+      {
+        "type": "APPLY_STATUS_EFFECT",
+        "status_effect_id": "STUNNED", // Name des Status-Effekts
+        "duration_rounds": 1,
+        "potency": null, // Betäubung hat keine direkte Potenz in diesem Sinne
+        "application_chance": 0.75 // 75% Chance zu betäuben bei Treffer
       }
-      // Man könnte hier noch einen Effekt hinzufügen, z.B. eine kleine Chance auf Blutung (DoT)
-      // {
-      //   "type": "apply_status_effect",
-      //   "effect_id": "status_bleeding_minor", // ID eines Statuseffekts (definieren wir später)
-      //   "duration": 2, // 2 Runden
-      //   "chance": 0.1 // 10% Chance
-      // }
+    ]
+  },
+  {
+    "id": "cleave",
+    "name": "Spalten",
+    "description": "Ein weiter Schwung, der das Hauptziel trifft und potenziell ein weiteres nahes Ziel.",
+    "cost": { "type": "STAMINA", "value": 25 },
+    "target_type": "ENEMY_SINGLE", // Hauptziel, Logik für Sekundärziel TBD ([46])
+    "effects": [
+      {
+        "type": "DAMAGE",
+        "damage_type": "PHYSICAL",
+        "base_damage": null,
+        "scaling_attribute": "STR",
+        "attribute_multiplier": 1.2,
+        "application_chance": 1.0
+        // Anmerkung: Multi-Target-Logik ist hier noch nicht abgebildet
+      }
+    ]
+  },
+
+  // --- Magier Skills ---
+  {
+    "id": "basic_magic_bolt",
+    "name": "Magischer Geschoss",
+    "description": "Ein einfacher Bolzen magischer Energie.",
+    "cost": { "type": "MANA", "value": 8 },
+    "target_type": "ENEMY_SINGLE",
+    "effects": [
+      {
+        "type": "DAMAGE",
+        "damage_type": "MAGICAL_ARCANE",
+        "base_damage": 6,
+        "scaling_attribute": "INT",
+        "attribute_multiplier": 1.0,
+        "application_chance": 1.0
+      }
+    ]
+  },
+  {
+    "id": "fireball",
+    "name": "Feuerball",
+    "description": "Schleudert einen Feuerball, der explodiert und Schaden sowie Verbrennungen verursacht.",
+    "cost": { "type": "MANA", "value": 20 },
+    "target_type": "ENEMY_SINGLE", // Könnte später zu ENEMY_AREA werden
+    "effects": [
+      {
+        "type": "DAMAGE",
+        "damage_type": "MAGICAL_FIRE",
+        "base_damage": 10,
+        "scaling_attribute": "INT",
+        "attribute_multiplier": 2.0,
+        "application_chance": 1.0
+      },
+      {
+        "type": "APPLY_STATUS_EFFECT",
+        "status_effect_id": "BURNING",
+        "duration_rounds": 2,
+        "potency": 3, // 3 Schaden pro Runde
+        "application_chance": 0.9 // 90% Chance zu verbrennen
+      }
+    ]
+  },
+  {
+    "id": "frostbolt",
+    "name": "Frostblitz",
+    "description": "Ein eisiger Blitz, der Schaden verursacht und das Ziel verlangsamt.",
+    "cost": { "type": "MANA", "value": 18 },
+    "target_type": "ENEMY_SINGLE",
+    "effects": [
+      {
+        "type": "DAMAGE",
+        "damage_type": "MAGICAL_FROST",
+        "base_damage": 8,
+        "scaling_attribute": "INT",
+        "attribute_multiplier": 1.8, // Angepasst von x2 zu 1.8 für Balance
+        "application_chance": 1.0
+      },
+      {
+        "type": "APPLY_STATUS_EFFECT",
+        "status_effect_id": "SLOWED",
+        "duration_rounds": 1,
+        "potency": null, // Verlangsamungseffekt wird später definiert
+        "application_chance": 1.0
+      }
+    ]
+  },
+  {
+    "id": "arcane_barrier",
+    "name": "Arkane Barriere",
+    "description": "Erzeugt eine magische Barriere, die Rüstung und Magieresistenz des Zaubernden temporär erhöht.",
+    "cost": { "type": "MANA", "value": 15 },
+    "target_type": "SELF", // Wirkt auf sich selbst
+    "effects": [
+      {
+        "type": "APPLY_STATUS_EFFECT",
+        "status_effect_id": "ARCANE_WARD", // Spezifischer Effekt für die Barriere
+        "duration_rounds": 3,
+        "potency": { // Definiert die Stärke des Buffs
+          "ARMOR_UP": 5,
+          "MAGIC_RESIST_UP": 5
+        },
+        "application_chance": 1.0
+      }
+    ]
+  },
+
+  // --- Schurke Skills ---
+  {
+    "id": "basic_strike_finesse",
+    "name": "Finessenhieb",
+    "description": "Ein schneller, präziser Angriff, der auf Geschicklichkeit basiert.",
+    "cost": { "type": "ENERGY", "value": 5 },
+    "target_type": "ENEMY_SINGLE",
+    "effects": [
+      {
+        "type": "DAMAGE",
+        "damage_type": "PHYSICAL_FINESSE", // Eigener Typ, um ggf. Rüstung anders zu behandeln
+        "base_damage": null,
+        "scaling_attribute": "DEX",
+        "attribute_multiplier": 1.0,
+        "application_chance": 1.0
+      }
+    ]
+  },
+  {
+    "id": "precise_stab",
+    "name": "Präziser Stich",
+    "description": "Ein gezielter Stich, der einen Teil der Rüstung des Ziels ignoriert.",
+    "cost": { "type": "ENERGY", "value": 15 },
+    "target_type": "ENEMY_SINGLE",
+    "effects": [
+      {
+        "type": "DAMAGE",
+        "damage_type": "PHYSICAL_FINESSE",
+        "base_damage": null,
+        "scaling_attribute": "DEX",
+        "attribute_multiplier": 1.3,
+        "armor_penetration_percent": 0.25, // Ignoriert 25% der Rüstung
+        "application_chance": 1.0
+      }
+    ]
+  },
+  {
+    "id": "distraction",
+    "name": "Ablenkung",
+    "description": "Lenkt den Gegner ab und reduziert dessen Genauigkeit.",
+    "cost": { "type": "ENERGY", "value": 20 },
+    "target_type": "ENEMY_SINGLE",
+    "effects": [
+      {
+        "type": "APPLY_STATUS_EFFECT",
+        "status_effect_id": "ACCURACY_DOWN",
+        "duration_rounds": 2,
+        "potency": -3, // Reduziert Genauigkeit um 3
+        "application_chance": 0.9
+      }
+    ]
+  },
+  {
+    "id": "sprint",
+    "name": "Sprint",
+    "description": "Erhöht kurzzeitig die Initiative des Schurken.",
+    "cost": { "type": "ENERGY", "value": 10 },
+    "target_type": "SELF",
+    "effects": [
+      {
+        "type": "APPLY_STATUS_EFFECT",
+        "status_effect_id": "INITIATIVE_UP",
+        "duration_rounds": 1, // Gilt für die nächste Runde/Zug
+        "potency": 20, // Erhöht Initiative um 20
+        "application_chance": 1.0
+      }
+    ]
+  },
+
+  // --- Kleriker Skills ---
+  {
+    "id": "basic_holy_spark",
+    "name": "Heiliger Funke",
+    "description": "Ein kleiner Funke heiliger Energie, der dem Gegner schadet.",
+    "cost": { "type": "MANA", "value": 8 },
+    "target_type": "ENEMY_SINGLE",
+    "effects": [
+      {
+        "type": "DAMAGE",
+        "damage_type": "HOLY",
+        "base_damage": 5,
+        "scaling_attribute": "WIS", // Skaliert mit Weisheit
+        "attribute_multiplier": 1.0,
+        "application_chance": 1.0
+      }
+    ]
+  },
+  {
+    "id": "heal",
+    "name": "Heilen",
+    "description": "Stellt Lebenspunkte eines verbündeten Ziels oder des Klerikers selbst wieder her.",
+    "cost": { "type": "MANA", "value": 15 },
+    "target_type": "SELF", // Oder ALLY_SINGLE, wenn wir Verbündete hätten
+    "effects": [
+      {
+        "type": "HEAL",
+        "base_heal": 15,
+        "scaling_attribute": "WIS",
+        // "attribute_multiplier": 0.5, // ANNEX: "WIS*0.5", das wäre ein Multiplikator
+        "flat_heal_bonus_per_attribute_point": 0.5, // ANNEX: "WIS*0.5" könnte auch so interpretiert werden, was gängiger ist für Heilskalierung. Wir nehmen das mal an.
+        "application_chance": 1.0
+      }
+    ]
+  },
+  {
+    "id": "holy_light",
+    "name": "Heiliges Licht",
+    "description": "Ein Strahl heiligen Lichts, der Feinden schadet, besonders Untoten.",
+    "cost": { "type": "MANA", "value": 20 },
+    "target_type": "ENEMY_SINGLE",
+    "effects": [
+      {
+        "type": "DAMAGE",
+        "damage_type": "HOLY",
+        "base_damage": 12,
+        "scaling_attribute": "WIS",
+        "attribute_multiplier": 1.5,
+        "bonus_vs_type": { // Bonus gegen bestimmte Gegnertypen
+          "tag": "UNDEAD",    // Gegner-Tag
+          "bonus_multiplier": 1.5 // 50% mehr Schaden gegen Untote
+        },
+        "application_chance": 1.0
+      }
+    ]
+  },
+  {
+    "id": "protective_ward",
+    "name": "Schutzsegen",
+    "description": "Ein Segen, der die Verteidigung eines Ziels erhöht.",
+    "cost": { "type": "MANA", "value": 15 },
+    "target_type": "SELF", // Oder ALLY_SINGLE
+    "effects": [
+      {
+        "type": "APPLY_STATUS_EFFECT",
+        "status_effect_id": "DEFENSE_UP", // Verwendet ARMOR_UP und MAGIC_RESIST_UP intern
+        "duration_rounds": 3,
+        "potency": {
+            "ARMOR_UP": 3,
+            "MAGIC_RESIST_UP": 3
+        },
+        "application_chance": 1.0
+      }
+    ]
+  },
+
+  // --- Gegner Skills (Beispiele aus ANNEX_GAME_DEFINITIONS_SUMMARY [23]) ---
+  {
+    "id": "basic_shot_phys", // Für Gegner wie z.B. Goblin-Bogenschützen
+    "name": "Einfacher Schuss",
+    "description": "Ein einfacher physischer Fernkampfangriff.",
+    "cost": { "type": "NONE", "value": 0 }, // Gegner verbrauchen oft keine Ressourcen für Basis-Skills
+    "target_type": "ENEMY_SINGLE",
+    "effects": [
+      {
+        "type": "DAMAGE",
+        "damage_type": "PHYSICAL_RANGED", // Unterscheidung für Fernkampf
+        "base_damage": 4, // Eigener Basisschaden
+        "scaling_attribute": "DEX", // Skaliert mit Geschicklichkeit des Gegners
+        "attribute_multiplier": 1.0,
+        "application_chance": 1.0
+      }
+    ]
+  },
+  {
+    "id": "weakening_curse",
+    "name": "Schwächender Fluch",
+    "description": "Verflucht das Ziel und reduziert dessen Stärke.",
+    "cost": { "type": "MANA", "value": 10 }, // Gegner-Schamane braucht Mana
+    "target_type": "ENEMY_SINGLE",
+    "effects": [
+      {
+        "type": "APPLY_STATUS_EFFECT",
+        "status_effect_id": "WEAKENED_STRENGTH",
+        "duration_rounds": 3,
+        "potency": -3, // Reduziert STR um 3
+        "application_chance": 0.85 // 85% Chance
+      }
+    ]
+  },
+  {
+    "id": "heal_lesser", // Gegner-Heilung
+    "name": "Geringe Heilung",
+    "description": "Heilt den Anwender oder einen verbündeten Gegner um einen kleinen Betrag.",
+    "cost": { "type": "MANA", "value": 12 },
+    "target_type": "SELF", // Oder ALLY_SINGLE
+    "effects": [
+      {
+        "type": "HEAL",
+        "base_heal": 10,
+        "scaling_attribute": "WIS",
+        // "attribute_multiplier": 3.0, // ANNEX: "WIS*3". Dies wäre eine sehr starke Skalierung als Multiplikator.
+        "flat_heal_bonus_per_attribute_point": 3.0, // Alternativ: 3 HP pro Weisheitspunkt, was plausibler ist. Ich nehme diesen Ansatz.
+        "application_chance": 1.0
+      }
     ]
   }
-  // Hier könnten später weitere Skills hinzugefügt werden
-  // z.B. Heilzauber, Buffs, Debuffs, Flächenangriffe etc.
+  // Komma nach dem letzten Element der Liste ist in JSON5 erlaubt
 ]
