@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-selfcheck.json
+*.egg-info/
+dist/
+build/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Eigenes
+logs/
+src/ai/models/
+saves/
+reports/
+*.prof
+.pytest_cache/
+
+# OS specific
+.DS_Store
+Thumbs.db

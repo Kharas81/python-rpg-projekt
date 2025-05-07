@@ -1,0 +1,21 @@
+{
+  // Globale Spieleinstellungen
+  "game_title": "Python RPG Projekt",
+  "version": "0.0.1",
+
+  // Pfade (relativ zum Projekt-Root oder src/)
+  // Werden später ggf. durch Python dynamisch angepasst oder validiert
+  "paths": {
+    "definitions_base": "src/definitions/json_data/",
+    "logs": "logs/",
+    "reports": "reports/",
+    "saves": "saves/",
+    "ai_models": "src/ai/models/"
+  },
+
+  // Einstellungen für das Logging
+  "logging": {
+    "log_level": "INFO", // Mögliche Werte: DEBUG, INFO, WARNING, ERROR, CRITICAL
+    "log_file": "game.log" // Name der Logdatei im "logs" Verzeichnis
+  }
+}

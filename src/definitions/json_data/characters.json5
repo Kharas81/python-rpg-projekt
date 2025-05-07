@@ -1,0 +1,35 @@
+[
+  {
+    "id": "player_warrior",
+    "name": "Krieger",
+    // Basisattribute für einen Krieger
+    "attributes": {
+      "health_max": 100,    // Maximale Lebenspunkte
+      "mana_max": 20,       // Maximale Manapunkte
+      "strength": 15,       // Stärke, beeinflusst physischen Schaden
+      "dexterity": 10,      // Geschicklichkeit, beeinflusst Ausweichen/Treffsicherheit
+      "intelligence": 8,    // Intelligenz, beeinflusst magischen Schaden/Manamenge
+      "vitality": 12        // Vitalität, beeinflusst Lebenspunkte/Regeneration
+    },
+    // Start-Skills, die der Krieger besitzt oder früh lernen kann
+    // Die IDs müssen mit den IDs in skills.json5 übereinstimmen
+    "skills": ["skill_basic_attack", "skill_power_strike"]
+  },
+  {
+    "id": "opponent_goblin",
+    "name": "Goblin",
+    // Attribute für einen einfachen Goblin-Gegner
+    "attributes": {
+      "health_max": 30,
+      "mana_max": 0,
+      "strength": 8,
+      "dexterity": 12,
+      "intelligence": 5,
+      "vitality": 6
+    },
+    // Skills, die der Goblin typischerweise einsetzt
+    "skills": ["skill_basic_attack", "skill_goblin_scratch"]
+  }
+  // Hier könnten später weitere Charakter-Vorlagen hinzugefügt werden
+  // z.B. Magier, Schurke, verschiedene Gegnertypen etc.
+]

@@ -1,0 +1,56 @@
+[
+  {
+    "id": "skill_basic_attack",
+    "name": "Einfacher Angriff",
+    "description": "Ein schneller, grundlegender Angriff.",
+    "cost": 0, // Kostet keine Ressourcen
+    "effects": [
+      {
+        "type": "damage",       // Art des Effekts
+        "amount_type": "physical", // Schadensart (wichtig für Resistenzen etc.)
+        "base_damage": 5,     // Basisschaden des Skills
+        "scaling_attribute": "strength", // Attribut, das den Schaden skaliert
+        "scaling_factor": 0.5   // Wie stark das Attribut skaliert (z.B. Schaden = base_damage + strength * scaling_factor)
+      }
+    ]
+  },
+  {
+    "id": "skill_power_strike",
+    "name": "Mächtiger Schlag",
+    "description": "Ein langsamer, aber kraftvoller Angriff, der mehr Schaden verursacht.",
+    "cost": 10, // Könnte z.B. Ausdauer oder Manapunkte kosten
+    "effects": [
+      {
+        "type": "damage",
+        "amount_type": "physical",
+        "base_damage": 12,
+        "scaling_attribute": "strength",
+        "scaling_factor": 0.7
+      }
+    ]
+  },
+  {
+    "id": "skill_goblin_scratch",
+    "name": "Goblin-Kratzer",
+    "description": "Ein schneller, fieser Kratzer.",
+    "cost": 0,
+    "effects": [
+      {
+        "type": "damage",
+        "amount_type": "physical",
+        "base_damage": 3,
+        "scaling_attribute": "strength", // Goblins sind nicht sehr stark
+        "scaling_factor": 0.3
+      }
+      // Man könnte hier noch einen Effekt hinzufügen, z.B. eine kleine Chance auf Blutung (DoT)
+      // {
+      //   "type": "apply_status_effect",
+      //   "effect_id": "status_bleeding_minor", // ID eines Statuseffekts (definieren wir später)
+      //   "duration": 2, // 2 Runden
+      //   "chance": 0.1 // 10% Chance
+      // }
+    ]
+  }
+  // Hier könnten später weitere Skills hinzugefügt werden
+  // z.B. Heilzauber, Buffs, Debuffs, Flächenangriffe etc.
+]
