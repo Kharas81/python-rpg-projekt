@@ -13,9 +13,10 @@ from typing import Dict, Any, List, Optional
 project_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_path)
 
-from src.config.config import load_config
+from src.config.config import get_config  # Geändert von load_config
 from src.utils.logging_setup import setup_logging, get_logger
-from src.definitions.character import get_character_template, get_opponent_template
+# Importiere die Funktionen aus der neuen character_utils.py
+from src.definitions.character_utils import get_character_template, get_opponent_template
 from src.game_logic.entities import CharacterInstance
 from src.game_logic.combat import CombatEncounter
 from src.ui.cli_main_loop import run_auto_simulation
@@ -115,7 +116,7 @@ def main():
     setup_logging(level=getattr(logging, args.log_level))
     
     # Konfiguration laden
-    config = load_config()
+    config = get_config()  # Geändert von load_config
     
     logger.info(f"Starte im Modus: {args.mode}")
     
