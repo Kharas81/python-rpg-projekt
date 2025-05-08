@@ -1,167 +1,172 @@
 """
-Haupteinstiegspunkt
+Haupteinstiegspunkt für das Python-RPG-Projekt
 
-Parst Argumente und startet die Anwendung im gewünschten Modus.
+Analysiert Befehlszeilenargumente und startet das Spiel im entsprechenden Modus.
 """
 import os
 import sys
 import argparse
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
 
-# Projektpfad zum PYTHONPATH hinzufügen, um Imports aus src zu ermöglichen
-project_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, project_path)
+# Stellen sicher, dass src im Python-Pfad ist
+sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
-from src.config.config import get_config  # Geändert von load_config
-from src.utils.logging_setup import setup_logging, get_logger
-# Importiere die Funktionen aus der neuen character_utils.py
-from src.definitions.character_utils import get_character_template, get_opponent_template
-from src.game_logic.entities import CharacterInstance
-from src.game_logic.combat import CombatEncounter
-from src.ui.cli_main_loop import run_auto_simulation
-
-# Module für den Trainingsmodus
-try:
-    from src.ai.rl_training import CurriculumTrainer
-except ImportError:
-    pass  # Ignorieren, falls nicht verfügbar
-
-# Module für den Evaluierungsmodus
-try:
-    from src.ai.evaluate_agent import AgentEvaluator
-except ImportError:
-    pass  # Ignorieren, falls nicht verfügbar
-
-# Logger für dieses Modul
-logger = get_logger(__name__)
+from src.utils.logging_setup import setup_logging
+from src.config.config import get_config
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     """
-    Parst Kommandozeilenargumente.
+    Analysiert die Befehlszeilenargumente.
     
     Returns:
-        argparse.Namespace: Die geparsten Argumente
+        argparse.Namespace: Die analysierten Argumente
     """
-    parser = argparse.ArgumentParser(description="RPG-System mit Reinforcement Learning")
+    parser = argparse.ArgumentParser(description='Python RPG mit KI-Komponenten')
     
-    # Haupt-Betriebsmodus
+    # Betriebsmodus
     parser.add_argument(
-        "--mode",
-        type=str,
-        choices=["manual", "auto", "train", "evaluate"],
-        default="auto",
-        help="Betriebsmodus: manual (Benutzereingabe), auto (automatische Simulation), "
-             "train (RL-Training), evaluate (RL-Evaluierung)"
+        '--mode', 
+        type=str, 
+        choices=['manual', 'auto', 'train', 'evaluate'], 
+        default='auto',
+        help='Betriebsmodus: manual (interaktiv), auto (Simulation), train (RL-Training), evaluate (RL-Evaluierung)'
     )
     
-    # Parameter für den Auto-Modus
+    # Simulationsparameter
     parser.add_argument(
-        "--players",
+        '--players',
         type=int,
         default=2,
-        help="Anzahl der Spielercharaktere im Auto-Modus"
+        help='Anzahl der Spielercharaktere für den Auto-Modus'
     )
+    
     parser.add_argument(
-        "--encounters",
+        '--encounters',
         type=int,
-        default=5,
-        help="Anzahl der Kampfbegegnungen im Auto-Modus"
+        default=3,
+        help='Anzahl der Begegnungen für den Auto-Modus'
     )
     
-    # Logging-Level
+    # Optional: Loglevel überschreiben
     parser.add_argument(
-        "--log-level",
+        '--log-level',
         type=str,
-        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
-        default="INFO",
-        help="Logging-Level"
+        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        help='Überschreibt das in der Konfiguration festgelegte Log-Level'
     )
     
-    # Config-Pfad
+    # Optional: Pfad zu einer alternativen Konfigurationsdatei
     parser.add_argument(
-        "--config",
+        '--config',
         type=str,
-        default=None,
-        help="Pfad zur Konfigurationsdatei (für RL-Modi)"
-    )
-    
-    # Zusätzliche Parameter für RL-Modi
-    parser.add_argument(
-        "--model",
-        type=str,
-        default=None,
-        help="Pfad zum Modell (für Evaluierungsmodus)"
-    )
-    
-    parser.add_argument(
-        "--level",
-        type=int,
-        default=1,
-        help="Curriculum-Level für Training/Evaluierung"
+        help='Pfad zu einer alternativen settings.json5-Datei'
     )
     
     return parser.parse_args()
 
 
-def main():
+def run_manual_mode() -> None:
     """
-    Hauptfunktion, die die Anwendung startet.
+    Startet das Spiel im manuellen (interaktiven) Modus.
+    Diese Funktion ist ein Platzhalter und wird später implementiert.
     """
-    # Kommandozeilenargumente parsen
-    args = parse_args()
+    logger = logging.getLogger('rpg.main')
+    logger.info("Starte Spiel im manuellen Modus (interaktiv)")
+    logger.warning("Der manuelle Modus ist noch nicht implementiert!")
+
+
+def run_auto_mode(num_players: int = 2, num_encounters: int = 3) -> None:
+    """
+    Startet das Spiel im automatischen (Simulations-) Modus.
     
-    # Logging-Setup
-    setup_logging(level=getattr(logging, args.log_level))
-    
-    # Konfiguration laden
-    config = get_config()  # Geändert von load_config
-    
-    logger.info(f"Starte im Modus: {args.mode}")
+    Args:
+        num_players (int): Anzahl der Spielercharaktere
+        num_encounters (int): Anzahl der zu simulierenden Begegnungen
+    """
+    logger = logging.getLogger('rpg.main')
+    logger.info(f"Starte Spiel im automatischen Modus (Simulation mit {num_players} Spielern, {num_encounters} Begegnungen)")
     
     try:
-        if args.mode == "manual":
-            logger.info("Manueller Modus noch nicht implementiert")
-            # TODO: Implementierung des manuellen Modus
-            
-        elif args.mode == "auto":
-            # Automatische Simulation starten
-            run_auto_simulation(
-                num_players=args.players,
-                num_encounters=args.encounters
-            )
-            
-        elif args.mode == "train":
-            # RL-Training starten
-            logger.info("Starte RL-Training")
-            try:
-                trainer = CurriculumTrainer(args.config)
-                trainer.train_curriculum()
-            except NameError:
-                logger.error("RL-Module nicht verfügbar. Stelle sicher, dass alle erforderlichen Pakete installiert sind.")
-            
-        elif args.mode == "evaluate":
-            # RL-Evaluierung starten
-            logger.info("Starte RL-Evaluierung")
-            if args.model is None:
-                logger.error("Kein Modellpfad angegeben. Verwende --model PFAD")
-                return
-            
-            try:
-                evaluator = AgentEvaluator(args.config)
-                results = evaluator.evaluate_agent(args.model, args.level)
-                if results['success']:
-                    evaluator.save_results(results)
-            except NameError:
-                logger.error("RL-Module nicht verfügbar. Stelle sicher, dass alle erforderlichen Pakete installiert sind.")
-            
-    except KeyboardInterrupt:
-        logger.info("Programm durch Benutzer beendet")
+        # Pfade zu den JSON5-Dateien
+        base_path = os.path.dirname(__file__)
+        characters_path = os.path.join(base_path, "definitions", "json_data", "characters.json5")
+        skills_path = os.path.join(base_path, "definitions", "json_data", "skills.json5")
+        opponents_path = os.path.join(base_path, "definitions", "json_data", "opponents.json5")
+        
+        # CLI-Simulation importieren und ausführen
+        from src.ui.cli_main_loop import run_simulation
+        run_simulation(characters_path, skills_path, opponents_path)
+        
     except Exception as e:
-        logger.error(f"Fehler im Hauptprogramm: {e}", exc_info=True)
+        logger.exception(f"Fehler im automatischen Modus: {str(e)}")
+
+
+def run_train_mode() -> None:
+    """
+    Startet das RL-Training.
+    Diese Funktion ist ein Platzhalter und wird später implementiert.
+    """
+    logger = logging.getLogger('rpg.main')
+    logger.info("Starte RL-Training")
+    logger.warning("Der Trainingsmodus ist noch nicht implementiert!")
+
+
+def run_evaluate_mode() -> None:
+    """
+    Evaluiert ein trainiertes RL-Modell.
+    Diese Funktion ist ein Platzhalter und wird später implementiert.
+    """
+    logger = logging.getLogger('rpg.main')
+    logger.info("Starte RL-Evaluierung")
+    logger.warning("Der Evaluierungsmodus ist noch nicht implementiert!")
+
+
+def main() -> None:
+    """
+    Hauptfunktion des Programms.
+    Analysiert Argumente und startet das Spiel im entsprechenden Modus.
+    """
+    args = parse_args()
     
-    logger.info("Programm beendet")
+    # Logger einrichten
+    logger = setup_logging('rpg')
+    
+    # Log-Level überschreiben, falls angegeben
+    if args.log_level:
+        logger.setLevel(getattr(logging, args.log_level))
+    
+    # Konfiguration laden
+    config = get_config()
+    
+    # Wichtige Informationen loggen
+    logger.info(f"Python RPG gestartet im Modus: {args.mode}")
+    logger.info(f"Python-Version: {sys.version}")
+    logger.debug(f"Konfiguration geladen: {config.get('game_settings')}")
+    
+    # Je nach Modus die entsprechende Funktion aufrufen
+    try:
+        if args.mode == 'manual':
+            run_manual_mode()
+        elif args.mode == 'auto':
+            run_auto_mode(args.players, args.encounters)
+        elif args.mode == 'train':
+            run_train_mode()
+        elif args.mode == 'evaluate':
+            run_evaluate_mode()
+        else:
+            logger.error(f"Ungültiger Modus: {args.mode}")
+            sys.exit(1)
+        
+    except KeyboardInterrupt:
+        logger.info("Programm durch Benutzer abgebrochen")
+        sys.exit(0)
+    except Exception as e:
+        logger.exception(f"Unerwarteter Fehler: {str(e)}")
+        sys.exit(1)
+    
+    logger.info("Programm normal beendet")
 
 
 if __name__ == "__main__":
