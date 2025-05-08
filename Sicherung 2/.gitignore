@@ -1,0 +1,18 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.prof
+
+# Projekt-spezifisch
+saves/
+logs/
+src/ai/models/
+reports/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

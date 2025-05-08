@@ -1,0 +1,367 @@
+{
+  // Basisangriffe
+  "basic_attack_free": {
+    "name": "Angriff",
+    "description": "Ein einfacher Angriff, der keine Ressourcen kostet.",
+    "cost": {
+      "value": 0,
+      "type": "NONE"
+    },
+    "effects": {
+      "base_damage": 3,
+      "scaling_attribute": "STR",
+      "damage_type": "PHYSICAL",
+      "multiplier": 1.0
+    }
+  },
+  
+  "basic_strike_phys": {
+    "name": "Schlag",
+    "description": "Ein kräftiger Schlag mit einer Nahkampfwaffe.",
+    "cost": {
+      "value": 5,
+      "type": "STAMINA"
+    },
+    "effects": {
+      "base_damage": null,  // Nutzt den Standard-Waffenschaden
+      "scaling_attribute": "STR",
+      "damage_type": "PHYSICAL",
+      "multiplier": 1.0
+    }
+  },
+  
+  // [Rest der Datei bleibt unverändert]
+  "basic_magic_bolt": {
+    "name": "Magischer Pfeil",
+    "description": "Ein einfacher magischer Energiepfeil.",
+    "cost": {
+      "value": 5,
+      "type": "MANA"
+    },
+    "effects": {
+      "base_damage": null,  // Nutzt den Standard-Waffenschaden
+      "scaling_attribute": "INT",
+      "damage_type": "MAGICAL",
+      "multiplier": 1.0
+    }
+  },
+  
+  "basic_holy_spark": {
+    "name": "Heiliger Funke",
+    "description": "Ein Funke heiliger Energie.",
+    "cost": {
+      "value": 5,
+      "type": "MANA"
+    },
+    "effects": {
+      "base_damage": null,  // Nutzt den Standard-Waffenschaden
+      "scaling_attribute": "WIS",
+      "damage_type": "HOLY",
+      "multiplier": 1.0
+    }
+  },
+  
+  "basic_strike_finesse": {
+    "name": "Präziser Stich",
+    "description": "Ein präziser Stich mit einer Klinge.",
+    "cost": {
+      "value": 5,
+      "type": "ENERGY"
+    },
+    "effects": {
+      "base_damage": null,  // Nutzt den Standard-Waffenschaden
+      "scaling_attribute": "DEX",
+      "damage_type": "PHYSICAL",
+      "multiplier": 1.0
+    }
+  },
+  
+  "basic_shot_phys": {
+    "name": "Schuss",
+    "description": "Ein einfacher Schuss mit einer Fernkampfwaffe.",
+    "cost": {
+      "value": 5,
+      "type": "STAMINA"
+    },
+    "effects": {
+      "base_damage": null,  // Nutzt den Standard-Waffenschaden
+      "scaling_attribute": "DEX",
+      "damage_type": "PHYSICAL",
+      "multiplier": 1.0
+    }
+  },
+  
+  // Krieger-Skills
+  "power_strike": {
+    "name": "Mächtiger Schlag",
+    "description": "Ein kraftvoller Schlag, der zusätzlichen Schaden verursacht.",
+    "cost": {
+      "value": 15,
+      "type": "STAMINA"
+    },
+    "effects": {
+      "base_damage": 6,
+      "scaling_attribute": "STR",
+      "damage_type": "PHYSICAL",
+      "multiplier": 1.5
+    }
+  },
+  
+  "shield_bash": {
+    "name": "Schildschlag",
+    "description": "Ein Schlag mit dem Schild, der den Gegner betäubt.",
+    "cost": {
+      "value": 20,
+      "type": "STAMINA"
+    },
+    "effects": {
+      "base_damage": 2,
+      "scaling_attribute": "STR",
+      "damage_type": "PHYSICAL",
+      "multiplier": 1.0
+    },
+    "applies_effects": [
+      {
+        "id": "STUNNED",
+        "duration": 1,
+        "potency": 1
+      }
+    ]
+  },
+  
+  "cleave": {
+    "name": "Rundumschlag",
+    "description": "Ein weiter Schwung, der mehrere Gegner treffen kann.",
+    "cost": {
+      "value": 25,
+      "type": "STAMINA"
+    },
+    "effects": {
+      "base_damage": 7,
+      "scaling_attribute": "STR",
+      "damage_type": "PHYSICAL",
+      "multiplier": 1.2,
+      "area_type": "CLEAVE"
+    }
+  },
+  
+  // Magier-Skills
+  "fireball": {
+    "name": "Feuerball",
+    "description": "Ein explodierender Feuerball, der den Gegner verbrennt.",
+    "cost": {
+      "value": 20,
+      "type": "MANA"
+    },
+    "effects": {
+      "base_damage": 8,
+      "scaling_attribute": "INT",
+      "damage_type": "MAGICAL",
+      "multiplier": 1.5
+    },
+    "applies_effects": [
+      {
+        "id": "BURNING",
+        "duration": 2,
+        "potency": 3
+      }
+    ]
+  },
+  
+  "frostbolt": {
+    "name": "Frostblitz",
+    "description": "Ein Geschoss aus eisiger Kälte, das den Gegner verlangsamt.",
+    "cost": {
+      "value": 15,
+      "type": "MANA"
+    },
+    "effects": {
+      "base_damage": 6,
+      "scaling_attribute": "INT",
+      "damage_type": "MAGICAL",
+      "multiplier": 1.2
+    },
+    "applies_effects": [
+      {
+        "id": "SLOWED",
+        "duration": 2,
+        "potency": 2
+      }
+    ]
+  },
+  
+  "arcane_barrier": {
+    "name": "Arkane Barriere",
+    "description": "Eine magische Barriere, die Schaden absorbiert.",
+    "cost": {
+      "value": 30,
+      "type": "MANA"
+    },
+    "effects": {},
+    "applies_effects": [
+      {
+        "id": "SHIELDED",
+        "duration": 3,
+        "potency": 15
+      }
+    ],
+    "is_self_effect": true
+  },
+  
+  // Schurken-Skills
+  "precise_stab": {
+    "name": "Präziser Stich",
+    "description": "Ein präziser Stich an eine verwundbare Stelle.",
+    "cost": {
+      "value": 15,
+      "type": "ENERGY"
+    },
+    "effects": {
+      "base_damage": 7,
+      "scaling_attribute": "DEX",
+      "damage_type": "PHYSICAL",
+      "multiplier": 1.4,
+      "critical_chance": 25,
+      "critical_multiplier": 1.5
+    }
+  },
+  
+  "distraction": {
+    "name": "Ablenkung",
+    "description": "Lenkt den Gegner ab und reduziert seine Treffsicherheit.",
+    "cost": {
+      "value": 10,
+      "type": "ENERGY"
+    },
+    "effects": {},
+    "applies_effects": [
+      {
+        "id": "ACCURACY_DOWN",
+        "duration": 2,
+        "potency": 3
+      }
+    ]
+  },
+  
+  "sprint": {
+    "name": "Sprint",
+    "description": "Erhöht vorübergehend die eigene Initiative.",
+    "cost": {
+      "value": 15,
+      "type": "ENERGY"
+    },
+    "effects": {},
+    "applies_effects": [
+      {
+        "id": "INITIATIVE_UP",
+        "duration": 3,
+        "potency": 20
+      }
+    ],
+    "is_self_effect": true
+  },
+  
+  // Kleriker-Skills
+  "heal": {
+    "name": "Heilung",
+    "description": "Heilt Verletzungen des Ziels.",
+    "cost": {
+      "value": 20,
+      "type": "MANA"
+    },
+    "effects": {
+      "base_healing": 15,
+      "scaling_attribute": "WIS",
+      "healing_multiplier": 1.5
+    }
+  },
+  
+  "holy_light": {
+    "name": "Heiliges Licht",
+    "description": "Ein Strahl heiligen Lichts, besonders effektiv gegen Untote.",
+    "cost": {
+      "value": 25,
+      "type": "MANA"
+    },
+    "effects": {
+      "base_damage": 8,
+      "scaling_attribute": "WIS",
+      "damage_type": "HOLY",
+      "multiplier": 1.2,
+      "bonus_vs_type": "UNDEAD",
+      "bonus_multiplier": 2.0
+    }
+  },
+  
+  "protective_ward": {
+    "name": "Schutzfeld",
+    "description": "Erhöht die Verteidigung des Ziels.",
+    "cost": {
+      "value": 20,
+      "type": "MANA"
+    },
+    "effects": {},
+    "applies_effects": [
+      {
+        "id": "DEFENSE_UP",
+        "duration": 3,
+        "potency": 3
+      }
+    ]
+  },
+  
+  // Gegner-Skills
+  "weakening_curse": {
+    "name": "Schwächungsfluch",
+    "description": "Ein Fluch, der die Stärke des Opfers reduziert.",
+    "cost": {
+      "value": 10,
+      "type": "MANA"
+    },
+    "effects": {},
+    "applies_effects": [
+      {
+        "id": "WEAKENED",
+        "duration": 3,
+        "potency": 3
+      }
+    ]
+  },
+  
+  "heal_lesser": {
+    "name": "Geringe Heilung",
+    "description": "Heilt einen geringen Teil der Verletzungen.",
+    "cost": {
+      "value": 10,
+      "type": "MANA"
+    },
+    "effects": {
+      "base_healing": 10,
+      "scaling_attribute": "WIS",
+      "healing_multiplier": 0.3
+    }
+  },
+  
+  "area_fire_blast": {
+    "name": "Flächenbrand",
+    "description": "Eine Explosion aus Feuer, die mehrere Gegner trifft.",
+    "cost": {
+      "value": 25,
+      "type": "MANA"
+    },
+    "effects": {
+      "base_damage": 6,
+      "scaling_attribute": "INT",
+      "damage_type": "MAGICAL",
+      "multiplier": 1.0,
+      "area_type": "SPLASH"
+    },
+    "applies_effects": [
+      {
+        "id": "BURNING",
+        "duration": 1,
+        "potency": 2
+      }
+    ]
+  }
+}
