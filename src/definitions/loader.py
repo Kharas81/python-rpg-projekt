@@ -1,12 +1,19 @@
 # src/definitions/loader.py
 
-import json5
+import json5 # type: ignore
 from pathlib import Path
-import sys
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 
+# Importiere die geänderten Skill-Definitionsklassen und andere benötigte Klassen/Exceptions
 from .character import CharacterDefinition, PrimaryAttributeSet, BaseCombatValueSet, SkillIdList
-from .skill import SkillDefinition, SkillCost, SkillEffectDefinition, BonusVsTypeData # Diese Zeile wird in Schritt 4 angepasst
+from .skill import (
+    SkillDefinition, SkillCost, BonusVsTypeData,
+    BaseEffectDefinition, DamageEffectDefinition, HealEffectDefinition, ApplyStatusEffectDefinition,
+    EffectType, DamageType, AttributeName, StatusEffectId, SkillEffectPotency # Type Aliases
+)
+from .opponent import OpponentDefinition
+from src.utils.exceptions import DefinitionFileNotFoundError, DefinitionParsingError, DefinitionContentError, RPGBaseException
+
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 CONFIG_DIR = PROJECT_ROOT / "src" / "config"
@@ -19,116 +26,149 @@ OPPONENTS_FILE = DEFINITIONS_DATA_DIR / "opponents.json5"
 
 def _load_json_file(file_path: Path) -> Any:
     if not file_path.exists():
-        print(f"FEHLER: Definitionsdatei nicht gefunden: {file_path}", file=sys.stderr)
-        return None
+        raise DefinitionFileNotFoundError(filepath=str(file_path))
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             data = json5.load(f)
         return data
     except json5.JSONDecodeError as e:
-        print(f"FEHLER: Fehler beim Parsen der JSON5-Datei {file_path}: {e}", file=sys.stderr)
-        return None
+        raise DefinitionParsingError(filepath=str(file_path), original_exception=e)
     except Exception as e:
-        print(f"FEHLER: Ein unerwarteter Fehler ist beim Laden von {file_path} aufgetreten: {e}", file=sys.stderr)
-        return None
+        raise DefinitionFileError(message=f"Ein unerwarteter Fehler ist beim Laden von {file_path} aufgetreten: {e}", 
+                                  filepath=str(file_path))
 
-def load_game_settings() -> Optional[Dict[str, Any]]:
-    return _load_json_file(SETTINGS_FILE)
+def load_game_settings() -> Dict[str, Any]:
+    data = _load_json_file(SETTINGS_FILE)
+    if not isinstance(data, dict):
+        raise DefinitionContentError(filepath=str(SETTINGS_FILE), 
+                                     message="settings.json5 muss ein Dictionary auf Top-Level sein.")
+    return data
 
-def load_character_definitions() -> Optional[Dict[str, CharacterDefinition]]:
+def load_character_definitions() -> Dict[str, CharacterDefinition]:
+    # Implementierung bleibt gleich wie im vorherigen Schritt
     raw_data_list = _load_json_file(CHARACTERS_FILE)
     if not isinstance(raw_data_list, list):
-        print(f"FEHLER: Inhalt von {CHARACTERS_FILE} ist keine Liste.", file=sys.stderr)
-        return None
-
-    character_definitions: Dict[str, CharacterDefinition] = {}
-    for char_dict in raw_data_list:
-        if not isinstance(char_dict, dict):
-            print(f"WARNUNG: Eintrag in {CHARACTERS_FILE} ist kein Dictionary: {char_dict}", file=sys.stderr)
-            continue
+        raise DefinitionContentError(filepath=str(CHARACTERS_FILE), message=f"Inhalt von {CHARACTERS_FILE.name} ist keine Liste.")
+    defs: Dict[str, CharacterDefinition] = {}
+    for i, item_dict in enumerate(raw_data_list):
+        if not isinstance(item_dict, dict):
+            raise DefinitionContentError(filepath=str(CHARACTERS_FILE), message=f"Eintrag #{i} ist kein Dictionary.")
         try:
-            char_def = CharacterDefinition(
-                id=char_dict['id'],
-                name=char_dict['name'],
-                description=char_dict['description'],
-                primary_attributes=PrimaryAttributeSet(char_dict['primary_attributes']),
-                base_combat_values=BaseCombatValueSet(char_dict['base_combat_values']),
-                starting_skills=SkillIdList(char_dict['starting_skills'])
-            )
-            character_definitions[char_def.id] = char_def
-        except KeyError as e:
-            print(f"WARNUNG: Fehlender Schlüssel {e} in Charakterdaten: {char_dict.get('id', 'UNBEKANNTE ID')}", file=sys.stderr)
-        except TypeError as e:
-            print(f"WARNUNG: Typfehler beim Erstellen von CharacterDefinition für {char_dict.get('id', 'UNBEKANNTE ID')}: {e}", file=sys.stderr)
-            
-    return character_definitions if character_definitions else None
-
-def _parse_skill_effect(effect_data: Dict[str, Any]) -> SkillEffectDefinition: # Wird in Schritt 4 angepasst
-    bonus_vs_type_dict = effect_data.get("bonus_vs_type")
-    bonus_vs_type_obj = None
-    if bonus_vs_type_dict:
-        bonus_vs_type_obj = BonusVsTypeData(**bonus_vs_type_dict)
+            defs[item_dict['id']] = CharacterDefinition(**item_dict)
+        except (KeyError, TypeError) as e:
+            raise DefinitionContentError(filepath=str(CHARACTERS_FILE), message=f"Fehler bei Charakter #{i} (ID: {item_dict.get('id')}): {e}")
+    return defs
     
-    effect_kwargs = effect_data.copy()
-    if 'bonus_vs_type' in effect_kwargs:
-        del effect_kwargs['bonus_vs_type']
+def load_opponent_definitions() -> Dict[str, OpponentDefinition]:
+    # Implementierung bleibt gleich wie im vorherigen Schritt
+    raw_data_list = _load_json_file(OPPONENTS_FILE)
+    if not isinstance(raw_data_list, list):
+        raise DefinitionContentError(filepath=str(OPPONENTS_FILE), message=f"Inhalt von {OPPONENTS_FILE.name} ist keine Liste.")
+    defs: Dict[str, OpponentDefinition] = {}
+    for i, item_dict in enumerate(raw_data_list):
+        if not isinstance(item_dict, dict):
+            raise DefinitionContentError(filepath=str(OPPONENTS_FILE), message=f"Eintrag #{i} ist kein Dictionary.")
+        try:
+            # .get für optionale Felder in JSON, die in Dataclass Defaults haben (wie 'tags')
+            item_dict['description'] = item_dict.get('description', '') 
+            item_dict['skills'] = item_dict.get('skills', [])
+            item_dict['tags'] = item_dict.get('tags', [])
+            defs[item_dict['id']] = OpponentDefinition(**item_dict)
+        except (KeyError, TypeError) as e:
+            raise DefinitionContentError(filepath=str(OPPONENTS_FILE), message=f"Fehler bei Gegner #{i} (ID: {item_dict.get('id')}): {e}")
+    return defs
 
-    return SkillEffectDefinition(
-        **effect_kwargs,
-        bonus_vs_type=bonus_vs_type_obj
-    )
+# --- Factory für Skill-Effekte ---
+def _parse_skill_effect_from_dict(effect_data: Dict[str, Any]) -> BaseEffectDefinition:
+    """
+    Factory-Funktion: Erstellt die korrekte SkillEffectDefinition-Subklasse
+    basierend auf dem 'type'-Feld in den Daten.
+    """
+    effect_type_str = effect_data.get("type")
+    if not effect_type_str:
+        raise DefinitionContentError(message="Skill-Effekt-Daten fehlt das 'type'-Feld.", filepath=str(SKILLS_FILE))
 
-def _parse_skill_dict_to_definition(skill_data: Dict[str, Any]) -> SkillDefinition: # Wird in Schritt 4 angepasst
-    cost_data = skill_data.get("cost", {})
-    skill_cost_obj = SkillCost(**cost_data)
-
-    effects_list_data = skill_data.get("effects", [])
-    effects_obj_list: List[SkillEffectDefinition] = []
-    for effect_data in effects_list_data:
-        effects_obj_list.append(_parse_skill_effect(effect_data))
-
-    skill_kwargs = skill_data.copy()
-    skill_kwargs['cost'] = skill_cost_obj
-    skill_kwargs['effects'] = effects_obj_list
+    # Allgemeine Felder, die alle Effekte haben (oder von BaseEffectDefinition geerbt)
+    # Wir extrahieren die Basis-Argumente zuerst
+    base_args = {
+        "type": effect_type_str,
+        "application_chance": float(effect_data.get("application_chance", 1.0))
+    }
     
-    return SkillDefinition(**skill_kwargs)
+    # Entferne Basis-Argumente aus effect_data, damit wir den Rest per **kwargs übergeben können
+    specific_args = {k: v for k, v in effect_data.items() if k not in base_args}
 
-def load_skill_definitions() -> Optional[Dict[str, SkillDefinition]]: # Wird in Schritt 4 angepasst
+    if effect_type_str == "DAMAGE":
+        bonus_vs_type_dict = specific_args.pop("bonus_vs_type", None)
+        bonus_vs_type_obj = BonusVsTypeData(**bonus_vs_type_dict) if bonus_vs_type_dict else None
+        return DamageEffectDefinition(**base_args, **specific_args, bonus_vs_type=bonus_vs_type_obj)
+    
+    elif effect_type_str == "HEAL":
+        return HealEffectDefinition(**base_args, **specific_args)
+        
+    elif effect_type_str == "APPLY_STATUS_EFFECT":
+        return ApplyStatusEffectDefinition(**base_args, **specific_args)
+        
+    # Hier könnten weitere elif-Blöcke für neue Effekttypen hinzukommen
+    else:
+        raise DefinitionContentError(
+            message=f"Unbekannter Skill-Effekttyp '{effect_type_str}' in Skill-Definitionen.",
+            filepath=str(SKILLS_FILE)
+        )
+
+def _parse_skill_dict_to_definition(skill_data: Dict[str, Any]) -> SkillDefinition:
+    """Wandelt ein Dictionary aus der JSON-Datei in ein SkillDefinition-Objekt um."""
+    try:
+        cost_data = skill_data.get("cost", {})
+        skill_cost_obj = SkillCost(**cost_data)
+
+        effects_list_data = skill_data.get("effects", [])
+        effects_obj_list: List[BaseEffectDefinition] = []
+        for i, effect_data_dict in enumerate(effects_list_data):
+            if not isinstance(effect_data_dict, dict):
+                raise DefinitionContentError(message=f"Effekt #{i} für Skill '{skill_data.get('id')}' ist kein Dictionary.", filepath=str(SKILLS_FILE))
+            effects_obj_list.append(_parse_skill_effect_from_dict(effect_data_dict))
+        
+        # Erstelle das SkillDefinition-Objekt, indem alle Felder explizit zugewiesen werden
+        # oder indem **skill_data verwendet wird, nachdem 'cost' und 'effects' modifiziert wurden.
+        return SkillDefinition(
+            id=skill_data['id'],
+            name=skill_data['name'],
+            description=skill_data['description'],
+            cost=skill_cost_obj,
+            target_type=skill_data['target_type'],
+            effects=effects_obj_list
+        )
+    except KeyError as e:
+        raise DefinitionContentError(message=f"Fehlender Schlüssel {e} in Skill-Daten für ID '{skill_data.get('id', 'UNBEKANNT')}'.", filepath=str(SKILLS_FILE))
+    except TypeError as e: # Fängt Fehler beim Entpacken von **kwargs in Dataclasses
+        raise DefinitionContentError(message=f"Typfehler beim Parsen von Skill '{skill_data.get('id', 'UNBEKANNT')}': {e}", filepath=str(SKILLS_FILE))
+    except DefinitionContentError: # Wenn _parse_skill_effect_from_dict einen Fehler wirft
+        raise # Einfach weiterwerfen, da die Nachricht schon spezifisch ist
+    except Exception as e: # Fängt andere unerwartete Fehler ab
+        raise RPGBaseException(f"Unerwarteter Fehler beim Parsen von Skill '{skill_data.get('id', 'UNBEKANNT')}': {e}")
+
+
+def load_skill_definitions() -> Dict[str, SkillDefinition]:
     raw_data_list = _load_json_file(SKILLS_FILE)
     if not isinstance(raw_data_list, list):
-        print(f"FEHLER: Inhalt von {SKILLS_FILE} ist keine Liste.", file=sys.stderr)
-        return None
+        raise DefinitionContentError(filepath=str(SKILLS_FILE),
+                                     message=f"Inhalt von {SKILLS_FILE.name} ist keine Liste.")
 
     skill_definitions: Dict[str, SkillDefinition] = {}
-    for skill_dict in raw_data_list:
+    for i, skill_dict in enumerate(raw_data_list):
         if not isinstance(skill_dict, dict):
-            print(f"WARNUNG: Eintrag in {SKILLS_FILE} ist kein Dictionary: {skill_dict}", file=sys.stderr)
-            continue
+            raise DefinitionContentError(filepath=str(SKILLS_FILE),
+                                         message=f"Eintrag #{i} in {SKILLS_FILE.name} ist kein Dictionary.")
         try:
             skill_def = _parse_skill_dict_to_definition(skill_dict)
             skill_definitions[skill_def.id] = skill_def
-        except KeyError as e:
-            print(f"WARNUNG: Fehlender Schlüssel {e} in Skilldaten: {skill_dict.get('id', 'UNBEKANNTE ID')}", file=sys.stderr)
-        except TypeError as e:
-            print(f"WARNUNG: Typfehler beim Erstellen von SkillDefinition für {skill_dict.get('id', 'UNBEKANNTE ID')}: {e}", file=sys.stderr)
-            print(f"         Skill-Daten: {skill_dict}", file=sys.stderr)
-
-    return skill_definitions if skill_definitions else None
-
-def load_opponent_definitions() -> Optional[Dict[str, Dict[str, Any]]]:
-    raw_data_list = _load_json_file(OPPONENTS_FILE)
-    if not isinstance(raw_data_list, list):
-        print(f"FEHLER: Inhalt von {OPPONENTS_FILE} ist keine Liste.", file=sys.stderr)
-        return None
-        
-    indexed_data: Dict[str, Dict[str, Any]] = {}
-    for item in raw_data_list:
-        if not isinstance(item, dict):
-            print(f"WARNUNG: Eintrag in {OPPONENTS_FILE} ist kein Dictionary: {item}", file=sys.stderr)
-            continue
-        item_id = item.get("id")
-        if not item_id:
-            print(f"WARNUNG: Eintrag in {OPPONENTS_FILE} hat keine ID: {item}", file=sys.stderr)
-            continue
-        indexed_data[item_id] = item
-    return indexed_data if indexed_data else None
+        except DefinitionContentError as e: # Fängt Fehler aus _parse_skill_dict_to_definition
+            # Hier könnten wir entscheiden, ob wir den Ladevorgang abbrechen oder nur eine Warnung loggen
+            # und den fehlerhaften Skill überspringen. Fürs Erste werfen wir den Fehler weiter.
+            # print(f"WARNUNG: Skill-Definition fehlerhaft und übersprungen: {e}", file=sys.stderr)
+            raise e 
+        except RPGBaseException as e: # Fängt andere spezifische Fehler ab
+             raise e
+             
+    return skill_definitions
