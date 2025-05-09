@@ -22,8 +22,7 @@ def setup_logging(logger_name: str = None) -> logging.Logger:
         logging.Logger: Der konfigurierte Logger
     """
     config = get_config()
-    # Korrektur: Verwenden Sie config.get('logging', {}) statt config.logging
-    log_config = config.get('logging', {})
+    log_config = config.logging
     
     # Standardwerte, falls nicht in der Konfiguration vorhanden
     log_level = getattr(logging, log_config.get('level', 'INFO'))

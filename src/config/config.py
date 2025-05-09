@@ -1,145 +1,76 @@
 """
-Zentrale Konfiguration
-
-Lädt die Konfigurationsdaten aus settings.json5 und stellt sie zur Verfügung.
+Zentrales Config-Modul, das Einstellungen aus settings.json5 lädt.
 """
 import os
 import json5
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
-# Standardwerte für den Fall, dass einige Einstellungen in der Datei fehlen
-DEFAULT_CONFIG = {
-    "game_settings": {
-        "min_damage": 1,
-        "base_weapon_damage": 5,
-        "hit_chance_base": 90,
-        "hit_chance_accuracy_factor": 3,
-        "hit_chance_evasion_factor": 2,
-        "hit_chance_min": 5,
-        "hit_chance_max": 95,
-        "xp_level_base": 100,
-        "xp_level_factor": 1.5,
-    },
-    "logging": {
-        "level": "INFO",
-        "file_level": "DEBUG",
-        "console_level": "INFO",
-        "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        "date_format": "%Y-%m-%d %H:%M:%S",
-        "log_dir": "logs",
-        "log_file": "rpg.log",
-    },
-    "rl": {
-        "train": {
-            "total_timesteps": 100000,
-            "log_interval": 100,
-            "n_eval_episodes": 10,
-            "eval_interval": 1000,
-        },
-        "env": {
-            "max_steps": 100,
-            "reward_win": 100,
-            "reward_lose": -100,
-            "reward_damage_dealt_factor": 0.1,
-            "reward_damage_taken_factor": -0.1,
-        },
-    },
-}
+# Globale Variable, um die Konfiguration zu cachen
+_config_cache = None
 
-
-class Config:
+def get_config(config_path: Optional[str] = None) -> Dict[str, Any]:
     """
-    Zentrale Konfigurationsklasse, die Einstellungen aus settings.json5 lädt.
-    """
-    _instance = None
-    _config = {}
+    Gibt die Konfiguration aus settings.json5 zurück.
     
-    def __new__(cls):
-        """
-        Singleton-Pattern: Stellt sicher, dass nur eine Instanz existiert.
-        """
-        if cls._instance is None:
-            cls._instance = super(Config, cls).__new__(cls)
-            cls._instance._load_config()
-        return cls._instance
-    
-    def _load_config(self):
-        """
-        Lädt die Konfigurationsdaten aus der settings.json5-Datei.
-        Wenn die Datei nicht existiert oder fehlerhaft ist, werden Standardwerte verwendet.
-        """
-        settings_path = os.path.join(os.path.dirname(__file__), 'settings.json5')
-        try:
-            if os.path.exists(settings_path):
-                with open(settings_path, 'r', encoding='utf-8') as file:
-                    self._config = json5.load(file)
-            else:
-                print(f"WARNUNG: Konfigurationsdatei {settings_path} nicht gefunden. Verwende Standardwerte.")
-                self._config = DEFAULT_CONFIG.copy()
-        except Exception as e:
-            print(f"FEHLER beim Laden der Konfiguration: {str(e)}. Verwende Standardwerte.")
-            self._config = DEFAULT_CONFIG.copy()
-    
-    def get(self, section: str, key: str = None, default: Any = None) -> Any:
-        """
-        Gibt einen Konfigurationswert zurück.
+    Args:
+        config_path: Optionaler Pfad zur Konfigurationsdatei.
         
-        Args:
-            section (str): Der Abschnitt der Konfiguration (z.B. 'game_settings')
-            key (str, optional): Der Schlüssel innerhalb des Abschnitts
-            default (Any, optional): Der Standardwert, wenn der Wert nicht gefunden wird
-            
-        Returns:
-            Any: Der Konfigurationswert oder der Standardwert
-        """
-        if section not in self._config:
-            if section in DEFAULT_CONFIG:
-                return DEFAULT_CONFIG[section] if key is None else DEFAULT_CONFIG[section].get(key, default)
-            return default
-        
-        if key is None:
-            return self._config[section]
-        
-        if key in self._config[section]:
-            return self._config[section][key]
-        
-        if section in DEFAULT_CONFIG and key in DEFAULT_CONFIG[section]:
-            return DEFAULT_CONFIG[section][key]
-        
-        return default
-    
-    @property
-    def game_settings(self) -> Dict[str, Any]:
-        """Gibt die Spieleinstellungen zurück."""
-        return self.get('game_settings', default={})
-    
-    @property
-    def logging(self) -> Dict[str, Any]:
-        """Gibt die Logging-Einstellungen zurück."""
-        return self.get('logging', default={})
-    
-    @property
-    def rl(self) -> Dict[str, Any]:
-        """Gibt die RL-Einstellungen zurück."""
-        return self.get('rl', default={})
-    
-    def reload(self):
-        """
-        Lädt die Konfiguration neu.
-        Nützlich, wenn die Konfigurationsdatei während der Laufzeit geändert wurde.
-        """
-        self._load_config()
-
-
-# Globale Konfigurationsinstanz
-config = Config()
-
-
-def get_config() -> Config:
-    """
-    Gibt die globale Konfigurationsinstanz zurück.
-    
     Returns:
-        Config: Die globale Konfigurationsinstanz
+        Dict[str, Any]: Ein Dictionary mit den Konfigurationseinstellungen.
     """
-    return config
+    global _config_cache
+    
+    # Wenn die Konfiguration bereits geladen wurde und kein neuer Pfad angegeben wurde, returne den Cache
+    if _config_cache is not None and config_path is None:
+        return _config_cache
+    
+    # Standard-Konfigurationspfad, wenn keiner angegeben wurde
+    if config_path is None:
+        # Pfad relativ zum aktuellen Skript
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        config_path = os.path.join(base_dir, 'src', 'config', 'settings.json5')
+    
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = json5.load(f)
+        _config_cache = config
+        return config
+    except Exception as e:
+        print(f"Fehler beim Laden der Konfigurationsdatei: {e}")
+        # Rückfallkonfiguration
+        return {
+            "game_settings": {
+                "min_damage": 1,
+                "base_weapon_damage": 5,
+                "hit_chance_base": 90,
+                "hit_chance_accuracy_factor": 3,
+                "hit_chance_evasion_factor": 2,
+                "hit_chance_min": 5,
+                "hit_chance_max": 95,
+                "xp_level_base": 100,
+                "xp_level_factor": 1.5,
+                "resource_regen_percent": 5
+            },
+            "logging": {
+                "level": "INFO",
+                "file": "logs/rpg_game.log",
+                "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+                "date_format": "%Y-%m-%d %H:%M:%S",
+                "console_level": "INFO"
+            },
+            "rl_settings": {
+                "max_episode_steps": 100,
+                "max_players": 4,
+                "max_opponents": 6,
+                "max_skills_per_character": 10,
+                "max_targets": 10,
+                "rewards": {
+                    "victory": 10.0,
+                    "defeat": -10.0,
+                    "damage_factor": 0.1,
+                    "healing_factor": 0.2,
+                    "kill": 1.0,
+                    "time_penalty": -0.01
+                }
+            }
+        }
