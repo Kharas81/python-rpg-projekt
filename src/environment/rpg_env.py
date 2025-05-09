@@ -183,6 +183,15 @@ class RPGEnv(gym.Env):
         
         return observation, reward, terminated, truncated, info
     
+    def get_action_mask(self) -> np.ndarray:
+        """
+        Gibt die Aktionsmaske für den aktuellen Zustand zurück.
+
+        Returns:
+            np.ndarray: Die Aktionsmaske.
+        """
+        return self.action_manager.get_action_mask(self.state)
+    
     def _setup_environment(self, curriculum_level: int) -> None:
         """
         Richtet die Umgebung basierend auf dem Curriculum-Level ein.
