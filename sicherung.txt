@@ -1,0 +1,4951 @@
+===== sicherung.py =====
+import os
+
+def save_project_to_single_txt(source_dir, output_file):
+    """
+    Speichert den gesamten Inhalt eines Projekts in einer einzigen .txt-Datei.
+    Der .git-Ordner wird ignoriert.
+
+    :param source_dir: Quellverzeichnis, das durchsucht werden soll
+    :param output_file: Pfad zur Ausgabedatei (.txt)
+    """
+    try:
+        with open(output_file, 'w', encoding='utf-8') as outfile:
+            for root, dirs, files in os.walk(source_dir):
+                # .git-Ordner ignorieren
+                if '.git' in dirs:
+                    dirs.remove('.git')
+
+                for file in files:
+                    source_file_path = os.path.join(root, file)
+                    relative_path = os.path.relpath(source_file_path, source_dir)
+
+                    try:
+                        # Dateiinhalt lesen
+                        with open(source_file_path, 'r', encoding='utf-8') as infile:
+                            content = infile.read()
+
+                        # Dateiinhalt in die Ausgabedatei schreiben
+                        outfile.write(f"===== {relative_path} =====\n")
+                        outfile.write(content)
+                        outfile.write("\n\n")
+
+                        print(f"Gespeichert: {relative_path}")
+
+                    except Exception as e:
+                        print(f"Fehler beim Verarbeiten von {source_file_path}: {e}")
+                        outfile.write(f"===== {relative_path} (Fehler beim Lesen) =====\n\n")
+
+        print(f"Projekt erfolgreich in {output_file} gespeichert.")
+    except Exception as e:
+        print(f"Fehler beim Speichern des Projekts: {e}")
+
+if __name__ == "__main__":
+    # Quell- und Zielverzeichnis festlegen
+    source_directory = "/workspaces/python-rpg-projekt"  # Dein Projektverzeichnis
+    output_file_path = "/workspaces/python-rpg-projekt/sicherung.txt"  # Ziel-Datei
+
+    save_project_to_single_txt(source_directory, output_file_path)
+
+===== sicherung.txt =====
+
+===== src/main.py =====
+"""
+Haupteinstiegspunkt für das Python-RPG-Projekt
+
+Analysiert Befehlszeilenargumente und startet das Spiel im entsprechenden Modus.
+"""
+import os
+import sys
+import argparse
+import logging
+from typing import Dict, Any
+
+# Stellen sicher, dass src im Python-Pfad ist
+sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
+
+from src.utils.logging_setup import setup_logging
+from src.config.config import get_config
+
+
+def parse_args() -> argparse.Namespace:
+    """
+    Analysiert die Befehlszeilenargumente.
+    
+    Returns:
+        argparse.Namespace: Die analysierten Argumente
+    """
+    parser = argparse.ArgumentParser(description='Python RPG mit KI-Komponenten')
+    
+    # Betriebsmodus
+    parser.add_argument(
+        '--mode', 
+        type=str, 
+        choices=['manual', 'auto', 'train', 'evaluate'], 
+        default='auto',
+        help='Betriebsmodus: manual (interaktiv), auto (Simulation), train (RL-Training), evaluate (RL-Evaluierung)'
+    )
+    
+    # Simulationsparameter
+    parser.add_argument(
+        '--players',
+        type=int,
+        default=2,
+        help='Anzahl der Spielercharaktere für den Auto-Modus'
+    )
+    
+    parser.add_argument(
+        '--encounters',
+        type=int,
+        default=3,
+        help='Anzahl der Begegnungen für den Auto-Modus'
+    )
+    
+    # Optional: Loglevel überschreiben
+    parser.add_argument(
+        '--log-level',
+        type=str,
+        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        help='Überschreibt das in der Konfiguration festgelegte Log-Level'
+    )
+    
+    # Optional: Pfad zu einer alternativen Konfigurationsdatei
+    parser.add_argument(
+        '--config',
+        type=str,
+        help='Pfad zu einer alternativen settings.json5-Datei'
+    )
+    
+    return parser.parse_args()
+
+
+def run_manual_mode() -> None:
+    """
+    Startet das Spiel im manuellen (interaktiven) Modus.
+    Diese Funktion ist ein Platzhalter und wird später implementiert.
+    """
+    logger = logging.getLogger('rpg.main')
+    logger.info("Starte Spiel im manuellen Modus (interaktiv)")
+    logger.warning("Der manuelle Modus ist noch nicht implementiert!")
+
+
+def run_auto_mode(num_players: int = 2, num_encounters: int = 3) -> None:
+    """
+    Startet das Spiel im automatischen (Simulations-) Modus.
+    
+    Args:
+        num_players (int): Anzahl der Spielercharaktere
+        num_encounters (int): Anzahl der zu simulierenden Begegnungen
+    """
+    logger = logging.getLogger('rpg.main')
+    logger.info(f"Starte Spiel im automatischen Modus (Simulation mit {num_players} Spielern, {num_encounters} Begegnungen)")
+    
+    try:
+        # Pfade zu den JSON5-Dateien
+        base_path = os.path.dirname(__file__)
+        characters_path = os.path.join(base_path, "definitions", "json_data", "characters.json5")
+        skills_path = os.path.join(base_path, "definitions", "json_data", "skills.json5")
+        opponents_path = os.path.join(base_path, "definitions", "json_data", "opponents.json5")
+        
+        # CLI-Simulation importieren und ausführen
+        from src.ui.cli_main_loop import run_simulation
+        run_simulation(characters_path, skills_path, opponents_path)
+        
+    except Exception as e:
+        logger.exception(f"Fehler im automatischen Modus: {str(e)}")
+
+
+def run_train_mode() -> None:
+    """
+    Startet das RL-Training.
+    Diese Funktion ist ein Platzhalter und wird später implementiert.
+    """
+    logger = logging.getLogger('rpg.main')
+    logger.info("Starte RL-Training")
+    logger.warning("Der Trainingsmodus ist noch nicht implementiert!")
+
+
+def run_evaluate_mode() -> None:
+    """
+    Evaluiert ein trainiertes RL-Modell.
+    Diese Funktion ist ein Platzhalter und wird später implementiert.
+    """
+    logger = logging.getLogger('rpg.main')
+    logger.info("Starte RL-Evaluierung")
+    logger.warning("Der Evaluierungsmodus ist noch nicht implementiert!")
+
+
+def main() -> None:
+    """
+    Hauptfunktion des Programms.
+    Analysiert Argumente und startet das Spiel im entsprechenden Modus.
+    """
+    args = parse_args()
+    
+    # Logger einrichten
+    logger = setup_logging('rpg')
+    
+    # Log-Level überschreiben, falls angegeben
+    if args.log_level:
+        logger.setLevel(getattr(logging, args.log_level))
+    
+    # Konfiguration laden
+    config = get_config()
+    
+    # Wichtige Informationen loggen
+    logger.info(f"Python RPG gestartet im Modus: {args.mode}")
+    logger.info(f"Python-Version: {sys.version}")
+    logger.debug(f"Konfiguration geladen: {config.get('game_settings')}")
+    
+    # Je nach Modus die entsprechende Funktion aufrufen
+    try:
+        if args.mode == 'manual':
+            run_manual_mode()
+        elif args.mode == 'auto':
+            run_auto_mode(args.players, args.encounters)
+        elif args.mode == 'train':
+            run_train_mode()
+        elif args.mode == 'evaluate':
+            run_evaluate_mode()
+        else:
+            logger.error(f"Ungültiger Modus: {args.mode}")
+            sys.exit(1)
+        
+    except KeyboardInterrupt:
+        logger.info("Programm durch Benutzer abgebrochen")
+        sys.exit(0)
+    except Exception as e:
+        logger.exception(f"Unerwarteter Fehler: {str(e)}")
+        sys.exit(1)
+    
+    logger.info("Programm normal beendet")
+
+
+if __name__ == "__main__":
+    main()
+
+
+===== src/ai/ai_dispatcher.py =====
+"""
+AI-Dispatcher
+
+Wählt die passende KI-Strategie basierend auf Charakter-Daten.
+"""
+from typing import Dict, Optional, List, Any
+
+from src.game_logic.entities import CharacterInstance
+from src.definitions.skill import SkillDefinition
+from src.ai.strategies.base_strategy import BaseStrategy
+from src.ai.strategies.basic_melee import BasicMeleeStrategy
+from src.ai.strategies.basic_ranged import BasicRangedStrategy
+from src.ai.strategies.support_caster import SupportCasterStrategy
+from src.utils.logging_setup import get_logger
+
+
+# Logger für dieses Modul
+logger = get_logger(__name__)
+
+
+class AIDispatcher:
+    """
+    Verwaltet KI-Strategien und wählt die passende für einen Charakter aus.
+    """
+    
+    def __init__(self):
+        """Initialisiert den AI-Dispatcher."""
+        # Dictionary zum Zwischenspeichern von Strategien für Charaktere
+        self._character_strategies: Dict[str, BaseStrategy] = {}
+        
+        # Strategie-Map: Strategie-ID -> Strategie-Klasse
+        self.strategy_map = {
+            'basic_melee': BasicMeleeStrategy,
+            'basic_ranged': BasicRangedStrategy,
+            'support_caster': SupportCasterStrategy,
+        }
+    
+    def get_strategy_for_character(self, character: CharacterInstance) -> Optional[BaseStrategy]:
+        """
+        Gibt die passende KI-Strategie für einen Charakter zurück.
+        
+        Args:
+            character (CharacterInstance): Der Charakter
+            
+        Returns:
+            Optional[BaseStrategy]: Die KI-Strategie oder None, wenn keine passende gefunden wird
+        """
+        # Prüfen, ob wir bereits eine Strategie für diesen Charakter haben
+        if character.id in self._character_strategies:
+            return self._character_strategies[character.id]
+        
+        # Strategie basierend auf AI-Strategy-Attribut wählen
+        if hasattr(character, 'ai_strategy') and character.ai_strategy:
+            strategy_id = character.ai_strategy
+            strategy_class = self.strategy_map.get(strategy_id)
+            
+            if strategy_class:
+                strategy = strategy_class(character)
+                self._character_strategies[character.id] = strategy
+                logger.debug(f"Strategie '{strategy_id}' für {character.name} gewählt")
+                return strategy
+        
+        # Fallback: Strategie basierend auf Tags wählen
+        if character.has_tag("CASTER") and character.has_tag("SUPPORT"):
+            strategy = SupportCasterStrategy(character)
+        elif character.has_tag("RANGED"):
+            strategy = BasicRangedStrategy(character)
+        else:
+            # Standardmäßig Nahkampf-Strategie
+            strategy = BasicMeleeStrategy(character)
+        
+        self._character_strategies[character.id] = strategy
+        logger.debug(f"Fallback-Strategie '{strategy.__class__.__name__}' für {character.name} gewählt")
+        return strategy
+    
+    def choose_action(self, character: CharacterInstance, 
+                      allies: List[CharacterInstance], 
+                      enemies: List[CharacterInstance],
+                      available_skills: Dict[str, SkillDefinition]):
+        """
+        Wählt eine Aktion für einen Charakter basierend auf seiner KI-Strategie.
+        
+        Args:
+            character (CharacterInstance): Der Charakter, für den eine Aktion gewählt wird
+            allies (List[CharacterInstance]): Liste der verbündeten Charaktere
+            enemies (List[CharacterInstance]): Liste der feindlichen Charaktere
+            available_skills (Dict[str, SkillDefinition]): Verfügbare Skills mit ihren Definitionen
+            
+        Returns:
+            Tuple: (gewählter Skill, Hauptziel, sekundäre Ziele) oder (None, None, []), wenn keine Aktion möglich ist
+        """
+        strategy = self.get_strategy_for_character(character)
+        if not strategy:
+            logger.warning(f"Keine KI-Strategie für {character.name} gefunden")
+            return None, None, []
+        
+        # Strategisch Aktion wählen
+        return strategy.choose_action(allies, enemies, available_skills)
+
+
+# Globaler AI-Dispatcher
+_ai_dispatcher = AIDispatcher()
+
+
+def get_ai_dispatcher() -> AIDispatcher:
+    """
+    Gibt die globale Instanz des AI-Dispatchers zurück.
+    
+    Returns:
+        AIDispatcher: Die globale Instanz
+    """
+    return _ai_dispatcher
+
+
+===== src/ai/__init__.py =====
+"""
+AI Paket
+
+Enthält KI-Strategien und -Logik für Gegner im Spiel.
+"""
+
+
+===== src/ai/strategies/support_caster.py =====
+"""
+Support-Caster-Strategie
+
+Implementiert eine KI-Strategie für Unterstützungs-Zauberwirker.
+"""
+import random
+from typing import List, Optional, Dict, Any, Tuple
+
+from src.game_logic.entities import CharacterInstance
+from src.definitions.skill import SkillDefinition
+from src.ai.strategies.base_strategy import BaseStrategy
+from src.utils.logging_setup import get_logger
+
+
+# Logger für dieses Modul
+logger = get_logger(__name__)
+
+
+class SupportCasterStrategy(BaseStrategy):
+    """
+    KI-Strategie für Unterstützer und Heiler.
+    
+    Diese Strategie priorisiert:
+    1. Heilung von verletzten Verbündeten
+    2. Unterstützungszauber auf Verbündete
+    3. Schwächungszauber auf Gegner
+    4. Direkte Angriffe als letzte Wahl
+    """
+    
+    def choose_action(self, allies: List[CharacterInstance], enemies: List[CharacterInstance], 
+                      available_skills: Dict[str, SkillDefinition]) -> Tuple[Optional[SkillDefinition], 
+                                                                            Optional[CharacterInstance], 
+                                                                            List[CharacterInstance]]:
+        """
+        Wählt eine Aktion basierend auf der aktuellen Kampfsituation aus.
+        
+        Args:
+            allies (List[CharacterInstance]): Liste der verbündeten Charaktere
+            enemies (List[CharacterInstance]): Liste der feindlichen Charaktere
+            available_skills (Dict[str, SkillDefinition]): Verfügbare Skills mit ihren Definitionen
+            
+        Returns:
+            Tuple[Optional[SkillDefinition], Optional[CharacterInstance], List[CharacterInstance]]: 
+            Der gewählte Skill, das Hauptziel und sekundäre Ziele
+        """
+        if not self.character.can_act():
+            logger.debug(f"{self.character.name} kann nicht handeln")
+            return None, None, []
+        
+        # Gültige Ziele finden
+        valid_enemies = self._get_valid_targets(enemies)
+        valid_allies = self._get_valid_targets(allies)
+        
+        if not valid_enemies and not valid_allies:
+            logger.debug(f"{self.character.name} hat keine gültigen Ziele")
+            return None, None, []
+        
+        # Verfügbare Skills kategorisieren
+        healing_skills = []
+        buff_skills = []
+        debuff_skills = []
+        attack_skills = []
+        
+        for skill_id, skill in available_skills.items():
+            if not self._can_use_skill(skill):
+                continue
+                
+            if 'base_healing' in skill.effects:
+                healing_skills.append(skill)
+            elif skill.is_self_effect() or (skill.applies_effects and any(e.id.endswith('_UP') for e in skill.applies_effects)):
+                buff_skills.append(skill)
+            elif skill.applies_effects and any(e.id.endswith('_DOWN') or e.id in ('STUNNED', 'SLOWED', 'WEAKENED') for e in skill.applies_effects):
+                debuff_skills.append(skill)
+            elif 'base_damage' in skill.effects or skill.get_base_damage() is not None:
+                attack_skills.append(skill)
+        
+        # Entscheidungslogik
+        chosen_skill = None
+        target = None
+        secondary_targets = []
+        
+        # 1. Prüfen, ob ein Verbündeter stark verletzt ist (< 50% HP)
+        # und ob wir einen Heilzauber haben
+        wounded_allies = [ally for ally in valid_allies if ally.hp < ally.get_max_hp() * 0.5]
+        
+        if wounded_allies and healing_skills:
+            # Healing-Priorität: am stärksten verletzter Verbündeter
+            chosen_skill = random.choice(healing_skills)
+            target = self._get_lowest_health_percentage_target(wounded_allies)
+            logger.debug(f"{self.character.name} heilt {target.name} mit {chosen_skill.name}")
+        
+        # 2. Prüfen, ob wir Buff-Skills haben und jemand diese gebrauchen könnte
+        elif buff_skills and valid_allies and random.random() < 0.7:  # 70% Chance für Buff-Priorisierung
+            chosen_skill = random.choice(buff_skills)
+            
+            # Ziel für Buff: Entweder self-effect oder stärkster Verbündeter
+            if chosen_skill.is_self_effect():
+                target = self.character
+            else:
+                # Einen starken Verbündeten auswählen (z.B. mit hohem Schaden)
+                target = self._get_strongest_target(valid_allies)
+            
+            logger.debug(f"{self.character.name} verstärkt {target.name} mit {chosen_skill.name}")
+        
+        # 3. Prüfen, ob wir Debuff-Skills haben und Gegner da sind
+        elif debuff_skills and valid_enemies and random.random() < 0.6:  # 60% Chance für Debuff-Priorisierung
+            chosen_skill = random.choice(debuff_skills)
+            
+            # Priorität für Debuff: starke Gegner oder Caster
+            caster_enemies = self._filter_targets_by_tag(valid_enemies, "CASTER")
+            
+            if caster_enemies and random.random() < 0.7:
+                target = self._get_strongest_target(caster_enemies)
+            else:
+                target = self._get_strongest_target(valid_enemies)
+            
+            logger.debug(f"{self.character.name} schwächt {target.name} mit {chosen_skill.name}")
+            
+            # Bei Flächeneffekten sekundäre Ziele hinzufügen
+            if chosen_skill.is_area_effect() and len(valid_enemies) > 1:
+                area_type = chosen_skill.get_area_type()
+                
+                if area_type == 'SPLASH':
+                    secondary_targets = [t for t in valid_enemies if t != target]
+        
+        # 4. Als letzte Option: Angriff, falls möglich
+        elif attack_skills and valid_enemies:
+            chosen_skill = random.choice(attack_skills)
+            
+            # Priorität für Angriff: schwache oder verletzliche Gegner
+            if random.random() < 0.6:
+                target = self._get_weakest_target(valid_enemies)
+            else:
+                target = self._get_random_target(valid_enemies)
+            
+            logger.debug(f"{self.character.name} greift {target.name} mit {chosen_skill.name} an")
+            
+            # Bei Flächeneffekten sekundäre Ziele hinzufügen
+            if chosen_skill.is_area_effect() and len(valid_enemies) > 1:
+                area_type = chosen_skill.get_area_type()
+                
+                if area_type == 'SPLASH':
+                    secondary_targets = [t for t in valid_enemies if t != target]
+        
+        # Wenn keine passende Aktion gefunden wurde
+        if not chosen_skill:
+            # Einfach irgendeinen verfügbaren Skill wählen
+            all_usable_skills = [s for s_id, s in available_skills.items() if self._can_use_skill(s)]
+            
+            if not all_usable_skills:
+                logger.debug(f"{self.character.name} hat keine verwendbaren Skills")
+                return None, None, []
+            
+            chosen_skill = random.choice(all_usable_skills)
+            
+            # Standard-Ziel basierend auf Skill-Typ wählen
+            if chosen_skill.is_self_effect():
+                target = self.character
+            elif 'base_healing' in chosen_skill.effects:
+                target = self._get_random_target([a for a in valid_allies if a.hp < a.get_max_hp()])
+                target = target or self.character  # Fallback auf selbst, wenn kein verletztes Ziel
+            else:
+                target = self._get_random_target(valid_enemies) if valid_enemies else None
+        
+        if target:
+            logger.debug(f"{self.character.name} (Support-KI) wählt {chosen_skill.name} mit Ziel {target.name}")
+        else:
+            logger.warning(f"{self.character.name} hat Skill {chosen_skill.name} gewählt, aber kein gültiges Ziel gefunden")
+            return None, None, []
+        
+        return chosen_skill, target, secondary_targets
+
+
+===== src/ai/strategies/basic_ranged.py =====
+"""
+Basis-Fernkampf-Strategie
+
+Implementiert eine einfache KI-Strategie für Fernkämpfer.
+"""
+import random
+from typing import List, Optional, Dict, Any, Tuple
+
+from src.game_logic.entities import CharacterInstance
+from src.definitions.skill import SkillDefinition
+from src.ai.strategies.base_strategy import BaseStrategy
+from src.utils.logging_setup import get_logger
+
+
+# Logger für dieses Modul
+logger = get_logger(__name__)
+
+
+class BasicRangedStrategy(BaseStrategy):
+    """
+    Einfache KI-Strategie für Fernkämpfer.
+    
+    Diese Strategie priorisiert:
+    1. Taktische Positionierung (nicht implementiert in dieser Version)
+    2. Schwächere Ziele oder Magier/Heiler
+    3. Skills mit Status-Effekten, wenn verfügbar
+    """
+    
+    def choose_action(self, allies: List[CharacterInstance], enemies: List[CharacterInstance], 
+                      available_skills: Dict[str, SkillDefinition]) -> Tuple[Optional[SkillDefinition], 
+                                                                            Optional[CharacterInstance], 
+                                                                            List[CharacterInstance]]:
+        """
+        Wählt eine Aktion basierend auf der aktuellen Kampfsituation aus.
+        
+        Args:
+            allies (List[CharacterInstance]): Liste der verbündeten Charaktere
+            enemies (List[CharacterInstance]): Liste der feindlichen Charaktere
+            available_skills (Dict[str, SkillDefinition]): Verfügbare Skills mit ihren Definitionen
+            
+        Returns:
+            Tuple[Optional[SkillDefinition], Optional[CharacterInstance], List[CharacterInstance]]: 
+            Der gewählte Skill, das Hauptziel und sekundäre Ziele
+        """
+        if not self.character.can_act():
+            logger.debug(f"{self.character.name} kann nicht handeln")
+            return None, None, []
+        
+        # Gültige Ziele finden
+        valid_targets = self._get_valid_targets(enemies)
+        if not valid_targets:
+            logger.debug(f"{self.character.name} hat keine gültigen Ziele")
+            return None, None, []
+        
+        # Verfügbare Skills sortieren
+        skills_with_effects = []  # Skills mit Statuseffekten
+        normal_attack_skills = []  # Normale Angriffsfertigkeiten
+        other_skills = []  # Andere Skills (Heilung, Buff, etc.)
+        
+        for skill_id, skill in available_skills.items():
+            if self._can_use_skill(skill):
+                if skill.applies_effects and ('base_damage' in skill.effects or skill.get_base_damage() is not None):
+                    skills_with_effects.append(skill)
+                elif 'base_damage' in skill.effects or skill.get_base_damage() is not None:
+                    normal_attack_skills.append(skill)
+                else:
+                    other_skills.append(skill)
+        
+        # Skills mit Status-Effekten bevorzugen, dann normale Angriffe, dann andere
+        all_usable_skills = skills_with_effects + normal_attack_skills + other_skills
+        
+        if not all_usable_skills:
+            logger.debug(f"{self.character.name} hat keine verwendbaren Skills")
+            return None, None, []
+        
+        # Skill-Auswahl-Logik
+        chosen_skill = None
+        
+        # Mit 60% Wahrscheinlichkeit Status-Effekt-Skills verwenden, wenn verfügbar
+        if skills_with_effects and random.random() < 0.6:
+            chosen_skill = random.choice(skills_with_effects)
+        # Mit 30% Wahrscheinlichkeit normale Angriffe verwenden, wenn verfügbar
+        elif normal_attack_skills and random.random() < 0.3:
+            chosen_skill = random.choice(normal_attack_skills)
+        # Sonst zufälligen Skill wählen
+        else:
+            chosen_skill = random.choice(all_usable_skills)
+        
+        # Ziel auswählen
+        target = None
+        secondary_targets = []
+        
+        if chosen_skill.is_self_effect():
+            # Selbst-Effekt
+            target = self.character
+        elif 'base_healing' in chosen_skill.effects:
+            # Heilungs-Skill - den am meisten verletzten Verbündeten auswählen
+            wounded_allies = [ally for ally in allies if ally.hp < ally.get_max_hp() and ally.is_alive()]
+            if wounded_allies:
+                target = self._get_lowest_health_percentage_target(wounded_allies)
+        else:
+            # Angriffs-Skill
+            
+            # Priorität: Magier/Caster > Schwache Ziele > Zufällig
+            caster_targets = self._filter_targets_by_tag(valid_targets, "CASTER")
+            
+            if caster_targets and random.random() < 0.7:
+                # Mit 70% Wahrscheinlichkeit Caster angreifen, wenn vorhanden
+                target = self._get_weakest_target(caster_targets)
+            elif random.random() < 0.6:
+                # Mit 60% Wahrscheinlichkeit das schwächste Ziel wählen
+                target = self._get_weakest_target(valid_targets)
+            else:
+                # Sonst zufälliges Ziel
+                target = self._get_random_target(valid_targets)
+            
+            # Bei Flächeneffekten sekundäre Ziele auswählen
+            if chosen_skill.is_area_effect() and len(valid_targets) > 1:
+                area_type = chosen_skill.get_area_type()
+                
+                if area_type == 'CLEAVE':
+                    # Bei Cleave ein weiteres zufälliges Ziel wählen
+                    other_targets = [t for t in valid_targets if t != target]
+                    if other_targets:
+                        secondary_targets = [random.choice(other_targets)]
+                
+                elif area_type == 'SPLASH':
+                    # Bei Splash alle Ziele im Bereich wählen
+                    # Für Einfachheit: alle anderen Ziele hinzufügen
+                    secondary_targets = [t for t in valid_targets if t != target]
+        
+        logger.debug(f"{self.character.name} (Fernkampf-KI) wählt {chosen_skill.name} mit Ziel {target.name if target else 'keines'}")
+        
+        return chosen_skill, target, secondary_targets
+
+
+===== src/ai/strategies/basic_melee.py =====
+"""
+Basis-Nahkampf-Strategie
+
+Implementiert eine einfache KI-Strategie für Nahkämpfer.
+"""
+import random
+from typing import List, Optional, Dict, Any, Tuple
+
+from src.game_logic.entities import CharacterInstance
+from src.definitions.skill import SkillDefinition
+from src.ai.strategies.base_strategy import BaseStrategy
+from src.utils.logging_setup import get_logger
+
+
+# Logger für dieses Modul
+logger = get_logger(__name__)
+
+
+class BasicMeleeStrategy(BaseStrategy):
+    """
+    Einfache KI-Strategie für Nahkämpfer.
+    
+    Diese Strategie priorisiert:
+    1. Schwache Ziele (geringere HP)
+    2. Offensive Skills gegenüber defensiven
+    3. Stärkere Angriffe, wenn genug Ressourcen vorhanden sind
+    """
+    
+    def choose_action(self, allies: List[CharacterInstance], enemies: List[CharacterInstance], 
+                      available_skills: Dict[str, SkillDefinition]) -> Tuple[Optional[SkillDefinition], 
+                                                                            Optional[CharacterInstance], 
+                                                                            List[CharacterInstance]]:
+        """
+        Wählt eine Aktion basierend auf der aktuellen Kampfsituation aus.
+        
+        Args:
+            allies (List[CharacterInstance]): Liste der verbündeten Charaktere
+            enemies (List[CharacterInstance]): Liste der feindlichen Charaktere
+            available_skills (Dict[str, SkillDefinition]): Verfügbare Skills mit ihren Definitionen
+            
+        Returns:
+            Tuple[Optional[SkillDefinition], Optional[CharacterInstance], List[CharacterInstance]]: 
+            Der gewählte Skill, das Hauptziel und sekundäre Ziele
+        """
+        if not self.character.can_act():
+            logger.debug(f"{self.character.name} kann nicht handeln")
+            return None, None, []
+        
+        # Gültige Ziele finden
+        valid_targets = self._get_valid_targets(enemies)
+        if not valid_targets:
+            logger.debug(f"{self.character.name} hat keine gültigen Ziele")
+            return None, None, []
+        
+        # Verfügbare Skills sortieren (offensive zuerst)
+        offensive_skills = []
+        other_skills = []
+        
+        for skill_id, skill in available_skills.items():
+            if self._can_use_skill(skill):
+                if 'base_damage' in skill.effects or skill.get_base_damage() is not None:
+                    offensive_skills.append(skill)
+                else:
+                    other_skills.append(skill)
+        
+        # Offensive Skills nach Schaden sortieren (stärkste zuerst)
+        offensive_skills.sort(
+            key=lambda s: (s.get_base_damage() or 0) * s.get_multiplier(),
+            reverse=True
+        )
+        
+        # Alle verfügbaren Skills kombinieren
+        all_usable_skills = offensive_skills + other_skills
+        
+        if not all_usable_skills:
+            logger.debug(f"{self.character.name} hat keine verwendbaren Skills")
+            return None, None, []
+        
+        # Skill auswählen (mit 70% Chance den stärksten Angriff, sonst zufällig)
+        if random.random() < 0.7 and offensive_skills:
+            chosen_skill = offensive_skills[0]
+        else:
+            chosen_skill = random.choice(all_usable_skills)
+        
+        # Ziel auswählen
+        target = None
+        secondary_targets = []
+        
+        if chosen_skill.is_self_effect():
+            # Selbst-Effekt
+            target = self.character
+        elif 'base_healing' in chosen_skill.effects:
+            # Heilungs-Skill - den am meisten verletzten Verbündeten auswählen
+            wounded_allies = [ally for ally in allies if ally.hp < ally.get_max_hp() and ally.is_alive()]
+            if wounded_allies:
+                target = self._get_lowest_health_percentage_target(wounded_allies)
+        else:
+            # Angriffs-Skill - mit 80% Chance das schwächste Ziel, sonst zufällig
+            if random.random() < 0.8:
+                target = self._get_weakest_target(valid_targets)
+            else:
+                target = self._get_random_target(valid_targets)
+            
+            # Bei Flächeneffekten sekundäre Ziele auswählen
+            if chosen_skill.is_area_effect() and len(valid_targets) > 1:
+                area_type = chosen_skill.get_area_type()
+                
+                if area_type == 'CLEAVE':
+                    # Bei Cleave ein weiteres zufälliges Ziel wählen
+                    other_targets = [t for t in valid_targets if t != target]
+                    if other_targets:
+                        secondary_targets = [random.choice(other_targets)]
+                
+                elif area_type == 'SPLASH':
+                    # Bei Splash alle Ziele im Bereich wählen
+                    # Für Einfachheit: alle anderen Ziele hinzufügen
+                    secondary_targets = [t for t in valid_targets if t != target]
+        
+        logger.debug(f"{self.character.name} (Nahkampf-KI) wählt {chosen_skill.name} mit Ziel {target.name if target else 'keines'}")
+        
+        return chosen_skill, target, secondary_targets
+
+
+===== src/ai/strategies/__init__.py =====
+"""
+Strategien Unterpaket
+
+Enthält verschiedene regelbasierte KI-Strategien für unterschiedliche Gegnertypen.
+"""
+
+
+===== src/ai/strategies/base_strategy.py =====
+"""
+Basis-Strategie
+
+Definiert die abstrakte Basisklasse für alle KI-Strategien.
+"""
+from abc import ABC, abstractmethod
+from typing import List, Optional, Dict, Any, Tuple
+
+from src.game_logic.entities import CharacterInstance
+from src.definitions.skill import SkillDefinition
+from src.utils.logging_setup import get_logger
+
+
+# Logger für dieses Modul
+logger = get_logger(__name__)
+
+
+class BaseStrategy(ABC):
+    """
+    Abstrakte Basisklasse für alle KI-Strategien.
+    
+    Alle konkreten KI-Strategien müssen von dieser Klasse erben und
+    die abstrakte Methode choose_action implementieren.
+    """
+    
+    def __init__(self, character: CharacterInstance):
+        """
+        Initialisiert die Strategie für einen bestimmten Charakter.
+        
+        Args:
+            character (CharacterInstance): Der Charakter, der diese Strategie verwendet
+        """
+        self.character = character
+        self.name = self.__class__.__name__
+    
+    @abstractmethod
+    def choose_action(self, allies: List[CharacterInstance], enemies: List[CharacterInstance], 
+                      available_skills: Dict[str, SkillDefinition]) -> Tuple[Optional[SkillDefinition], 
+                                                                            Optional[CharacterInstance], 
+                                                                            List[CharacterInstance]]:
+        """
+        Wählt eine Aktion basierend auf der aktuellen Kampfsituation aus.
+        
+        Args:
+            allies (List[CharacterInstance]): Liste der verbündeten Charaktere
+            enemies (List[CharacterInstance]): Liste der feindlichen Charaktere
+            available_skills (Dict[str, SkillDefinition]): Verfügbare Skills mit ihren Definitionen
+            
+        Returns:
+            Tuple[Optional[SkillDefinition], Optional[CharacterInstance], List[CharacterInstance]]: 
+            Der gewählte Skill, das Hauptziel und sekundäre Ziele (für Flächeneffekte)
+        """
+        pass
+    
+    def _get_valid_targets(self, characters: List[CharacterInstance]) -> List[CharacterInstance]:
+        """
+        Filtert die Liste der Charaktere nach gültigen Zielen.
+        
+        Args:
+            characters (List[CharacterInstance]): Liste der zu filternden Charaktere
+            
+        Returns:
+            List[CharacterInstance]: Liste der gültigen Ziele
+        """
+        return [char for char in characters if char.can_be_targeted()]
+    
+    def _get_weakest_target(self, targets: List[CharacterInstance]) -> Optional[CharacterInstance]:
+        """
+        Findet das schwächste Ziel (mit den wenigsten HP) in der Liste.
+        
+        Args:
+            targets (List[CharacterInstance]): Liste der Ziele
+            
+        Returns:
+            Optional[CharacterInstance]: Das schwächste Ziel oder None, wenn keine Ziele vorhanden sind
+        """
+        if not targets:
+            return None
+        
+        return min(targets, key=lambda char: char.hp)
+    
+    def _get_strongest_target(self, targets: List[CharacterInstance]) -> Optional[CharacterInstance]:
+        """
+        Findet das stärkste Ziel (mit den meisten HP) in der Liste.
+        
+        Args:
+            targets (List[CharacterInstance]): Liste der Ziele
+            
+        Returns:
+            Optional[CharacterInstance]: Das stärkste Ziel oder None, wenn keine Ziele vorhanden sind
+        """
+        if not targets:
+            return None
+        
+        return max(targets, key=lambda char: char.hp)
+    
+    def _get_lowest_health_percentage_target(self, targets: List[CharacterInstance]) -> Optional[CharacterInstance]:
+        """
+        Findet das Ziel mit dem niedrigsten HP-Prozentsatz.
+        
+        Args:
+            targets (List[CharacterInstance]): Liste der Ziele
+            
+        Returns:
+            Optional[CharacterInstance]: Das Ziel mit dem niedrigsten HP-Prozentsatz oder None, wenn keine Ziele vorhanden sind
+        """
+        if not targets:
+            return None
+        
+        return min(targets, key=lambda char: char.hp / char.get_max_hp())
+    
+    def _get_random_target(self, targets: List[CharacterInstance]) -> Optional[CharacterInstance]:
+        """
+        Wählt ein zufälliges Ziel aus der Liste aus.
+        
+        Args:
+            targets (List[CharacterInstance]): Liste der Ziele
+            
+        Returns:
+            Optional[CharacterInstance]: Ein zufälliges Ziel oder None, wenn keine Ziele vorhanden sind
+        """
+        import random
+        if not targets:
+            return None
+        
+        return random.choice(targets)
+    
+    def _filter_targets_by_tag(self, targets: List[CharacterInstance], tag: str) -> List[CharacterInstance]:
+        """
+        Filtert die Liste der Ziele nach einem bestimmten Tag.
+        
+        Args:
+            targets (List[CharacterInstance]): Liste der Ziele
+            tag (str): Der zu filternde Tag
+            
+        Returns:
+            List[CharacterInstance]: Liste der Ziele mit dem angegebenen Tag
+        """
+        return [char for char in targets if char.has_tag(tag)]
+    
+    def _can_use_skill(self, skill: SkillDefinition) -> bool:
+        """
+        Prüft, ob der Charakter einen bestimmten Skill verwenden kann.
+        
+        Args:
+            skill (SkillDefinition): Der zu prüfende Skill
+            
+        Returns:
+            bool: True, wenn der Skill verwendet werden kann, sonst False
+        """
+        return self.character.has_enough_resource(skill)
+
+
+===== src/ai/strategies/__pycache__/base_strategy.cpython-312.pyc (Fehler beim Lesen) =====
+
+===== src/ai/strategies/__pycache__/basic_melee.cpython-312.pyc (Fehler beim Lesen) =====
+
+===== src/ai/strategies/__pycache__/__init__.cpython-312.pyc (Fehler beim Lesen) =====
+
+===== src/ai/strategies/__pycache__/support_caster.cpython-312.pyc (Fehler beim Lesen) =====
+
+===== src/ai/strategies/__pycache__/basic_ranged.cpython-312.pyc (Fehler beim Lesen) =====
+
+===== src/ai/__pycache__/__init__.cpython-312.pyc (Fehler beim Lesen) =====
+
+===== src/ai/__pycache__/ai_dispatcher.cpython-312.pyc (Fehler beim Lesen) =====
+
+===== src/utils/__init__.py =====
+"""
+Utils Paket
+
+Enthält Hilfsmodule und -funktionen für das gesamte Projekt.
+"""
+
+
+===== src/utils/test_config_logging.py =====
+"""
+Einfache Test-Datei, um das Konfiguration- und Logging-Setup zu überprüfen.
+"""
+import sys
+import os
+
+# Stellen sicher, dass src im Python-Pfad ist
+sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
+
+from src.utils.logging_setup import get_logger
+from src.config.config import get_config
+from src.definitions import loader
+
+
+def main():
+    # Logger holen
+    logger = get_logger("test_script")
+    logger.info("Test des Konfiguration- und Logging-Setups")
+    
+    # Konfiguration testen
+    config = get_config()
+    logger.info(f"Geladene Spieleinstellungen: {config.game_settings}")
+    
+    # Pfade zu den JSON5-Dateien
+    base_path = os.path.dirname(os.path.dirname(__file__))
+    characters_path = os.path.join(base_path, "definitions", "json_data", "characters.json5")
+    skills_path = os.path.join(base_path, "definitions", "json_data", "skills.json5")
+    opponents_path = os.path.join(base_path, "definitions", "json_data", "opponents.json5")
+    
+    # Laden der JSON5-Dateien testen
+    try:
+        logger.info("Versuche characters.json5 zu laden...")
+        characters = loader.load_characters(characters_path)
+        logger.info(f"Erfolgreich {len(characters)} Charaktere geladen!")
+        
+        logger.info("Versuche skills.json5 zu laden...")
+        skills = loader.load_skills(skills_path)
+        logger.info(f"Erfolgreich {len(skills)} Skills geladen!")
+        
+        logger.info("Versuche opponents.json5 zu laden...")
+        opponents = loader.load_opponents(opponents_path)
+        logger.info(f"Erfolgreich {len(opponents)} Gegner geladen!")
+        
+        # Ein paar Details ausgeben
+        logger.info("\n--- Charakter-Details ---")
+        for char_id, char in characters.items():
+            logger.info(f"Charakter: {char.name} (ID: {char_id})")
+            logger.info(f"  STR: {char.get_attribute('STR')}, DEX: {char.get_attribute('DEX')}")
+            logger.info(f"  Skills: {char.skills}")
+        
+        logger.info("\n--- Skill-Details ---")
+        for skill_id, skill in skills.items():
+            logger.info(f"Skill: {skill.name} (ID: {skill_id})")
+            logger.info(f"  Kosten: {skill.get_cost_value()} {skill.get_cost_type()}")
+            
+        logger.info("\n--- Gegner-Details ---")
+        for opp_id, opp in opponents.items():
+            logger.info(f"Gegner: {opp.name} (ID: {opp_id})")
+            logger.info(f"  Level: {opp.level}, XP: {opp.xp_reward}")
+            logger.info(f"  KI-Strategie: {opp.ai_strategy}")
+        
+        logger.info("\nAlle Tests erfolgreich!")
+        
+    except Exception as e:
+        logger.exception(f"Test fehlgeschlagen: {str(e)}")
+
+
+if __name__ == "__main__":
+    main()
+
+
+===== src/utils/logging_setup.py =====
+"""
+Logging-Setup
+
+Konfiguriert das Logging-System für das gesamte Projekt.
+"""
+import os
+import logging
+from logging.handlers import RotatingFileHandler
+from typing import Optional
+
+from src.config.config import get_config
+
+
+def setup_logging(logger_name: str = None) -> logging.Logger:
+    """
+    Richtet das Logging-System ein und gibt einen Logger zurück.
+    
+    Args:
+        logger_name (str, optional): Der Name des Loggers (Standardmäßig der Stammlogger)
+        
+    Returns:
+        logging.Logger: Der konfigurierte Logger
+    """
+    config = get_config()
+    log_config = config.logging
+    
+    # Standardwerte, falls nicht in der Konfiguration vorhanden
+    log_level = getattr(logging, log_config.get('level', 'INFO'))
+    file_level = getattr(logging, log_config.get('file_level', 'DEBUG'))
+    console_level = getattr(logging, log_config.get('console_level', 'INFO'))
+    log_format = log_config.get('format', '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    date_format = log_config.get('date_format', '%Y-%m-%d %H:%M:%S')
+    log_dir = log_config.get('log_dir', 'logs')
+    log_file = log_config.get('log_file', 'rpg.log')
+    
+    # Logger erstellen oder abrufen
+    logger = logging.getLogger(logger_name)
+    
+    # Nur konfigurieren, wenn noch keine Handler vorhanden sind
+    if not logger.handlers:
+        logger.setLevel(log_level)
+        formatter = logging.Formatter(log_format, date_format)
+        
+        # Konsolen-Handler
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(console_level)
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
+        
+        # Datei-Handler (mit Rotation)
+        try:
+            # Verzeichnis erstellen, falls es nicht existiert
+            os.makedirs(log_dir, exist_ok=True)
+            log_path = os.path.join(log_dir, log_file)
+            
+            # Rotierender Datei-Handler (maximal 5MB pro Datei, maximal 5 Backup-Dateien)
+            file_handler = RotatingFileHandler(
+                log_path, maxBytes=5*1024*1024, backupCount=5, encoding='utf-8'
+            )
+            file_handler.setLevel(file_level)
+            file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)
+        except Exception as e:
+            # Wenn das Schreiben in die Logdatei fehlschlägt, loggen wir den Fehler in die Konsole
+            logger.error(f"Konnte Logdatei nicht einrichten: {str(e)}")
+    
+    return logger
+
+
+def get_logger(module_name: Optional[str] = None) -> logging.Logger:
+    """
+    Gibt einen für das Modul konfigurierten Logger zurück.
+    
+    Args:
+        module_name (Optional[str]): Der Name des Moduls (standardmäßig __name__)
+        
+    Returns:
+        logging.Logger: Der konfigurierte Logger für das Modul
+    """
+    logger_name = module_name if module_name else 'rpg'
+    return setup_logging(logger_name)
+
+
+===== src/utils/__pycache__/__init__.cpython-312.pyc (Fehler beim Lesen) =====
+
+===== src/utils/__pycache__/logging_setup.cpython-312.pyc (Fehler beim Lesen) =====
+
+===== src/config/__init__.py =====
+"""
+Config Paket
+
+Enthält die zentrale Konfiguration des Spiels.
+"""
+
+
+===== src/config/config.py =====
+"""
+Zentrale Konfiguration
+
+Lädt die Konfigurationsdaten aus settings.json5 und stellt sie zur Verfügung.
+"""
+import os
+import json5
+from typing import Dict, Any
+
+# Standardwerte für den Fall, dass einige Einstellungen in der Datei fehlen
+DEFAULT_CONFIG = {
+    "game_settings": {
+        "min_damage": 1,
+        "base_weapon_damage": 5,
+        "hit_chance_base": 90,
+        "hit_chance_accuracy_factor": 3,
+        "hit_chance_evasion_factor": 2,
+        "hit_chance_min": 5,
+        "hit_chance_max": 95,
+        "xp_level_base": 100,
+        "xp_level_factor": 1.5,
+    },
+    "logging": {
+        "level": "INFO",
+        "file_level": "DEBUG",
+        "console_level": "INFO",
+        "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        "date_format": "%Y-%m-%d %H:%M:%S",
+        "log_dir": "logs",
+        "log_file": "rpg.log",
+    },
+    "rl": {
+        "train": {
+            "total_timesteps": 100000,
+            "log_interval": 100,
+            "n_eval_episodes": 10,
+            "eval_interval": 1000,
+        },
+        "env": {
+            "max_steps": 100,
+            "reward_win": 100,
+            "reward_lose": -100,
+            "reward_damage_dealt_factor": 0.1,
+            "reward_damage_taken_factor": -0.1,
+        },
+    },
+}
+
+
+class Config:
+    """
+    Zentrale Konfigurationsklasse, die Einstellungen aus settings.json5 lädt.
+    """
+    _instance = None
+    _config = {}
+    
+    def __new__(cls):
+        """
+        Singleton-Pattern: Stellt sicher, dass nur eine Instanz existiert.
+        """
+        if cls._instance is None:
+            cls._instance = super(Config, cls).__new__(cls)
+            cls._instance._load_config()
+        return cls._instance
+    
+    def _load_config(self):
+        """
+        Lädt die Konfigurationsdaten aus der settings.json5-Datei.
+        Wenn die Datei nicht existiert oder fehlerhaft ist, werden Standardwerte verwendet.
+        """
+        settings_path = os.path.join(os.path.dirname(__file__), 'settings.json5')
+        try:
+            if os.path.exists(settings_path):
+                with open(settings_path, 'r', encoding='utf-8') as file:
+                    self._config = json5.load(file)
+            else:
+                print(f"WARNUNG: Konfigurationsdatei {settings_path} nicht gefunden. Verwende Standardwerte.")
+                self._config = DEFAULT_CONFIG.copy()
+        except Exception as e:
+            print(f"FEHLER beim Laden der Konfiguration: {str(e)}. Verwende Standardwerte.")
+            self._config = DEFAULT_CONFIG.copy()
+    
+    def get(self, section: str, key: str = None, default: Any = None) -> Any:
+        """
+        Gibt einen Konfigurationswert zurück.
+        
+        Args:
+            section (str): Der Abschnitt der Konfiguration (z.B. 'game_settings')
+            key (str, optional): Der Schlüssel innerhalb des Abschnitts
+            default (Any, optional): Der Standardwert, wenn der Wert nicht gefunden wird
+            
+        Returns:
+            Any: Der Konfigurationswert oder der Standardwert
+        """
+        if section not in self._config:
+            if section in DEFAULT_CONFIG:
+                return DEFAULT_CONFIG[section] if key is None else DEFAULT_CONFIG[section].get(key, default)
+            return default
+        
+        if key is None:
+            return self._config[section]
+        
+        if key in self._config[section]:
+            return self._config[section][key]
+        
+        if section in DEFAULT_CONFIG and key in DEFAULT_CONFIG[section]:
+            return DEFAULT_CONFIG[section][key]
+        
+        return default
+    
+    @property
+    def game_settings(self) -> Dict[str, Any]:
+        """Gibt die Spieleinstellungen zurück."""
+        return self.get('game_settings', default={})
+    
+    @property
+    def logging(self) -> Dict[str, Any]:
+        """Gibt die Logging-Einstellungen zurück."""
+        return self.get('logging', default={})
+    
+    @property
+    def rl(self) -> Dict[str, Any]:
+        """Gibt die RL-Einstellungen zurück."""
+        return self.get('rl', default={})
+    
+    def reload(self):
+        """
+        Lädt die Konfiguration neu.
+        Nützlich, wenn die Konfigurationsdatei während der Laufzeit geändert wurde.
+        """
+        self._load_config()
+
+
+# Globale Konfigurationsinstanz
+config = Config()
+
+
+def get_config() -> Config:
+    """
+    Gibt die globale Konfigurationsinstanz zurück.
+    
+    Returns:
+        Config: Die globale Konfigurationsinstanz
+    """
+    return config
+
+
+===== src/config/settings.json5 =====
+{
+  // Konfigurationen für verschiedene Teile des Spiels
+  "game_settings": {
+    "min_damage": 1,
+    "base_weapon_damage": 5,
+    
+    // Trefferchance-Konfiguration
+    "hit_chance_base": 90,       // Basis-Trefferchance in Prozent
+    "hit_chance_accuracy_factor": 3,  // Multiplikator für Genauigkeitsbonus
+    "hit_chance_evasion_factor": 2,   // Multiplikator für Ausweichbonus
+    "hit_chance_min": 5,         // Minimale Trefferchance in Prozent
+    "hit_chance_max": 95,        // Maximale Trefferchance in Prozent
+    
+    // XP und Level-Konfiguration
+    "xp_level_base": 100,        // Basis-XP für Level 2
+    "xp_level_factor": 1.5,      // Exponentielle Zunahme der XP pro Level
+    
+    // Ressourcenregeneration pro Runde
+    "resource_regen_percent": 5  // 5% der maximal verfügbaren Ressource wird pro Runde regeneriert
+  },
+  
+  // Logging-Konfiguration
+  "logging": {
+    "level": "INFO",           // Log-Level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "date_format": "%Y-%m-%d %H:%M:%S",
+    "file": "game.log"         // Pfad zur Log-Datei
+  },
+  
+  // Reinforcement Learning (RL) Konfiguration
+  "rl_settings": {
+    "observation_space": {
+      "include_allies": true,   // Verbündete in Beobachtungen einbeziehen
+      "include_enemies": true,  // Gegner in Beobachtungen einbeziehen
+      "max_allies": 4,          // Maximale Anzahl an Verbündeten in der Beobachtung
+      "max_enemies": 6          // Maximale Anzahl an Gegnern in der Beobachtung
+    },
+    "reward_settings": {
+      "victory_reward": 100.0,  // Belohnung für einen Sieg
+      "defeat_penalty": -50.0,  // Strafe für eine Niederlage
+      "damage_dealt_factor": 0.1, // Multiplikator für verursachten Schaden
+      "damage_taken_factor": -0.1, // Multiplikator für erlittenen Schaden
+      "healing_factor": 0.2,    // Multiplikator für durchgeführte Heilung
+      "self_damage_factor": -0.5, // Multiplikator für selbst zugefügten Schaden
+      "time_penalty": -0.1      // Zeitstrafe pro Runde (um schnelle Lösungen zu fördern)
+    },
+    "training": {
+      "learning_rate": 0.0003,  // Lernrate für den RL-Algorithmus
+      "batch_size": 64,         // Batch-Größe für Training
+      "buffer_size": 100000,    // Größe des Replay-Puffers
+      "exploration_fraction": 0.1, // Anteil der Gesamtschritte für Exploration-Verringerung
+      "exploration_initial": 1.0, // Anfangswert für Explorations-Epsilon
+      "exploration_final": 0.05, // Endwert für Explorations-Epsilon
+      "gamma": 0.99            // Discount-Faktor für zukünftige Belohnungen
+    }
+  }
+}
+
+
+===== src/config/__pycache__/__init__.cpython-312.pyc (Fehler beim Lesen) =====
+
+===== src/config/__pycache__/config.cpython-312.pyc (Fehler beim Lesen) =====
+
+===== src/ui/cli_main_loop.py =====
+"""
+CLI-Hauptschleife
+
+Implementiert die Hauptschleife für die automatische Simulation.
+"""
+import time
+import random
+from typing import List, Dict, Any, Optional, Tuple
+
+from src.definitions import loader
+from src.game_logic.entities import CharacterInstance
+from src.game_logic.combat import CombatEncounter
+from src.game_logic.leveling import get_leveling_service
+from src.ai.ai_dispatcher import get_ai_dispatcher
+from src.ui.cli_output import get_cli_output
+from src.utils.logging_setup import get_logger
+
+
+# Logger für dieses Modul
+logger = get_logger(__name__)
+
+
+class CLISimulation:
+    """
+    Verwaltet die automatische Simulation im CLI-Modus.
+    """
+    
+    def __init__(self, characters_path: str, skills_path: str, opponents_path: str):
+        """
+        Initialisiert die Simulation.
+        
+        Args:
+            characters_path (str): Pfad zur characters.json5-Datei
+            skills_path (str): Pfad zur skills.json5-Datei
+            opponents_path (str): Pfad zur opponents.json5-Datei
+        """
+        self.characters_path = characters_path
+        self.skills_path = skills_path
+        self.opponents_path = opponents_path
+        
+        self.cli_output = get_cli_output()
+        self.leveling_service = get_leveling_service()
+        self.ai_dispatcher = get_ai_dispatcher()
+        
+        # Daten laden
+        self.character_templates = loader.load_characters(characters_path)
+        self.skill_definitions = loader.load_skills(skills_path)
+        self.opponent_templates = loader.load_opponents(opponents_path)
+        
+        # Aktive Spieler und Gegner
+        self.players: List[CharacterInstance] = []
+        self.current_encounter: Optional[CombatEncounter] = None
+    
+    def start_simulation(self, num_players: int = 1, num_encounters: int = 3) -> None:
+        """
+        Startet die Simulation.
+        
+        Args:
+            num_players (int): Anzahl der Spielercharaktere
+            num_encounters (int): Anzahl der zu simulierenden Begegnungen
+        """
+        self.cli_output.clear_screen()
+        self.cli_output.print_header("RPG Simulation gestartet")
+        
+        # Spielercharaktere erstellen
+        self._create_player_characters(num_players)
+        
+        # Mehrere Begegnungen simulieren
+        for i in range(num_encounters):
+            self.cli_output.print_header(f"Begegnung {i+1}/{num_encounters}")
+            
+            # Zufällige Gegner generieren
+            opponents = self._generate_random_opponents()
+            
+            # Kampf starten
+            self._run_combat_encounter(opponents)
+            
+            # Kurze Pause zwischen Begegnungen
+            if i < num_encounters - 1:
+                self.cli_output.print_message("\nNächste Begegnung wird vorbereitet...\n")
+                self.cli_output.wait(2.0)
+        
+        self.cli_output.print_header("Simulation beendet")
+        self._show_final_stats()
+    
+    def _create_player_characters(self, num_players: int) -> None:
+        """
+        Erstellt die Spielercharaktere.
+        
+        Args:
+            num_players (int): Anzahl der zu erstellenden Charaktere
+        """
+        self.cli_output.print_subheader("Charaktererstellung")
+        
+        self.players = []
+        available_templates = list(self.character_templates.values())
+        
+        for i in range(num_players):
+            # Template zufällig auswählen (oder alle verwenden, wenn genug vorhanden sind)
+            if i < len(available_templates):
+                template = available_templates[i]
+            else:
+                template = random.choice(available_templates)
+            
+            # Charakter erstellen
+            player = CharacterInstance.from_template(template)
+            self.players.append(player)
+            
+            self.cli_output.print_message(f"Spieler {i+1}: {player.name} erstellt (Klasse: {template.id})")
+        
+        # Detaillierte Statistiken anzeigen
+        for player in self.players:
+            self.cli_output.print_character_stats(player, detailed=True)
+    
+    def _generate_random_opponents(self, min_opponents: int = 1, max_opponents: int = 3) -> List[CharacterInstance]:
+        """
+        Generiert zufällige Gegner für eine Begegnung.
+        
+        Args:
+            min_opponents (int): Minimale Anzahl an Gegnern
+            max_opponents (int): Maximale Anzahl an Gegnern
+            
+        Returns:
+            List[CharacterInstance]: Die generierten Gegner
+        """
+        self.cli_output.print_subheader("Gegner erscheinen!")
+        
+        # Anzahl der Gegner bestimmen (basierend auf Spieleranzahl)
+        player_count = len(self.players)
+        num_opponents = random.randint(min_opponents, min(max_opponents, player_count + 1))
+        
+        # Durchschnittslevel der Spieler berechnen
+        avg_player_level = sum(p.level for p in self.players) // player_count
+        
+        # Gegner generieren
+        opponents = []
+        available_templates = list(self.opponent_templates.values())
+        
+        for i in range(num_opponents):
+            # Zufälliges Template auswählen
+            template = random.choice(available_templates)
+            
+            # Gegner-Level bestimmen (nahe am Spieler-Level)
+            level_variance = random.randint(-1, 1)  # -1, 0 oder 1
+            opponent_level = max(1, avg_player_level + level_variance)
+            
+            # Gegner erstellen
+            opponent = CharacterInstance.from_template(template, level=opponent_level)
+            opponents.append(opponent)
+            
+            self.cli_output.print_message(f"Gegner erscheint: {opponent.name} (Level {opponent_level})")
+        
+        # Kurze Pause nach der Gegnergenerierung
+        self.cli_output.wait(1.0)
+        
+        return opponents
+    
+    def _run_combat_encounter(self, opponents: List[CharacterInstance]) -> None:
+        """
+        Führt einen Kampf zwischen Spielern und Gegnern durch.
+        
+        Args:
+            opponents (List[CharacterInstance]): Die Gegner
+        """
+        # Kampf initialisieren
+        self.current_encounter = CombatEncounter(self.players, opponents)
+        self.current_encounter.start_combat()
+        
+        # Status vor dem Kampf anzeigen
+        self.cli_output.print_combat_summary(self.players, opponents)
+        self.cli_output.wait(1.0)
+        
+        # Kampfschleife
+        while self.current_encounter.is_active:
+            # Nächste Runde vorbereiten, wenn die Zugreihenfolge leer ist
+            if not self.current_encounter.turn_order:
+                self.current_encounter.next_round()
+                self.cli_output.print_message(f"\nRunde {self.current_encounter.round} beginnt!")
+                self.cli_output.print_combat_summary(self.players, opponents)
+            
+            # Nächsten Charakter in der Zugreihenfolge holen
+            if not self.current_encounter.turn_order:
+                logger.error("Fehler: Keine Charaktere in der Zugreihenfolge!")
+                break
+                
+            current_character = self.current_encounter.turn_order.pop(0)
+            
+            # Prüfen, ob der Charakter noch lebt und handeln kann
+            if not current_character.is_alive() or not current_character.can_act():
+                continue
+            
+            # Charakter am Zug anzeigen
+            is_player = current_character in self.players
+            self.cli_output.print_message(f"\n{current_character.name} ist am Zug!")
+            
+            # Aktion auswählen und ausführen
+            self._perform_character_action(current_character, is_player)
+            
+            # Prüfen, ob der Kampf beendet ist
+            if self.current_encounter.check_combat_end():
+                break
+        
+        # Kampfergebnis anzeigen
+        self._show_combat_results()
+    
+    def _perform_character_action(self, character: CharacterInstance, is_player: bool) -> None:
+        """
+        Führt die Aktion eines Charakters aus.
+        
+        Args:
+            character (CharacterInstance): Der handelnde Charakter
+            is_player (bool): True, wenn es ein Spielercharakter ist, False für Gegner
+        """
+        # Verfügbare Skills für den Charakter laden
+        available_skills = {skill_id: self.skill_definitions.get(skill_id) 
+                           for skill_id in character.skill_ids 
+                           if skill_id in self.skill_definitions}
+        
+        # Verbündete und Feinde bestimmen
+        allies = self.players if is_player else self.current_encounter.opponents
+        enemies = self.current_encounter.opponents if is_player else self.players
+        
+        # KI-Entscheidung für den nächsten Zug
+        skill, primary_target, secondary_targets = self.ai_dispatcher.choose_action(
+            character, allies, enemies, available_skills
+        )
+        
+        if not skill or not primary_target:
+            self.cli_output.print_message(f"{character.name} kann keine Aktion ausführen!")
+            return
+        
+        # Kampfaktion erstellen und ausführen
+        from src.game_logic.combat import CombatAction, get_combat_system
+        combat_system = get_combat_system()
+        
+        action = CombatAction(character, skill, primary_target, secondary_targets)
+        result = combat_system.execute_action(action)
+        
+        # Ergebnis anzeigen
+        is_self_effect = skill.is_self_effect()
+        is_healing = 'base_healing' in skill.effects
+        
+        # Aktionsausgabe
+        action_desc = f"{character.name} verwendet {skill.name}"
+        target_desc = f"auf {primary_target.name}"
+        
+        if is_self_effect and character == primary_target:
+            target_desc = "auf sich selbst"
+        
+        self.cli_output.print_message(f"{action_desc} {target_desc}")
+        
+        # Trefferausgabe
+        for target in result.hits:
+            if target in result.damage_dealt:
+                damage = result.damage_dealt[target]
+                self.cli_output.print_message(f"  • Trifft {target.name} für {damage} Schaden")
+                if not target.is_alive():
+                    self.cli_output.print_message(f"  • {target.name} wurde besiegt!")
+            
+            if target in result.healing_done:
+                healing = result.healing_done[target]
+                self.cli_output.print_message(f"  • Heilt {target.name} um {healing} HP")
+            
+            if target in result.effects_applied:
+                effects = result.effects_applied[target]
+                self.cli_output.print_message(f"  • Wendet Effekt(e) an: {', '.join(effects)}")
+        
+        for target in result.misses:
+            self.cli_output.print_message(f"  • Verfehlt {target.name}")
+        
+        # Status nach der Aktion anzeigen
+        self.cli_output.wait(0.5)
+    
+    def _show_combat_results(self) -> None:
+        """Zeigt die Ergebnisse des aktuellen Kampfes an."""
+        if not self.current_encounter:
+            return
+        
+        self.cli_output.print_subheader("Kampfergebnis")
+        
+        if self.current_encounter.winner == 'players':
+            self.cli_output.print_message("Die Spieler haben gesiegt!")
+            
+            # XP vergeben
+            self.current_encounter.award_xp_for_victory(self.leveling_service)
+            
+            # Status der überlebenden Spieler anzeigen
+            for player in self.players:
+                if player.is_alive():
+                    self.cli_output.print_character_stats(player, detailed=True)
+                    
+                    # XP-Fortschritt anzeigen
+                    next_level_xp = self.leveling_service.get_xp_for_next_level(player)
+                    progress = self.leveling_service.get_xp_progress_percentage(player)
+                    self.cli_output.print_message(
+                        f"XP: {player.xp}/{next_level_xp} ({progress:.1f}% zum nächsten Level)"
+                    )
+        
+        elif self.current_encounter.winner == 'opponents':
+            self.cli_output.print_message("Die Gegner haben gesiegt! GAME OVER")
+            # In einer echten Implementierung würde hier das Spiel beendet oder neu gestartet
+        
+        else:
+            self.cli_output.print_message("Der Kampf endete unentschieden.")
+    
+    def _show_final_stats(self) -> None:
+        """Zeigt die Endstatistiken der Spieler an."""
+        self.cli_output.print_subheader("Endstatistiken")
+        
+        for i, player in enumerate(self.players):
+            self.cli_output.print_message(f"Spieler {i+1}: {player.name} (Level {player.level})")
+            self.cli_output.print_character_stats(player, detailed=True)
+            
+            if player.is_alive():
+                next_level_xp = self.leveling_service.get_xp_for_next_level(player)
+                progress = self.leveling_service.get_xp_progress_percentage(player)
+                self.cli_output.print_message(
+                    f"XP: {player.xp}/{next_level_xp} ({progress:.1f}% zum nächsten Level)"
+                )
+            else:
+                self.cli_output.print_message("Status: Gefallen im Kampf")
+
+
+def run_simulation(characters_path: str, skills_path: str, opponents_path: str) -> None:
+    """
+    Führt die CLI-Simulation durch.
+    
+    Args:
+        characters_path (str): Pfad zur characters.json5-Datei
+        skills_path (str): Pfad zur skills.json5-Datei
+        opponents_path (str): Pfad zur opponents.json5-Datei
+    """
+    simulation = CLISimulation(characters_path, skills_path, opponents_path)
+    
+    # Standardwerte für die Simulation
+    num_players = 2
+    num_encounters = 3
+    
+    simulation.start_simulation(num_players, num_encounters)
+
+
+===== src/ui/__init__.py =====
+"""
+UI Paket
+
+Enthält Komponenten für die Benutzeroberfläche und Simulation.
+"""
+
+
+===== src/ui/cli_output.py =====
+"""
+CLI-Ausgabehelfer
+
+Enthält Funktionen für formatierte Ausgaben in der Konsole.
+"""
+import time
+import os
+from typing import List, Dict, Any, Optional
+
+from src.game_logic.entities import CharacterInstance
+from src.utils.logging_setup import get_logger
+
+
+# Logger für dieses Modul
+logger = get_logger(__name__)
+
+
+class CLIOutput:
+    """
+    Klasse für formatierte Konsolenausgaben.
+    """
+    
+    def __init__(self, verbose: bool = True, delay: float = 0.5):
+        """
+        Initialisiert den CLI-Output-Handler.
+        
+        Args:
+            verbose (bool): Wenn True, werden detaillierte Ausgaben angezeigt
+            delay (float): Verzögerung in Sekunden zwischen Ausgaben
+        """
+        self.verbose = verbose
+        self.delay = delay
+    
+    def clear_screen(self) -> None:
+        """Löscht den Bildschirm."""
+        os.system('cls' if os.name == 'nt' else 'clear')
+    
+    def wait(self, seconds: Optional[float] = None) -> None:
+        """
+        Wartet für die angegebene Zeit.
+        
+        Args:
+            seconds (Optional[float]): Die Wartezeit in Sekunden (Standard: self.delay)
+        """
+        if seconds is None:
+            seconds = self.delay
+        
+        if seconds > 0:
+            time.sleep(seconds)
+    
+    def print_header(self, text: str) -> None:
+        """
+        Gibt einen hervorgehobenen Überschriftentext aus.
+        
+        Args:
+            text (str): Der anzuzeigende Text
+        """
+        print("\n" + "=" * 60)
+        print(f" {text.upper()} ")
+        print("=" * 60 + "\n")
+        self.wait(self.delay / 2)
+    
+    def print_subheader(self, text: str) -> None:
+        """
+        Gibt einen hervorgehobenen Unterüberschriftentext aus.
+        
+        Args:
+            text (str): Der anzuzeigende Text
+        """
+        print("\n" + "-" * 50)
+        print(f" {text} ")
+        print("-" * 50 + "\n")
+        self.wait(self.delay / 3)
+    
+    def print_message(self, message: str) -> None:
+        """
+        Gibt eine einfache Nachricht aus.
+        
+        Args:
+            message (str): Die anzuzeigende Nachricht
+        """
+        print(message)
+        self.wait(self.delay / 2)
+    
+    def print_combat_action(self, actor_name: str, action_name: str, target_name: str, result: str) -> None:
+        """
+        Gibt eine formatierte Kampfaktion aus.
+        
+        Args:
+            actor_name (str): Name des Akteurs
+            action_name (str): Name der Aktion
+            target_name (str): Name des Ziels
+            result (str): Ergebnis der Aktion
+        """
+        print(f"[AKTION] {actor_name} verwendet {action_name} gegen {target_name}: {result}")
+        self.wait()
+    
+    def print_character_stats(self, character: CharacterInstance, detailed: bool = False) -> None:
+        """
+        Gibt die Statistiken eines Charakters aus.
+        
+        Args:
+            character (CharacterInstance): Der Charakter
+            detailed (bool): Wenn True, werden detaillierte Statistiken angezeigt
+        """
+        health_percent = round((character.hp / character.get_max_hp()) * 100)
+        health_bar = self._generate_bar(health_percent, 20)
+        
+        print(f"{character.name} (Level {character.level}):")
+        print(f"HP: {character.hp}/{character.get_max_hp()} {health_bar} ({health_percent}%)")
+        
+        # Ressourcen anzeigen, falls vorhanden
+        if character.mana > 0:
+            print(f"Mana: {character.mana}/{character.base_combat_values.get('base_mana', 0)}")
+        if character.stamina > 0:
+            print(f"Ausdauer: {character.stamina}/{character.base_combat_values.get('base_stamina', 0)}")
+        if character.energy > 0:
+            print(f"Energie: {character.energy}/{character.base_combat_values.get('base_energy', 0)}")
+        
+        # Status-Effekte anzeigen
+        if character.active_effects:
+            effect_names = [f"{effect_id} ({effect.duration}R)" for effect_id, effect in character.active_effects.items()]
+            print(f"Effekte: {', '.join(effect_names)}")
+        
+        # Detaillierte Statistiken
+        if detailed and self.verbose:
+            print(f"ATT: STR {character.get_attribute('STR')}, "
+                  f"DEX {character.get_attribute('DEX')}, "
+                  f"INT {character.get_attribute('INT')}, "
+                  f"CON {character.get_attribute('CON')}, "
+                  f"WIS {character.get_attribute('WIS')}")
+            print(f"DEF: Rüstung {character.get_combat_value('armor')}, "
+                  f"Magieresistenz {character.get_combat_value('magic_resist')}")
+            print(f"Genauigkeit: {character.get_accuracy()}, Ausweichen: {character.get_evasion()}")
+        
+        if self.verbose:
+            self.wait(self.delay / 4)
+    
+    def print_combat_summary(self, players: List[CharacterInstance], opponents: List[CharacterInstance]) -> None:
+        """
+        Gibt eine Zusammenfassung des aktuellen Kampfzustands aus.
+        
+        Args:
+            players (List[CharacterInstance]): Die Spielercharaktere
+            opponents (List[CharacterInstance]): Die Gegner
+        """
+        self.print_subheader("KAMPFÜBERSICHT")
+        
+        print("SPIELER:")
+        for player in players:
+            self.print_character_stats(player)
+        
+        print("\nGEGNER:")
+        for opponent in opponents:
+            self.print_character_stats(opponent)
+        
+        print("")  # Leerzeile zur besseren Lesbarkeit
+    
+    def _generate_bar(self, percent: int, length: int = 20) -> str:
+        """
+        Generiert einen grafischen Fortschrittsbalken.
+        
+        Args:
+            percent (int): Der Prozentsatz (0-100)
+            length (int): Die Länge des Balkens
+            
+        Returns:
+            str: Der grafische Balken
+        """
+        fill_count = int(percent / 100 * length)
+        empty_count = length - fill_count
+        
+        if percent >= 60:
+            color = '\033[92m'  # Grün
+        elif percent >= 25:
+            color = '\033[93m'  # Gelb
+        else:
+            color = '\033[91m'  # Rot
+        
+        reset = '\033[0m'
+        
+        return f"{color}[{'=' * fill_count}{' ' * empty_count}]{reset}"
+
+
+# Globaler CLIOutput-Handler
+cli_output = CLIOutput()
+
+
+def get_cli_output() -> CLIOutput:
+    """
+    Gibt den globalen CLIOutput-Handler zurück.
+    
+    Returns:
+        CLIOutput: Der globale Handler
+    """
+    return cli_output
+
+
+===== src/ui/__pycache__/__init__.cpython-312.pyc (Fehler beim Lesen) =====
+
+===== src/ui/__pycache__/cli_output.cpython-312.pyc (Fehler beim Lesen) =====
+
+===== src/ui/__pycache__/cli_main_loop.cpython-312.pyc (Fehler beim Lesen) =====
+
+===== src/game_logic/combat.py =====
+"""
+Kampfsystem
+
+Enthält Klassen und Funktionen für die Abwicklung von Kampfaktionen.
+"""
+import random
+from typing import Dict, List, Any, Optional, Tuple, Union, Set
+
+from src.definitions.skill import SkillDefinition
+from src.game_logic.entities import CharacterInstance
+from src.game_logic.formulas import calculate_damage, calculate_hit_chance, calculate_damage_reduction
+from src.utils.logging_setup import get_logger
+
+
+# Logger für dieses Modul
+logger = get_logger(__name__)
+
+
+class CombatAction:
+    """
+    Repräsentiert eine Kampfaktion (z.B. einen Angriff oder eine Fertigkeit).
+    """
+    def __init__(self, 
+                 actor: CharacterInstance, 
+                 skill: SkillDefinition,
+                 primary_target: Optional[CharacterInstance] = None,
+                 secondary_targets: Optional[List[CharacterInstance]] = None):
+        """
+        Initialisiert eine Kampfaktion.
+        
+        Args:
+            actor (CharacterInstance): Der Ausführende der Aktion
+            skill (SkillDefinition): Der verwendete Skill
+            primary_target (Optional[CharacterInstance]): Das Hauptziel
+            secondary_targets (Optional[List[CharacterInstance]]): Sekundäre Ziele (für Flächeneffekte)
+        """
+        self.actor = actor
+        self.skill = skill
+        self.primary_target = primary_target
+        self.secondary_targets = secondary_targets or []
+    
+    def is_valid(self) -> bool:
+        """
+        Prüft, ob die Aktion gültig ist.
+        
+        Returns:
+            bool: True, wenn die Aktion gültig ist, sonst False
+        """
+        # Prüfen, ob der Akteur handeln kann
+        if not self.actor.can_act():
+            logger.debug(f"{self.actor.name} kann nicht handeln")
+            return False
+        
+        # Prüfen, ob der Akteur genug Ressourcen hat
+        if not self.actor.has_enough_resource(self.skill):
+            logger.debug(f"{self.actor.name} hat nicht genug Ressourcen für {self.skill.name}")
+            return False
+        
+        # Prüfen, ob das Hauptziel gültig ist (falls erforderlich)
+        if not self.skill.is_self_effect() and self.primary_target is None:
+            logger.debug(f"Kein Ziel für Nicht-Selbsteffekt {self.skill.name}")
+            return False
+        
+        # Prüfen, ob das Hauptziel als Ziel ausgewählt werden kann
+        if self.primary_target and not self.primary_target.can_be_targeted():
+            logger.debug(f"{self.primary_target.name} kann nicht als Ziel ausgewählt werden")
+            return False
+        
+        return True
+
+
+class CombatResult:
+    """
+    Enthält die Ergebnisse einer Kampfaktion.
+    """
+    def __init__(self):
+        """Initialisiert ein leeres Ergebnis."""
+        self.hits: List[CharacterInstance] = []
+        self.misses: List[CharacterInstance] = []
+        self.damage_dealt: Dict[CharacterInstance, int] = {}
+        self.healing_done: Dict[CharacterInstance, int] = {}
+        self.effects_applied: Dict[CharacterInstance, List[str]] = {}
+        self.deaths: List[CharacterInstance] = []
+        self.resources_spent: Dict[str, int] = {}
+
+
+class CombatSystem:
+    """
+    Verwaltet die Kampflogik und -aktionen.
+    """
+    def __init__(self):
+        """Initialisiert das Kampfsystem."""
+        pass
+    
+    def execute_action(self, action: CombatAction) -> CombatResult:
+        """
+        Führt eine Kampfaktion aus.
+        
+        Args:
+            action (CombatAction): Die auszuführende Aktion
+            
+        Returns:
+            CombatResult: Das Ergebnis der Aktion
+        """
+        result = CombatResult()
+        
+        # Prüfen, ob die Aktion gültig ist
+        if not action.is_valid():
+            logger.warning(f"Ungültige Kampfaktion: {action.skill.name} von {action.actor.name}")
+            return result
+        
+        # Ressourcen verbrauchen
+        cost_value = action.skill.get_cost_value()
+        cost_type = action.skill.get_cost_type()
+        
+        success = action.actor.spend_resource(action.skill)
+        if not success:
+            logger.warning(f"{action.actor.name} konnte die Ressourcen für {action.skill.name} nicht aufbringen")
+            return result
+        
+        result.resources_spent[cost_type] = cost_value
+        
+        # Selbst-Effekt prüfen
+        if action.skill.is_self_effect():
+            self._apply_self_effect(action, result)
+        else:
+            # Für Angriffe oder Zauber auf andere
+            self._apply_combat_effect(action, result)
+        
+        return result
+    
+    def _apply_self_effect(self, action: CombatAction, result: CombatResult) -> None:
+        """
+        Wendet einen Selbst-Effekt an.
+        
+        Args:
+            action (CombatAction): Die Kampfaktion
+            result (CombatResult): Das zu aktualisierende Ergebnis
+        """
+        # Status-Effekte auf den Akteur anwenden
+        applied_effects = []
+        for effect in action.skill.applies_effects:
+            action.actor.apply_status_effect(effect.id, effect.duration, effect.potency)
+            applied_effects.append(effect.id)
+        
+        if applied_effects:
+            result.effects_applied[action.actor] = applied_effects
+            logger.debug(f"{action.actor.name} wendet Selbsteffekt(e) an: {', '.join(applied_effects)}")
+        
+        # Heilung prüfen
+        if 'base_healing' in action.skill.effects:
+            base_healing = action.skill.effects['base_healing']
+            scaling_attr = action.skill.effects.get('scaling_attribute', 'WIS')
+            multiplier = action.skill.effects.get('healing_multiplier', 1.0)
+            
+            attr_value = action.actor.get_attribute(scaling_attr)
+            healing = calculate_damage(base_healing, attr_value, multiplier)  # Wir verwenden die Schadensformel für Heilung
+            
+            actual_healing = action.actor.heal(healing)
+            result.healing_done[action.actor] = actual_healing
+            logger.info(f"{action.actor.name} heilt sich selbst um {actual_healing} HP")
+    
+    def _apply_combat_effect(self, action: CombatAction, result: CombatResult) -> None:
+        """
+        Wendet einen Kampfeffekt (Schaden, Status) auf ein Ziel an.
+        
+        Args:
+            action (CombatAction): Die Kampfaktion
+            result (CombatResult): Das zu aktualisierende Ergebnis
+        """
+        # Ziele festlegen
+        targets = [action.primary_target]
+        
+        # Bei Flächeneffekten die sekundären Ziele hinzufügen
+        if action.skill.is_area_effect() and action.secondary_targets:
+            targets.extend(action.secondary_targets)
+        
+        # Für jedes Ziel die Effekte anwenden
+        for target in targets:
+            if not target.can_be_targeted():
+                continue
+            
+            # Heilung prüfen
+            if 'base_healing' in action.skill.effects:
+                self._apply_healing(action, target, result)
+                continue
+            
+            # Trefferchance berechnen
+            hit_chance = calculate_hit_chance(action.actor.get_accuracy(), target.get_evasion())
+            roll = random.randint(1, 100)
+            
+            if roll <= hit_chance:
+                # Treffer!
+                result.hits.append(target)
+                
+                # Schaden berechnen und anwenden
+                if 'base_damage' in action.skill.effects or action.skill.get_base_damage() is not None:
+                    self._apply_damage(action, target, result)
+                
+                # Status-Effekte anwenden
+                if action.skill.applies_effects:
+                    applied_effects = []
+                    for effect in action.skill.applies_effects:
+                        target.apply_status_effect(effect.id, effect.duration, effect.potency)
+                        applied_effects.append(effect.id)
+                    
+                    if applied_effects:
+                        if target not in result.effects_applied:
+                            result.effects_applied[target] = []
+                        result.effects_applied[target].extend(applied_effects)
+            else:
+                # Verfehlt!
+                result.misses.append(target)
+                logger.debug(f"{action.actor.name} verfehlt {target.name} mit {action.skill.name} (Wurf: {roll}, benötigt: {hit_chance})")
+    
+    def _apply_damage(self, action: CombatAction, target: CharacterInstance, result: CombatResult) -> None:
+        """
+        Wendet Schaden auf ein Ziel an.
+        
+        Args:
+            action (CombatAction): Die Kampfaktion
+            target (CharacterInstance): Das Ziel
+            result (CombatResult): Das zu aktualisierende Ergebnis
+        """
+        # Schadensberechnung
+        base_damage = action.skill.get_base_damage()
+        scaling_attr = action.skill.get_scaling_attribute()
+        multiplier = action.skill.get_multiplier()
+        damage_type = action.skill.get_damage_type()
+        
+        # Bonus gegen bestimmte Gegnertypen
+        bonus_type = action.skill.effects.get('bonus_vs_type', None)
+        if bonus_type and target.has_tag(bonus_type):
+            bonus_multiplier = action.skill.effects.get('bonus_multiplier', 1.0)
+            multiplier *= bonus_multiplier
+            logger.debug(f"{action.skill.name} erhält Bonus-Multiplikator {bonus_multiplier} gegen {target.name} (Tag: {bonus_type})")
+        
+        # Attributwert des Akteurs für Skalierung
+        attr_value = action.actor.get_attribute(scaling_attr)
+        
+        # Rohschaden berechnen
+        raw_damage = calculate_damage(base_damage, attr_value, multiplier)
+        
+        # Schaden anwenden (mit Verteidigungsreduzierung)
+        actual_damage, is_dead = target.take_damage(raw_damage, damage_type)
+        
+        # Ergebnis aktualisieren
+        result.damage_dealt[target] = actual_damage
+        
+        if is_dead:
+            result.deaths.append(target)
+            logger.info(f"{action.actor.name} besiegt {target.name} mit {action.skill.name} ({actual_damage} Schaden)")
+        else:
+            logger.debug(f"{action.actor.name} fügt {target.name} {actual_damage} Schaden zu mit {action.skill.name}")
+    
+    def _apply_healing(self, action: CombatAction, target: CharacterInstance, result: CombatResult) -> None:
+        """
+        Wendet Heilung auf ein Ziel an.
+        
+        Args:
+            action (CombatAction): Die Kampfaktion
+            target (CharacterInstance): Das Ziel
+            result (CombatResult): Das zu aktualisierende Ergebnis
+        """
+        # Heilungsberechnung
+        base_healing = action.skill.effects['base_healing']
+        scaling_attr = action.skill.effects.get('scaling_attribute', 'WIS')
+        multiplier = action.skill.effects.get('healing_multiplier', 1.0)
+        
+        # Attributwert des Akteurs für Skalierung
+        attr_value = action.actor.get_attribute(scaling_attr)
+        
+        # Heilung berechnen
+        healing_amount = calculate_damage(base_healing, attr_value, multiplier)  # Wir verwenden die Schadensformel für Heilung
+        
+        # Heilung anwenden
+        actual_healing = target.heal(healing_amount)
+        
+        # Ergebnis aktualisieren
+        result.healing_done[target] = actual_healing
+        logger.info(f"{action.actor.name} heilt {target.name} um {actual_healing} HP mit {action.skill.name}")
+
+
+# Globales Kampfsystem
+combat_system = CombatSystem()
+
+
+def get_combat_system() -> CombatSystem:
+    """
+    Gibt die globale Instanz des Kampfsystems zurück.
+    
+    Returns:
+        CombatSystem: Die globale Instanz
+    """
+    return combat_system
+
+
+class CombatEncounter:
+    """
+    Repräsentiert einen Kampf zwischen Gruppen von Charakteren (Spieler und Gegner).
+    """
+    def __init__(self, players: List[CharacterInstance], opponents: List[CharacterInstance]):
+        """
+        Initialisiert einen Kampf.
+        
+        Args:
+            players (List[CharacterInstance]): Die Spielercharaktere
+            opponents (List[CharacterInstance]): Die Gegner
+        """
+        self.players = players
+        self.opponents = opponents
+        self.round = 0
+        self.combat_system = get_combat_system()
+        self.turn_order: List[CharacterInstance] = []
+        self.is_active = False
+        self.winner = None  # 'players' oder 'opponents' oder None
+        
+        # Regenerationsraten (Prozentsatz der Maximalressource pro Runde)
+        self.resource_regen_rates = {
+            'MANA': 0.05,     # 5% pro Runde
+            'STAMINA': 0.05,  # 5% pro Runde
+            'ENERGY': 0.05    # 5% pro Runde
+        }
+        
+        # Minimale Regeneration (Absolutwert pro Runde)
+        self.min_resource_regen = {
+            'MANA': 2,
+            'STAMINA': 2,
+            'ENERGY': 2
+        }
+    
+    def start_combat(self) -> None:
+        """Startet den Kampf und initialisiert die erste Runde."""
+        logger.info("Kampf beginnt!")
+        
+        # Status zurücksetzen
+        self.round = 0
+        self.is_active = True
+        self.winner = None
+        
+        # Kampfteilnehmer loggen
+        logger.info(f"Spieler: {', '.join(p.name for p in self.players)}")
+        logger.info(f"Gegner: {', '.join(o.name for o in self.opponents)}")
+        
+        # Erste Runde starten
+        self.next_round()
+    
+    def next_round(self) -> None:
+        """Startet die nächste Kampfrunde."""
+        self.round += 1
+        logger.info(f"Runde {self.round} beginnt!")
+        
+        # Zugreihenfolge berechnen
+        self.calculate_turn_order()
+        
+        # Status-Effekte für alle Charaktere verarbeiten
+        all_characters = self.players + self.opponents
+        for character in all_characters:
+            if character.is_alive():
+                # Status-Effekte verarbeiten
+                character.process_status_effects()
+                
+                # Ressourcen regenerieren
+                self._regenerate_resources(character)
+    
+    def _regenerate_resources(self, character: CharacterInstance) -> None:
+        """
+        Regeneriert Ressourcen für einen Charakter basierend auf der Regenerationsrate.
+        
+        Args:
+            character (CharacterInstance): Der Charakter, dessen Ressourcen regeneriert werden sollen
+        """
+        # Mana regenerieren
+        if character.mana < character.base_combat_values.get('base_mana', 0):
+            max_mana = character.base_combat_values.get('base_mana', 0)
+            if max_mana > 0:
+                regen_amount = max(
+                    self.min_resource_regen['MANA'],
+                    int(max_mana * self.resource_regen_rates['MANA'])
+                )
+                character.restore_resource('MANA', regen_amount)
+                logger.debug(f"{character.name} regeneriert {regen_amount} Mana")
+        
+        # Stamina regenerieren
+        if character.stamina < character.base_combat_values.get('base_stamina', 0):
+            max_stamina = character.base_combat_values.get('base_stamina', 0)
+            if max_stamina > 0:
+                regen_amount = max(
+                    self.min_resource_regen['STAMINA'],
+                    int(max_stamina * self.resource_regen_rates['STAMINA'])
+                )
+                character.restore_resource('STAMINA', regen_amount)
+                logger.debug(f"{character.name} regeneriert {regen_amount} Stamina")
+        
+        # Energy regenerieren
+        if character.energy < character.base_combat_values.get('base_energy', 0):
+            max_energy = character.base_combat_values.get('base_energy', 0)
+            if max_energy > 0:
+                regen_amount = max(
+                    self.min_resource_regen['ENERGY'],
+                    int(max_energy * self.resource_regen_rates['ENERGY'])
+                )
+                character.restore_resource('ENERGY', regen_amount)
+                logger.debug(f"{character.name} regeneriert {regen_amount} Energy")
+    
+    def calculate_turn_order(self) -> None:
+        """Berechnet die Zugreihenfolge basierend auf Initiative."""
+        # Alle lebenden Charaktere sammeln
+        all_alive = []
+        for character in self.players + self.opponents:
+            if character.is_alive():
+                all_alive.append((character, character.get_initiative()))
+        
+        # Nach Initiative sortieren (höchste zuerst)
+        all_alive.sort(key=lambda x: x[1], reverse=True)
+        
+        # Zugreihenfolge setzen
+        self.turn_order = [char for char, _ in all_alive]
+        
+        initiative_log = ", ".join(f"{char.name} ({init})" for char, init in all_alive)
+        logger.debug(f"Zugreihenfolge: {initiative_log}")
+    
+    def check_combat_end(self) -> bool:
+        """
+        Prüft, ob der Kampf beendet ist (eine Seite ist vollständig besiegt).
+        
+        Returns:
+            bool: True, wenn der Kampf beendet ist, sonst False
+        """
+        players_alive = any(player.is_alive() for player in self.players)
+        opponents_alive = any(opponent.is_alive() for opponent in self.opponents)
+        
+        if not players_alive and not opponents_alive:
+            # Unentschieden (sollte selten vorkommen)
+            logger.info("Kampf endet unentschieden! Alle Teilnehmer sind gefallen.")
+            self.is_active = False
+            return True
+        elif not players_alive:
+            # Gegner haben gewonnen
+            logger.info("Kampf endet! Die Gegner sind siegreich.")
+            self.is_active = False
+            self.winner = 'opponents'
+            return True
+        elif not opponents_alive:
+            # Spieler haben gewonnen
+            logger.info("Kampf endet! Die Spieler sind siegreich.")
+            self.is_active = False
+            self.winner = 'players'
+            return True
+        
+        # Kampf geht weiter
+        return False
+    
+    def get_valid_targets(self, for_player: bool) -> List[CharacterInstance]:
+        """
+        Gibt gültige Ziele für einen Angriff zurück.
+        
+        Args:
+            for_player (bool): True für Spieler-Angriffe (gegen Gegner), False für Gegner-Angriffe (gegen Spieler)
+            
+        Returns:
+            List[CharacterInstance]: Die gültigen Ziele
+        """
+        targets = self.opponents if for_player else self.players
+        return [target for target in targets if target.can_be_targeted()]
+    
+    def award_xp_for_victory(self, leveling_service=None) -> None:
+        """
+        Vergibt XP an die Spieler für besiegte Gegner.
+        
+        Args:
+            leveling_service (Optional): Der Leveling-Service (wird importiert, wenn nicht angegeben)
+        """
+        if self.winner != 'players':
+            logger.debug("Keine XP vergeben, da die Spieler nicht gewonnen haben")
+            return
+        
+        # Leveling-Service importieren, wenn nicht angegeben
+        if leveling_service is None:
+            from src.game_logic.leveling import get_leveling_service
+            leveling_service = get_leveling_service()
+        
+        # Gesamt-XP aus allen Gegnern berechnen
+        total_xp = sum(opponent.xp_reward for opponent in self.opponents)
+        
+        # XP an alle lebenden Spieler verteilen
+        living_players = [player for player in self.players if player.is_alive()]
+        if not living_players:
+            logger.warning("Keine lebenden Spieler für XP-Vergabe!")
+            return
+        
+        # XP gleichmäßig verteilen
+        xp_per_player = total_xp // len(living_players)
+        if xp_per_player <= 0:
+            xp_per_player = 1  # Mindestens 1 XP
+        
+        logger.info(f"Vergebe {xp_per_player} XP an jeden überlebenden Spieler")
+        
+        # XP zuweisen und auf Level-Ups prüfen
+        for player in living_players:
+            level_up_occurred = leveling_service.award_xp(player, xp_per_player)
+            if level_up_occurred:
+                logger.info(f"{player.name} ist aufgestiegen!")
+
+
+===== src/game_logic/entities.py =====
+"""
+Entitäten
+
+Enthält die Klasse CharacterInstance, die eine konkrete Instanz eines Charakters oder Gegners
+im Spiel repräsentiert, mit aktuellem Zustand wie HP, Statuseffekte, etc.
+"""
+from typing import Dict, List, Any, Optional, Tuple, Set
+from dataclasses import dataclass, field
+import math
+
+from src.definitions.character import CharacterTemplate, OpponentTemplate
+from src.definitions.skill import SkillDefinition
+from src.game_logic.formulas import (
+    calculate_attribute_bonus, calculate_max_hp, 
+    calculate_accuracy_modifier, calculate_evasion_modifier
+)
+from src.game_logic.effects import StatusEffect, create_status_effect
+from src.utils.logging_setup import get_logger
+
+
+# Logger für dieses Modul
+logger = get_logger(__name__)
+
+
+@dataclass
+class CharacterInstance:
+    """
+    Repräsentiert eine konkrete Instanz eines Charakters oder Gegners im Spiel.
+    
+    Diese Klasse enthält den aktuellen Zustand eines Charakters (Spieler oder Gegner),
+    einschließlich aktueller Lebenspunkte, Ressourcen und Status-Effekte.
+    """
+    # Basisinformationen
+    id: str
+    name: str
+    template_id: str
+    
+    # Primärattribute (aus Template + Statusmodifikatoren)
+    base_attributes: Dict[str, int]
+    
+    # Kampfwerte (aus Template + Statusmodifikatoren)
+    base_combat_values: Dict[str, int]
+    
+    # Verfügbare Skills
+    skill_ids: List[str]
+    
+    # Aktueller Zustand
+    hp: int
+    mana: int = 0
+    stamina: int = 0
+    energy: int = 0
+    shield_points: int = 0  # Für Schild-Effekte
+    
+    # Erfahrung und Level
+    xp: int = 0
+    level: int = 1
+    
+    # Status-Effekte und Modifikatoren
+    active_effects: Dict[str, StatusEffect] = field(default_factory=dict)
+    status_mods: Dict[str, int] = field(default_factory=dict)
+    status_flags: Dict[str, bool] = field(default_factory=dict)
+    
+    # Tags für den Charakter (z.B. WARRIOR, UNDEAD)
+    tags: Set[str] = field(default_factory=set)
+    
+    # Für Gegner: KI-Strategie und XP-Belohnung
+    ai_strategy: Optional[str] = None
+    xp_reward: int = 0
+    
+    def __post_init__(self):
+        """Wird nach der Initialisierung aufgerufen, um Standardwerte zu setzen."""
+        # Standardwerte für Status-Modifikatoren
+        default_mods = [
+            'STR', 'DEX', 'INT', 'CON', 'WIS',  # Primärattribute
+            'armor', 'magic_resist', 'initiative',  # Kampfwerte
+            'accuracy', 'evasion'  # Berechnete Werte
+        ]
+        for mod in default_mods:
+            if mod not in self.status_mods:
+                self.status_mods[mod] = 0
+        
+        # Standardwerte für Status-Flags
+        default_flags = ['can_act', 'can_be_targeted']
+        for flag in default_flags:
+            if flag not in self.status_flags:
+                self.status_flags[flag] = True
+        
+        # Sicherstellen, dass "basic_attack_free" vorhanden ist
+        if "basic_attack_free" not in self.skill_ids:
+            self.skill_ids.append("basic_attack_free")
+    
+    def __hash__(self) -> int:
+        """
+        Macht die CharacterInstance hashable, damit sie als Dictionary-Schlüssel verwendet werden kann.
+        
+        Returns:
+            int: Der Hash-Wert basierend auf der id
+        """
+        return hash(self.id)
+    
+    def __eq__(self, other) -> bool:
+        """
+        Vergleicht zwei CharacterInstances auf Gleichheit.
+        
+        Args:
+            other: Ein anderes Objekt zum Vergleich
+            
+        Returns:
+            bool: True, wenn die IDs übereinstimmen, sonst False
+        """
+        if not isinstance(other, CharacterInstance):
+            return False
+        return self.id == other.id
+    
+    @classmethod
+    def from_template(cls, template: CharacterTemplate, level: int = 1) -> 'CharacterInstance':
+        """
+        Erstellt eine CharacterInstance aus einem CharacterTemplate.
+        
+        Args:
+            template (CharacterTemplate): Das zu verwendende Template
+            level (int): Das Startlevel des Charakters
+            
+        Returns:
+            CharacterInstance: Eine neue CharacterInstance
+        """
+        # Basis-HP und Ressourcen berechnen
+        base_hp = template.get_combat_value('base_hp')
+        base_mana = template.get_combat_value('base_mana')
+        base_stamina = template.get_combat_value('base_stamina')
+        base_energy = template.get_combat_value('base_energy')
+        
+        # Maximales HP mit Konstitutionsbonus berechnen
+        constitution = template.get_attribute('CON')
+        max_hp = calculate_max_hp(base_hp, constitution)
+        
+        # Skills kopieren und sicherstellen, dass basic_attack_free enthalten ist
+        skills = template.skills.copy()
+        if "basic_attack_free" not in skills:
+            skills.append("basic_attack_free")
+        
+        instance = cls(
+            id=f"{template.id}_{id(template)}",  # Eindeutige ID erstellen
+            name=template.name,
+            template_id=template.id,
+            base_attributes=template.primary_attributes.copy(),
+            base_combat_values=template.combat_values.copy(),
+            skill_ids=skills,
+            hp=max_hp,
+            mana=base_mana,
+            stamina=base_stamina,
+            energy=base_energy,
+            level=level,
+            tags=set(template.tags)
+        )
+        
+        # Wenn es ein Gegner-Template ist, zusätzliche Werte setzen
+        if isinstance(template, OpponentTemplate):
+            instance.ai_strategy = template.ai_strategy
+            instance.xp_reward = template.xp_reward
+        
+        return instance
+    
+    def get_attribute(self, attr_name: str) -> int:
+        """
+        Gibt den aktuellen Wert eines Primärattributs zurück, inklusive Statusmodifikatoren.
+        
+        Args:
+            attr_name (str): Der Name des Attributs (z.B. 'STR')
+            
+        Returns:
+            int: Der aktuelle Attributwert
+        """
+        base_value = self.base_attributes.get(attr_name, 0)
+        mod_value = self.status_mods.get(attr_name, 0)
+        return base_value + mod_value
+    
+    def get_combat_value(self, value_name: str) -> int:
+        """
+        Gibt den aktuellen Wert eines Kampfwerts zurück, inklusive Statusmodifikatoren.
+        
+        Args:
+            value_name (str): Der Name des Kampfwerts (z.B. 'armor')
+            
+        Returns:
+            int: Der aktuelle Kampfwert
+        """
+        base_value = self.base_combat_values.get(value_name, 0)
+        mod_value = self.status_mods.get(value_name, 0)
+        return base_value + mod_value
+    
+    def get_max_hp(self) -> int:
+        """
+        Berechnet die maximalen Lebenspunkte basierend auf Basis-HP und Konstitution.
+        
+        Returns:
+            int: Die maximalen Lebenspunkte
+        """
+        base_hp = self.base_combat_values.get('base_hp', 0)
+        constitution = self.get_attribute('CON')
+        return calculate_max_hp(base_hp, constitution)
+    
+    def get_accuracy(self) -> int:
+        """
+        Berechnet den Genauigkeitsmodifikator basierend auf Geschicklichkeit und Statuseffekten.
+        
+        Returns:
+            int: Der aktuelle Genauigkeitsmodifikator
+        """
+        dexterity = self.get_attribute('DEX')
+        effects_mod = self.status_mods.get('accuracy', 0)
+        return calculate_accuracy_modifier(dexterity, effects_mod)
+    
+    def get_evasion(self) -> int:
+        """
+        Berechnet den Ausweichmodifikator basierend auf Geschicklichkeit und Statuseffekten.
+        
+        Returns:
+            int: Der aktuelle Ausweichmodifikator
+        """
+        dexterity = self.get_attribute('DEX')
+        effects_mod = self.status_mods.get('evasion', 0)
+        return calculate_evasion_modifier(dexterity, effects_mod)
+    
+    def get_initiative(self) -> int:
+        """
+        Berechnet die Initiative basierend auf Geschicklichkeit und Statuseffekten.
+        
+        Returns:
+            int: Der aktuelle Initiativewert
+        """
+        base_initiative = self.get_attribute('DEX') * 2
+        initiative_mod = self.status_mods.get('initiative', 0)
+        return base_initiative + initiative_mod
+    
+    def is_alive(self) -> bool:
+        """
+        Prüft, ob der Charakter noch lebt.
+        
+        Returns:
+            bool: True, wenn HP > 0, sonst False
+        """
+        return self.hp > 0
+    
+    def can_act(self) -> bool:
+        """
+        Prüft, ob der Charakter handeln kann (nicht betäubt, etc.).
+        
+        Returns:
+            bool: True, wenn der Charakter handeln kann, sonst False
+        """
+        return self.status_flags.get('can_act', True) and self.is_alive()
+    
+    def can_be_targeted(self) -> bool:
+        """
+        Prüft, ob der Charakter als Ziel ausgewählt werden kann.
+        
+        Returns:
+            bool: True, wenn der Charakter ein gültiges Ziel ist, sonst False
+        """
+        return self.status_flags.get('can_be_targeted', True) and self.is_alive()
+    
+    def has_tag(self, tag: str) -> bool:
+        """
+        Prüft, ob der Charakter einen bestimmten Tag hat.
+        
+        Args:
+            tag (str): Der zu prüfende Tag
+            
+        Returns:
+            bool: True, wenn der Tag vorhanden ist, sonst False
+        """
+        return tag in self.tags
+    
+    def has_enough_resource(self, skill: SkillDefinition) -> bool:
+        """
+        Prüft, ob der Charakter genug Ressourcen für den Skill hat.
+        
+        Args:
+            skill (SkillDefinition): Der zu prüfende Skill
+            
+        Returns:
+            bool: True, wenn genug Ressourcen vorhanden sind, sonst False
+        """
+        cost_value = skill.get_cost_value()
+        cost_type = skill.get_cost_type()
+        
+        if cost_type == 'NONE' or cost_value <= 0:
+            return True
+        
+        resource_map = {
+            'MANA': self.mana,
+            'STAMINA': self.stamina,
+            'ENERGY': self.energy,
+        }
+        
+        current_resource = resource_map.get(cost_type, 0)
+        return current_resource >= cost_value
+    
+    def spend_resource(self, skill: SkillDefinition) -> bool:
+        """
+        Verbraucht Ressourcen für einen Skill.
+        
+        Args:
+            skill (SkillDefinition): Der Skill, für den Ressourcen verbraucht werden
+            
+        Returns:
+            bool: True, wenn erfolgreich, False wenn nicht genug Ressourcen vorhanden waren
+        """
+        cost_value = skill.get_cost_value()
+        cost_type = skill.get_cost_type()
+        
+        if cost_type == 'NONE' or cost_value <= 0:
+            return True
+        
+        # Prüfen, ob genug Ressourcen vorhanden sind
+        if not self.has_enough_resource(skill):
+            return False
+        
+        # Ressourcen verbrauchen
+        if cost_type == 'MANA':
+            self.mana -= cost_value
+        elif cost_type == 'STAMINA':
+            self.stamina -= cost_value
+        elif cost_type == 'ENERGY':
+            self.energy -= cost_value
+        
+        return True
+    
+    def apply_status_effect(self, effect_id: str, duration: int, potency: int) -> None:
+        """
+        Wendet einen Statuseffekt auf den Charakter an.
+        
+        Args:
+            effect_id (str): Die ID des Statuseffekts
+            duration (int): Die Dauer in Runden
+            potency (int): Die Stärke des Effekts
+        """
+        # Statuseffekt erstellen
+        effect = create_status_effect(effect_id, duration, potency)
+        if not effect:
+            logger.warning(f"Konnte Statuseffekt {effect_id} nicht erstellen")
+            return
+        
+        # Prüfen, ob der Effekt bereits aktiv ist
+        if effect_id in self.active_effects:
+            existing_effect = self.active_effects[effect_id]
+            # Dauer auf das Maximum setzen (Refresh)
+            existing_effect.duration = max(existing_effect.duration, duration)
+            # Potenz überschreiben (kein Stacken)
+            existing_effect.potency = potency
+            logger.debug(f"Statuseffekt {effect_id} bei {self.name} erneuert/überschrieben")
+        else:
+            # Neuen Effekt anwenden
+            self.active_effects[effect_id] = effect
+            effect.on_apply(self)
+            logger.debug(f"Statuseffekt {effect_id} auf {self.name} angewendet")
+    
+    def remove_status_effect(self, effect_id: str) -> None:
+        """
+        Entfernt einen Statuseffekt vom Charakter.
+        
+        Args:
+            effect_id (str): Die ID des zu entfernenden Statuseffekts
+        """
+        if effect_id in self.active_effects:
+            effect = self.active_effects[effect_id]
+            effect.on_remove(self)
+            del self.active_effects[effect_id]
+            logger.debug(f"Statuseffekt {effect_id} von {self.name} entfernt")
+    
+    def process_status_effects(self) -> None:
+        """
+        Verarbeitet alle aktiven Statuseffekte für eine Runde.
+        """
+        effects_to_remove = []
+        
+        for effect_id, effect in self.active_effects.items():
+            # Effekt-Tick verarbeiten
+            is_active = effect.tick(self)
+            if not is_active:
+                effects_to_remove.append(effect_id)
+        
+        # Abgelaufene Effekte entfernen
+        for effect_id in effects_to_remove:
+            del self.active_effects[effect_id]
+    
+    def take_damage(self, damage: int, damage_type: str) -> Tuple[int, bool]:
+        """
+        Lässt den Charakter Schaden nehmen, unter Berücksichtigung von Rüstung/Resistenz.
+        
+        Args:
+            damage (int): Der Rohe Schaden
+            damage_type (str): Der Schadenstyp (PHYSICAL, MAGICAL, HOLY, etc.)
+            
+        Returns:
+            Tuple[int, bool]: Der tatsächlich zugefügte Schaden und ob der Charakter dadurch stirbt
+        """
+        # Schutzschild-Punkte zuerst anwenden, wenn vorhanden
+        if self.shield_points > 0:
+            absorbed = min(self.shield_points, damage)
+            self.shield_points -= absorbed
+            damage -= absorbed
+            logger.debug(f"{self.name}'s Schild absorbiert {absorbed} Schaden, {self.shield_points} Schildpunkte übrig")
+            if damage <= 0:
+                return absorbed, False
+        
+        # Passende Verteidigung basierend auf Schadenstyp wählen
+        defense = 0
+        if damage_type == 'PHYSICAL':
+            defense = self.get_combat_value('armor')
+        elif damage_type in ('MAGICAL', 'HOLY', 'DARK'):
+            defense = self.get_combat_value('magic_resist')
+        
+        # Schadenreduzierung durch Verteidigung
+        reduced_damage = max(1, damage - defense)  # Mindestens 1 Schaden
+        self.hp -= reduced_damage
+        
+        # Lebendstatus prüfen
+        is_dead = self.hp <= 0
+        if is_dead:
+            self.hp = 0
+            logger.info(f"{self.name} wurde besiegt!")
+        else:
+            logger.debug(f"{self.name} nimmt {reduced_damage} Schaden ({damage} - {defense}), verbleibende HP: {self.hp}")
+        
+        return reduced_damage, is_dead
+    
+    def take_raw_damage(self, damage: int) -> Tuple[int, bool]:
+        """
+        Lässt den Charakter direkten Schaden nehmen, der Rüstung und Resistenzen ignoriert.
+        
+        Args:
+            damage (int): Der Schaden
+            
+        Returns:
+            Tuple[int, bool]: Der tatsächlich zugefügte Schaden und ob der Charakter dadurch stirbt
+        """
+        self.hp -= damage
+        is_dead = self.hp <= 0
+        if is_dead:
+            self.hp = 0
+            logger.info(f"{self.name} wurde durch direkten Schaden besiegt!")
+        else:
+            logger.debug(f"{self.name} nimmt {damage} direkten Schaden, verbleibende HP: {self.hp}")
+        
+        return damage, is_dead
+    
+    def heal(self, amount: int) -> int:
+        """
+        Heilt den Charakter um die angegebene Menge.
+        
+        Args:
+            amount (int): Die Heilungsmenge
+            
+        Returns:
+            int: Die tatsächlich geheilte Menge
+        """
+        if not self.is_alive():
+            logger.debug(f"{self.name} ist tot und kann nicht geheilt werden")
+            return 0
+        
+        max_hp = self.get_max_hp()
+        old_hp = self.hp
+        self.hp = min(max_hp, self.hp + amount)
+        actual_healing = self.hp - old_hp
+        
+        if actual_healing > 0:
+            logger.debug(f"{self.name} wird um {actual_healing} HP geheilt, neue HP: {self.hp}/{max_hp}")
+        
+        return actual_healing
+    
+    def restore_resource(self, resource_type: str, amount: int) -> int:
+        """
+        Stellt eine Ressource (Mana, Stamina, Energy) wieder her.
+        
+        Args:
+            resource_type (str): Der Ressourcentyp ('MANA', 'STAMINA', 'ENERGY')
+            amount (int): Die Menge
+            
+        Returns:
+            int: Die tatsächlich wiederhergestellte Menge
+        """
+        if resource_type == 'MANA':
+            max_value = self.base_combat_values.get('base_mana', 0)
+            old_value = self.mana
+            self.mana = min(max_value, self.mana + amount)
+            return self.mana - old_value
+        
+        elif resource_type == 'STAMINA':
+            max_value = self.base_combat_values.get('base_stamina', 0)
+            old_value = self.stamina
+            self.stamina = min(max_value, self.stamina + amount)
+            return self.stamina - old_value
+        
+        elif resource_type == 'ENERGY':
+            max_value = self.base_combat_values.get('base_energy', 0)
+            old_value = self.energy
+            self.energy = min(max_value, self.energy + amount)
+            return self.energy - old_value
+        
+        return 0
+    
+    def gain_xp(self, amount: int) -> bool:
+        """
+        Lässt den Charakter Erfahrungspunkte erhalten und prüft auf Level-Aufstieg.
+        
+        Args:
+            amount (int): Die Menge an XP
+            
+        Returns:
+            bool: True, wenn ein Level-Aufstieg stattfand, sonst False
+        """
+        if not self.is_alive():
+            return False
+        
+        self.xp += amount
+        logger.debug(f"{self.name} erhält {amount} XP, neue Gesamtsumme: {self.xp}")
+        
+        # Diese Funktion macht noch keinen Level-Up - das überlassen wir dem Leveling-Service,
+        # der über diese Funktion informiert wird und dann die level_up-Methode aufruft.
+        
+        # In einer späteren Implementierung würden wir hier ein Event auslösen,
+        # das vom Leveling-System abonniert wird.
+        return False
+    
+    def level_up(self) -> None:
+        """
+        Führt einen Level-Aufstieg durch.
+        Diese Funktion wird vom Leveling-Service aufgerufen.
+        """
+        self.level += 1
+        logger.info(f"{self.name} ist auf Level {self.level} aufgestiegen!")
+        
+        # Volle Heilung und Ressourcenwiederherstellung
+        max_hp = self.get_max_hp()
+        self.hp = max_hp
+        
+        for resource_type in ['MANA', 'STAMINA', 'ENERGY']:
+            max_resource = self.base_combat_values.get(f'base_{resource_type.lower()}', 0)
+            if resource_type == 'MANA':
+                self.mana = max_resource
+            elif resource_type == 'STAMINA':
+                self.stamina = max_resource
+            elif resource_type == 'ENERGY':
+                self.energy = max_resource
+
+
+===== src/game_logic/effects.py =====
+"""
+Status-Effekte
+
+Enthält die Status-Effekt-Klassen und deren Logik.
+"""
+from abc import ABC, abstractmethod
+from typing import Dict, Any, Optional, List
+
+from src.utils.logging_setup import get_logger
+
+
+# Logger für dieses Modul
+logger = get_logger(__name__)
+
+
+class StatusEffect(ABC):
+    """
+    Abstrakte Basisklasse für Status-Effekte.
+    
+    Alle konkreten Status-Effekte müssen von dieser Klasse erben und
+    die abstrakten Methoden implementieren.
+    """
+    
+    def __init__(self, duration: int, potency: int):
+        """
+        Initialisiert einen Status-Effekt.
+        
+        Args:
+            duration (int): Die Dauer des Effekts in Runden
+            potency (int): Die Stärke des Effekts
+        """
+        self.duration = duration
+        self.potency = potency
+        self.name = self.__class__.__name__
+    
+    @abstractmethod
+    def on_apply(self, target: Any) -> None:
+        """
+        Wird aufgerufen, wenn der Effekt auf ein Ziel angewendet wird.
+        
+        Args:
+            target (Any): Das Ziel, auf das der Effekt angewendet wird
+        """
+        pass
+    
+    @abstractmethod
+    def on_tick(self, target: Any) -> None:
+        """
+        Wird in jeder Runde aufgerufen, solange der Effekt aktiv ist.
+        
+        Args:
+            target (Any): Das Ziel mit dem aktiven Effekt
+        """
+        pass
+    
+    @abstractmethod
+    def on_remove(self, target: Any) -> None:
+        """
+        Wird aufgerufen, wenn der Effekt endet oder entfernt wird.
+        
+        Args:
+            target (Any): Das Ziel, von dem der Effekt entfernt wird
+        """
+        pass
+    
+    def tick(self, target: Any) -> bool:
+        """
+        Verarbeitet einen Tick (eine Runde) des Effekts und reduziert die Dauer.
+        
+        Args:
+            target (Any): Das Ziel mit dem aktiven Effekt
+            
+        Returns:
+            bool: True, wenn der Effekt noch aktiv ist, False wenn er endet
+        """
+        # Effekt anwenden
+        self.on_tick(target)
+        
+        # Dauer reduzieren
+        self.duration -= 1
+        
+        # Prüfen, ob der Effekt endet
+        if self.duration <= 0:
+            self.on_remove(target)
+            return False
+        
+        return True
+    
+    def __str__(self) -> str:
+        """String-Repräsentation des Effekts"""
+        return f"{self.name} (Dauer: {self.duration}, Stärke: {self.potency})"
+
+
+# Konkrete Status-Effekt-Implementierungen
+
+class Burning(StatusEffect):
+    """Brennend: Verursacht Schaden über Zeit"""
+    
+    def on_apply(self, target: Any) -> None:
+        logger.debug(f"{target.name} brennt! (Stärke: {self.potency})")
+    
+    def on_tick(self, target: Any) -> None:
+        # Direkter Schaden, der Rüstung ignoriert
+        damage = self.potency
+        target.take_raw_damage(damage)
+        logger.debug(f"{target.name} erleidet {damage} Feuerschaden durch Brennen")
+    
+    def on_remove(self, target: Any) -> None:
+        logger.debug(f"{target.name} brennt nicht mehr")
+
+
+class Stunned(StatusEffect):
+    """Betäubt: Verhindert Aktionen"""
+    
+    def on_apply(self, target: Any) -> None:
+        target.status_flags['can_act'] = False
+        logger.debug(f"{target.name} ist betäubt und kann nicht handeln")
+    
+    def on_tick(self, target: Any) -> None:
+        # Nichts zu tun bei jedem Tick - der Effekt ist beim Anwenden eingetreten
+        pass
+    
+    def on_remove(self, target: Any) -> None:
+        target.status_flags['can_act'] = True
+        logger.debug(f"{target.name} ist nicht mehr betäubt")
+
+
+class Slowed(StatusEffect):
+    """Verlangsamt: Reduziert Initiative und Ausweichen"""
+    
+    def on_apply(self, target: Any) -> None:
+        target.status_mods['initiative'] -= 5 * self.potency
+        target.status_mods['evasion'] -= self.potency
+        logger.debug(f"{target.name} ist verlangsamt (Initiative -5, Ausweichen -{self.potency})")
+    
+    def on_tick(self, target: Any) -> None:
+        # Nichts zu tun bei jedem Tick - der Effekt ist beim Anwenden eingetreten
+        pass
+    
+    def on_remove(self, target: Any) -> None:
+        target.status_mods['initiative'] += 5 * self.potency
+        target.status_mods['evasion'] += self.potency
+        logger.debug(f"{target.name} ist nicht mehr verlangsamt")
+
+
+class Weakened(StatusEffect):
+    """Geschwächt: Reduziert Stärke"""
+    
+    def on_apply(self, target: Any) -> None:
+        target.status_mods['STR'] -= self.potency
+        logger.debug(f"{target.name} ist geschwächt (STR -{self.potency})")
+    
+    def on_tick(self, target: Any) -> None:
+        # Nichts zu tun bei jedem Tick - der Effekt ist beim Anwenden eingetreten
+        pass
+    
+    def on_remove(self, target: Any) -> None:
+        target.status_mods['STR'] += self.potency
+        logger.debug(f"{target.name} ist nicht mehr geschwächt")
+
+
+class AccuracyDown(StatusEffect):
+    """Genauigkeit reduziert: Reduziert Treffergenauigkeit"""
+    
+    def on_apply(self, target: Any) -> None:
+        target.status_mods['accuracy'] -= self.potency
+        logger.debug(f"{target.name} hat reduzierte Genauigkeit (-{self.potency})")
+    
+    def on_tick(self, target: Any) -> None:
+        # Nichts zu tun bei jedem Tick - der Effekt ist beim Anwenden eingetreten
+        pass
+    
+    def on_remove(self, target: Any) -> None:
+        target.status_mods['accuracy'] += self.potency
+        logger.debug(f"{target.name} hat keine reduzierte Genauigkeit mehr")
+
+
+class InitiativeUp(StatusEffect):
+    """Initiative erhöht: Erhöht die Initiative"""
+    
+    def on_apply(self, target: Any) -> None:
+        target.status_mods['initiative'] += self.potency
+        logger.debug(f"{target.name} hat erhöhte Initiative (+{self.potency})")
+    
+    def on_tick(self, target: Any) -> None:
+        # Nichts zu tun bei jedem Tick - der Effekt ist beim Anwenden eingetreten
+        pass
+    
+    def on_remove(self, target: Any) -> None:
+        target.status_mods['initiative'] -= self.potency
+        logger.debug(f"{target.name} hat keine erhöhte Initiative mehr")
+
+
+class Shielded(StatusEffect):
+    """Geschützt: Absorbiert Schaden"""
+    
+    def on_apply(self, target: Any) -> None:
+        target.shield_points = self.potency
+        logger.debug(f"{target.name} hat einen Schutzschild ({self.potency} Punkte)")
+    
+    def on_tick(self, target: Any) -> None:
+        # Nichts zu tun bei jedem Tick - der Effekt ist beim Anwenden eingetreten
+        pass
+    
+    def on_remove(self, target: Any) -> None:
+        target.shield_points = 0
+        logger.debug(f"{target.name} hat keinen Schutzschild mehr")
+
+
+class DefenseUp(StatusEffect):
+    """Verteidigung erhöht: Erhöht Rüstung und Magieresistenz"""
+    
+    def on_apply(self, target: Any) -> None:
+        target.status_mods['armor'] += self.potency
+        target.status_mods['magic_resist'] += self.potency
+        logger.debug(f"{target.name} hat erhöhte Verteidigung (Rüstung/Magieresistenz +{self.potency})")
+    
+    def on_tick(self, target: Any) -> None:
+        # Nichts zu tun bei jedem Tick - der Effekt ist beim Anwenden eingetreten
+        pass
+    
+    def on_remove(self, target: Any) -> None:
+        target.status_mods['armor'] -= self.potency
+        target.status_mods['magic_resist'] -= self.potency
+        logger.debug(f"{target.name} hat keine erhöhte Verteidigung mehr")
+
+
+# Factory für Status-Effekte
+def create_status_effect(effect_id: str, duration: int, potency: int) -> Optional[StatusEffect]:
+    """
+    Erstellt einen Status-Effekt basierend auf der ID.
+    
+    Args:
+        effect_id (str): Die ID des Status-Effekts
+        duration (int): Die Dauer in Runden
+        potency (int): Die Stärke des Effekts
+        
+    Returns:
+        Optional[StatusEffect]: Der erstellte Status-Effekt oder None, wenn die ID ungültig ist
+    """
+    effect_classes = {
+        'BURNING': Burning,
+        'STUNNED': Stunned,
+        'SLOWED': Slowed,
+        'WEAKENED': Weakened,
+        'ACCURACY_DOWN': AccuracyDown,
+        'INITIATIVE_UP': InitiativeUp,
+        'SHIELDED': Shielded,
+        'DEFENSE_UP': DefenseUp,
+    }
+    
+    effect_class = effect_classes.get(effect_id)
+    if not effect_class:
+        logger.error(f"Unbekannter Status-Effekt: {effect_id}")
+        return None
+    
+    return effect_class(duration, potency)
+
+
+===== src/game_logic/leveling.py =====
+"""
+Leveling-System
+
+Enthält Funktionen und Klassen für das Leveling-System.
+"""
+from typing import Dict, Any, List, Optional
+
+from src.game_logic.formulas import calculate_xp_for_level
+from src.game_logic.entities import CharacterInstance
+from src.utils.logging_setup import get_logger
+
+
+# Logger für dieses Modul
+logger = get_logger(__name__)
+
+
+class LevelingService:
+    """
+    Service zur Verwaltung von Erfahrungspunkten und Level-Aufstiegen.
+    
+    Diese Klasse verwaltet die XP-Vergabe und Level-Up-Logik für alle Charaktere.
+    Sie ist vom konkreten Charakter-Zustand entkoppelt.
+    """
+    
+    def __init__(self):
+        """Initialisiert den Leveling-Service."""
+        # Hier könnten zusätzliche Initialisierungen stattfinden, z.B.
+        # das Laden von Level-Up-Belohnungen oder -Boni aus Konfigurationsdateien
+        pass
+    
+    def award_xp(self, character: CharacterInstance, amount: int) -> bool:
+        """
+        Vergibt XP an einen Charakter und prüft auf Level-Aufstieg.
+        
+        Args:
+            character (CharacterInstance): Der Charakter, der XP erhält
+            amount (int): Die Menge an XP
+            
+        Returns:
+            bool: True, wenn ein Level-Aufstieg stattfand, sonst False
+        """
+        if not character.is_alive():
+            logger.debug(f"Keine XP für {character.name}, da nicht am Leben")
+            return False
+        
+        # XP vergeben
+        character.xp += amount
+        logger.info(f"{character.name} erhält {amount} XP, neue Gesamtsumme: {character.xp}")
+        
+        # Prüfen, ob ein Level-Aufstieg möglich ist
+        current_level = character.level
+        new_level = self.calculate_level_from_xp(character.xp)
+        
+        if new_level > current_level:
+            # Level-Aufstieg durchführen
+            levels_gained = new_level - current_level
+            logger.info(f"{character.name} steigt {levels_gained} Level auf!")
+            
+            # Für jeden gewonnenen Level die Boni anwenden
+            for _ in range(levels_gained):
+                self._apply_level_up(character)
+            
+            return True
+        
+        return False
+    
+    def calculate_level_from_xp(self, xp: int) -> int:
+        """
+        Berechnet das Level basierend auf XP.
+        
+        Args:
+            xp (int): Die Gesamtsumme an XP
+            
+        Returns:
+            int: Das daraus resultierende Level
+        """
+        level = 1
+        while True:
+            xp_for_next = calculate_xp_for_level(level + 1)
+            if xp_for_next > xp:
+                break
+            level += 1
+        
+        return level
+    
+    def get_xp_for_next_level(self, character: CharacterInstance) -> int:
+        """
+        Berechnet die XP, die für das nächste Level benötigt werden.
+        
+        Args:
+            character (CharacterInstance): Der Charakter
+            
+        Returns:
+            int: Die benötigte XP für das nächste Level
+        """
+        next_level = character.level + 1
+        return calculate_xp_for_level(next_level)
+    
+    def get_xp_progress_percentage(self, character: CharacterInstance) -> float:
+        """
+        Berechnet den XP-Fortschritt in Prozent zum nächsten Level.
+        
+        Args:
+            character (CharacterInstance): Der Charakter
+            
+        Returns:
+            float: Der Fortschritt in Prozent (0-100)
+        """
+        current_level_xp = calculate_xp_for_level(character.level)
+        next_level_xp = calculate_xp_for_level(character.level + 1)
+        
+        if next_level_xp <= current_level_xp:  # Sicherheit für Edge-Cases
+            return 100.0
+        
+        xp_for_level = next_level_xp - current_level_xp
+        current_xp_in_level = character.xp - current_level_xp
+        
+        progress = (current_xp_in_level / xp_for_level) * 100.0
+        return max(0.0, min(100.0, progress))  # Auf 0-100% beschränken
+    
+    def _apply_level_up(self, character: CharacterInstance) -> None:
+        """
+        Wendet die Level-Up-Logik auf einen Charakter an.
+        
+        Args:
+            character (CharacterInstance): Der Charakter, der aufsteigt
+        """
+        character.level += 1
+        logger.info(f"{character.name} ist auf Level {character.level} aufgestiegen!")
+        
+        # Volle Heilung und Ressourcenwiederherstellung
+        max_hp = character.get_max_hp()
+        character.hp = max_hp
+        
+        for resource_type in ['MANA', 'STAMINA', 'ENERGY']:
+            resource_key = f"base_{resource_type.lower()}"
+            max_resource = character.base_combat_values.get(resource_key, 0)
+            if max_resource > 0:
+                if resource_type == 'MANA':
+                    character.mana = max_resource
+                elif resource_type == 'STAMINA':
+                    character.stamina = max_resource
+                elif resource_type == 'ENERGY':
+                    character.energy = max_resource
+        
+        # Hier könnten weitere Level-Up-Boni angewendet werden, z.B.:
+        # - Neue Skills freischalten
+        # - Attributpunkte vergeben
+        # - Kampfwerte erhöhen
+        # Diese Logik würde in späteren Versionen implementiert werden.
+
+
+# Globale Instanz des Leveling-Service
+leveling_service = LevelingService()
+
+
+def get_leveling_service() -> LevelingService:
+    """
+    Gibt die globale Instanz des Leveling-Service zurück.
+    
+    Returns:
+        LevelingService: Die globale Instanz
+    """
+    return leveling_service
+
+
+===== src/game_logic/__init__.py =====
+"""
+Game Logic Paket
+
+Enthält die Kernlogik des Spiels und das Spielzustandsmanagement.
+"""
+
+
+===== src/game_logic/formulas.py =====
+"""
+Formeln und Berechnungen
+
+Enthält grundlegende Berechnungsformeln für Spiel-Mechaniken wie
+Attributboni, HP-Berechnung, Trefferchance usw.
+"""
+import math
+from typing import Optional
+
+from src.config.config import get_config
+from src.utils.logging_setup import get_logger
+
+
+# Logger für dieses Modul
+logger = get_logger(__name__)
+
+
+def calculate_attribute_bonus(attribute_value: int) -> int:
+    """
+    Berechnet den Bonus/Malus für einen Attributwert.
+    Formel: (Attributwert - 10) // 2 (ganzzahlige Division)
+    
+    Args:
+        attribute_value (int): Der Attributwert (z.B. STR, DEX)
+        
+    Returns:
+        int: Der Bonus/Malus für diesen Attributwert
+    """
+    return (attribute_value - 10) // 2
+
+
+def calculate_max_hp(base_hp: int, constitution: int) -> int:
+    """
+    Berechnet die maximalen Lebenspunkte.
+    Formel: Basis-HP + (Konstitution * 5)
+    
+    Args:
+        base_hp (int): Die Basis-Lebenspunkte
+        constitution (int): Der Konstitutionswert (CON)
+        
+    Returns:
+        int: Die maximalen Lebenspunkte
+    """
+    return base_hp + (constitution * 5)
+
+
+def calculate_damage(
+    base_damage: Optional[int], 
+    attribute_value: int, 
+    multiplier: float = 1.0
+) -> int:
+    """
+    Berechnet den Schaden einer Aktion.
+    Formel: floor((Basis-Schaden + Attribut-Bonus) * Multiplikator)
+    
+    Args:
+        base_damage (Optional[int]): Der Basis-Schaden (None nutzt Standardwert)
+        attribute_value (int): Der relevante Attributwert (z.B. STR, INT)
+        multiplier (float): Ein Multiplikator für den Schaden (Standard: 1.0)
+        
+    Returns:
+        int: Der berechnete Schaden (abgerundet)
+    """
+    config = get_config()
+    if base_damage is None:
+        base_damage = config.game_settings.get('base_weapon_damage', 5)
+        
+    attribute_bonus = calculate_attribute_bonus(attribute_value)
+    return math.floor((base_damage + attribute_bonus) * multiplier)
+
+
+def calculate_healing(
+    base_healing: int,
+    attribute_value: int,
+    multiplier: float = 1.0
+) -> int:
+    """
+    Berechnet die Heilung einer Aktion.
+    Formel: floor((Basis-Heilung + Attribut-Bonus) * Multiplikator)
+    
+    Args:
+        base_healing (int): Die Basis-Heilung
+        attribute_value (int): Der relevante Attributwert (z.B. WIS)
+        multiplier (float): Ein Multiplikator für die Heilung (Standard: 1.0)
+        
+    Returns:
+        int: Die berechnete Heilung (abgerundet)
+    """
+    attribute_bonus = calculate_attribute_bonus(attribute_value)
+    return math.floor((base_healing + attribute_bonus) * multiplier)
+
+
+def calculate_damage_reduction(damage: int, defense: int) -> int:
+    """
+    Berechnet den reduzierten Schaden nach Anwendung der Verteidigung.
+    Formel: max(min_damage, Schaden - Verteidigung)
+    
+    Args:
+        damage (int): Der ursprüngliche Schaden
+        defense (int): Der Verteidigungswert (Rüstung oder Magieresistenz)
+        
+    Returns:
+        int: Der reduzierte Schaden
+    """
+    config = get_config()
+    min_damage = config.game_settings.get('min_damage', 1)
+    
+    reduced_damage = max(min_damage, damage - defense)
+    return reduced_damage
+
+
+def calculate_hit_chance(accuracy: int, evasion: int) -> int:
+    """
+    Berechnet die Trefferchance basierend auf Genauigkeit und Ausweichen.
+    Formel: max(min_chance, min(max_chance, base_chance + (Genauigkeit*Faktor) - (Ausweichen*Faktor)))
+    
+    Args:
+        accuracy (int): Der Genauigkeitswert des Angreifers
+        evasion (int): Der Ausweichenwert des Ziels
+        
+    Returns:
+        int: Die Trefferchance in Prozent (5-95)
+    """
+    config = get_config()
+    base_chance = config.game_settings.get('hit_chance_base', 90)
+    accuracy_factor = config.game_settings.get('hit_chance_accuracy_factor', 3)
+    evasion_factor = config.game_settings.get('hit_chance_evasion_factor', 2)
+    min_chance = config.game_settings.get('hit_chance_min', 5)
+    max_chance = config.game_settings.get('hit_chance_max', 95)
+    
+    # Berechnung mit Abrundung auf ganze Prozente
+    hit_chance = base_chance + (accuracy * accuracy_factor) - (evasion * evasion_factor)
+    
+    # Auf den erlaubten Bereich beschränken
+    hit_chance = max(min_chance, min(max_chance, hit_chance))
+    
+    return hit_chance
+
+
+def calculate_xp_for_level(level: int) -> int:
+    """
+    Berechnet die benötigte XP für ein bestimmtes Level.
+    Formel: ceiling(xp_level_base * (xp_level_factor ^ (level - 1)))
+    
+    Args:
+        level (int): Das zu berechnende Level
+        
+    Returns:
+        int: Die benötigte XP für dieses Level
+    """
+    config = get_config()
+    xp_base = config.game_settings.get('xp_level_base', 100)
+    xp_factor = config.game_settings.get('xp_level_factor', 1.5)
+    
+    # Level 1 benötigt 0 XP, da es das Startlevel ist
+    if level <= 1:
+        return 0
+    
+    # XP für Level berechnen und aufrunden
+    required_xp = math.ceil(xp_base * (xp_factor ** (level - 1)))
+    return required_xp
+
+
+def calculate_accuracy_modifier(dexterity: int, effects_mod: int = 0) -> int:
+    """
+    Berechnet den Genauigkeitsmodifikator basierend auf Geschicklichkeit und Effekten.
+    
+    Args:
+        dexterity (int): Der Geschicklichkeitswert
+        effects_mod (int): Modifikator durch Status-Effekte
+        
+    Returns:
+        int: Der Gesamtmodifikator für Genauigkeit
+    """
+    base_mod = calculate_attribute_bonus(dexterity)
+    return base_mod + effects_mod
+
+
+def calculate_evasion_modifier(dexterity: int, effects_mod: int = 0) -> int:
+    """
+    Berechnet den Ausweichmodifikator basierend auf Geschicklichkeit und Effekten.
+    
+    Args:
+        dexterity (int): Der Geschicklichkeitswert
+        effects_mod (int): Modifikator durch Status-Effekte
+        
+    Returns:
+        int: Der Gesamtmodifikator für Ausweichen
+    """
+    base_mod = calculate_attribute_bonus(dexterity)
+    return base_mod + effects_mod
+
+
+===== src/game_logic/__pycache__/formulas.cpython-312.pyc (Fehler beim Lesen) =====
+
+===== src/game_logic/__pycache__/__init__.cpython-312.pyc (Fehler beim Lesen) =====
+
+===== src/game_logic/__pycache__/effects.cpython-312.pyc (Fehler beim Lesen) =====
+
+===== src/game_logic/__pycache__/entities.cpython-312.pyc (Fehler beim Lesen) =====
+
+===== src/game_logic/__pycache__/leveling.cpython-312.pyc (Fehler beim Lesen) =====
+
+===== src/game_logic/__pycache__/combat.cpython-312.pyc (Fehler beim Lesen) =====
+
+===== src/definitions/skill.py =====
+"""
+Skill-Definition
+
+Definiert die Struktur eines Skills.
+"""
+from typing import Dict, List, Optional, Any
+from dataclasses import dataclass
+
+
+@dataclass
+class StatusEffectDefinition:
+    """
+    Definition eines durch einen Skill anwendbaren Status-Effekts.
+    
+    Attribute:
+        id (str): Die ID des Status-Effekts
+        duration (int): Die Dauer in Runden
+        potency (int): Die Stärke des Effekts
+    """
+    id: str
+    duration: int
+    potency: int
+    
+    @staticmethod
+    def from_dict(data: Dict[str, Any]) -> 'StatusEffectDefinition':
+        """
+        Erstellt eine StatusEffectDefinition aus einer Dictionary.
+        
+        Args:
+            data (Dict[str, Any]): Die Rohdaten aus der JSON5-Datei
+            
+        Returns:
+            StatusEffectDefinition: Eine neue StatusEffectDefinition-Instanz
+        """
+        return StatusEffectDefinition(
+            id=data.get('id', ''),
+            duration=data.get('duration', 1),
+            potency=data.get('potency', 1),
+        )
+
+
+@dataclass
+class SkillDefinition:
+    """
+    Repräsentiert einen Skill mit allen notwendigen Eigenschaften.
+    
+    Attribute:
+        id (str): Die eindeutige ID des Skills
+        name (str): Der angezeigte Name
+        description (str): Die Beschreibung
+        cost (Dict[str, Any]): Die Kosten (Wert und Typ)
+        effects (Dict[str, Any]): Die Effekte (Schaden, Attribut, etc.)
+        applies_effects (List[StatusEffectDefinition]): Angewandte Status-Effekte
+    """
+    id: str
+    name: str
+    description: str
+    cost: Dict[str, Any]
+    effects: Dict[str, Any]
+    applies_effects: List[StatusEffectDefinition]
+    
+    @staticmethod
+    def from_dict(skill_id: str, data: Dict[str, Any]) -> 'SkillDefinition':
+        """
+        Erstellt eine SkillDefinition-Instanz aus einer Dictionary.
+        
+        Args:
+            skill_id (str): Die ID des Skills
+            data (Dict[str, Any]): Die Rohdaten aus der JSON5-Datei
+            
+        Returns:
+            SkillDefinition: Eine neue SkillDefinition-Instanz
+        """
+        applies_effects = []
+        if 'applies_effects' in data:
+            applies_effects = [StatusEffectDefinition.from_dict(effect) for effect in data['applies_effects']]
+            
+        return SkillDefinition(
+            id=skill_id,
+            name=data.get('name', skill_id),
+            description=data.get('description', ''),
+            cost=data.get('cost', {'value': 0, 'type': 'NONE'}),
+            effects=data.get('effects', {}),
+            applies_effects=applies_effects,
+        )
+    
+    def get_cost_value(self) -> int:
+        """
+        Gibt den Kostenwert des Skills zurück.
+        
+        Returns:
+            int: Der Kostenwert
+        """
+        return self.cost.get('value', 0)
+    
+    def get_cost_type(self) -> str:
+        """
+        Gibt den Kostentyp des Skills zurück.
+        
+        Returns:
+            str: Der Kostentyp (z.B. 'MANA', 'STAMINA')
+        """
+        return self.cost.get('type', 'NONE')
+    
+    def get_base_damage(self, default_damage: Optional[int] = None) -> Optional[int]:
+        """
+        Gibt den Basisschaden des Skills zurück.
+        
+        Args:
+            default_damage (Optional[int]): Der Standardwert, falls base_damage null ist
+            
+        Returns:
+            Optional[int]: Der Basisschaden oder der Standardwert
+        """
+        base_damage = self.effects.get('base_damage')
+        if base_damage is None and default_damage is not None:
+            return default_damage
+        return base_damage
+    
+    def get_scaling_attribute(self) -> str:
+        """
+        Gibt das Skalierungsattribut des Skills zurück.
+        
+        Returns:
+            str: Das Skalierungsattribut (z.B. 'STR', 'INT')
+        """
+        return self.effects.get('scaling_attribute', '')
+    
+    def get_damage_type(self) -> str:
+        """
+        Gibt den Schadenstyp des Skills zurück.
+        
+        Returns:
+            str: Der Schadenstyp (z.B. 'PHYSICAL', 'MAGICAL')
+        """
+        return self.effects.get('damage_type', 'PHYSICAL')
+    
+    def get_multiplier(self) -> float:
+        """
+        Gibt den Schadensmultiplikator des Skills zurück.
+        
+        Returns:
+            float: Der Multiplikator (z.B. 1.0, 1.5)
+        """
+        return self.effects.get('multiplier', 1.0)
+    
+    def is_self_effect(self) -> bool:
+        """
+        Prüft, ob der Skill einen Selbst-Effekt hat.
+        
+        Returns:
+            bool: True, wenn es ein Selbst-Effekt ist, sonst False
+        """
+        return self.effects.get('self_effect', False)
+    
+    def is_area_effect(self) -> bool:
+        """
+        Prüft, ob der Skill einen Flächeneffekt hat.
+        
+        Returns:
+            bool: True, wenn es ein Flächeneffekt ist, sonst False
+        """
+        return 'area_type' in self.effects
+    
+    def get_area_type(self) -> str:
+        """
+        Gibt den Typ des Flächeneffekts zurück.
+        
+        Returns:
+            str: Der Typ des Flächeneffekts (z.B. 'CLEAVE', 'SPLASH')
+        """
+        return self.effects.get('area_type', '')
+
+
+===== src/definitions/__init__.py =====
+"""
+Definitions Paket
+
+Enthält Klassen und Funktionen zur Definition von Spielobjekten und dem Laden von JSON5-Daten.
+"""
+
+
+===== src/definitions/item.py =====
+"""
+Item-Definition (Platzhalter)
+
+Definiert die Struktur eines Items.
+"""
+from typing import Dict, List, Any
+from dataclasses import dataclass
+
+
+@dataclass
+class ItemDefinition:
+    """
+    Repräsentiert ein Item mit allen notwendigen Eigenschaften (Platzhalter).
+    
+    Attribute:
+        id (str): Die eindeutige ID des Items
+        name (str): Der angezeigte Name
+        description (str): Die Beschreibung
+        item_type (str): Der Typ des Items (z.B. WEAPON, ARMOR)
+        properties (Dict[str, Any]): Die Eigenschaften des Items
+        tags (List[str]): Tags für das Item
+    """
+    id: str
+    name: str
+    description: str
+    item_type: str
+    properties: Dict[str, Any]
+    tags: List[str]
+    
+    @staticmethod
+    def from_dict(item_id: str, data: Dict[str, Any]) -> 'ItemDefinition':
+        """
+        Erstellt eine ItemDefinition-Instanz aus einer Dictionary.
+        
+        Args:
+            item_id (str): Die ID des Items
+            data (Dict[str, Any]): Die Rohdaten aus der JSON5-Datei
+            
+        Returns:
+            ItemDefinition: Eine neue ItemDefinition-Instanz
+        """
+        return ItemDefinition(
+            id=item_id,
+            name=data.get('name', item_id),
+            description=data.get('description', ''),
+            item_type=data.get('item_type', 'MISC'),
+            properties=data.get('properties', {}),
+            tags=data.get('tags', []),
+        )
+
+
+===== src/definitions/loader.py =====
+"""
+Loader für JSON5-Daten
+
+Lädt JSON5-Dateien und konvertiert sie in Python-Objekte.
+"""
+import os
+import json5
+from typing import Dict, Any, List, Type, TypeVar, Optional
+
+from .character import CharacterTemplate, OpponentTemplate
+from .skill import SkillDefinition
+from .item import ItemDefinition
+
+# Type-Variable für generisches Laden
+T = TypeVar('T')
+
+
+def load_json5_file(filepath: str) -> Dict[str, Any]:
+    """
+    Lädt eine JSON5-Datei und gibt den Inhalt als Dictionary zurück.
+    
+    Args:
+        filepath (str): Der Pfad zur JSON5-Datei
+        
+    Returns:
+        Dict[str, Any]: Die geladenen Daten
+        
+    Raises:
+        FileNotFoundError: Wenn die Datei nicht gefunden wird
+        json5.Json5Error: Wenn die Datei kein gültiges JSON5 enthält
+    """
+    if not os.path.exists(filepath):
+        raise FileNotFoundError(f"JSON5-Datei nicht gefunden: {filepath}")
+    
+    with open(filepath, 'r', encoding='utf-8') as file:
+        try:
+            return json5.load(file)
+        except Exception as e:
+            raise json5.Json5Error(f"Fehler beim Laden der JSON5-Datei {filepath}: {str(e)}")
+
+
+def load_templates(json_path: str, 
+                  template_class: Type[T], 
+                  prefix: Optional[str] = None) -> Dict[str, T]:
+    """
+    Lädt Templates aus einer JSON5-Datei.
+    
+    Args:
+        json_path (str): Der Pfad zur JSON5-Datei
+        template_class (Type[T]): Die Klasse, in die die Daten konvertiert werden sollen
+        prefix (Optional[str]): Ein optionales Präfix für die IDs
+        
+    Returns:
+        Dict[str, T]: Ein Dictionary mit den geladenen Templates
+    """
+    data = load_json5_file(json_path)
+    results = {}
+    
+    for template_id, template_data in data.items():
+        full_id = f"{prefix}_{template_id}" if prefix else template_id
+        results[full_id] = template_class.from_dict(full_id, template_data)
+    
+    return results
+
+
+def load_characters(json_path: str) -> Dict[str, CharacterTemplate]:
+    """
+    Lädt Charakterdefinitionen aus einer JSON5-Datei.
+    
+    Args:
+        json_path (str): Der Pfad zur characters.json5
+        
+    Returns:
+        Dict[str, CharacterTemplate]: Ein Dictionary mit den geladenen Charakteren
+    """
+    return load_templates(json_path, CharacterTemplate)
+
+
+def load_opponents(json_path: str) -> Dict[str, OpponentTemplate]:
+    """
+    Lädt Gegnerdefinitionen aus einer JSON5-Datei.
+    
+    Args:
+        json_path (str): Der Pfad zur opponents.json5
+        
+    Returns:
+        Dict[str, OpponentTemplate]: Ein Dictionary mit den geladenen Gegnern
+    """
+    return load_templates(json_path, OpponentTemplate)
+
+
+def load_skills(json_path: str) -> Dict[str, SkillDefinition]:
+    """
+    Lädt Skilldefinitionen aus einer JSON5-Datei.
+    
+    Args:
+        json_path (str): Der Pfad zur skills.json5
+        
+    Returns:
+        Dict[str, SkillDefinition]: Ein Dictionary mit den geladenen Skills
+    """
+    return load_templates(json_path, SkillDefinition)
+
+
+def load_items(json_path: str) -> Dict[str, ItemDefinition]:
+    """
+    Lädt Itemdefinitionen aus einer JSON5-Datei.
+    
+    Args:
+        json_path (str): Der Pfad zur items.json5
+        
+    Returns:
+        Dict[str, ItemDefinition]: Ein Dictionary mit den geladenen Items
+    """
+    return load_templates(json_path, ItemDefinition)
+
+
+===== src/definitions/character.py =====
+"""
+Charakter-Definition
+
+Definiert die Struktur eines Charakter-Templates.
+"""
+from typing import Dict, List, Optional, Any
+from dataclasses import dataclass
+
+
+@dataclass
+class CharacterTemplate:
+    """
+    Repräsentiert ein Charakter-Template mit allen Basiseigenschaften.
+    
+    Attribute:
+        id (str): Die eindeutige ID des Charakters/der Klasse
+        name (str): Der angezeigte Name
+        description (str): Die Beschreibung
+        primary_attributes (Dict[str, int]): Die Primärattribute (STR, DEX, etc.)
+        combat_values (Dict[str, int]): Kampfwerte (HP, Mana, etc.)
+        skills (List[str]): IDs der verfügbaren Skills
+        tags (List[str]): Tags für den Charakter (z.B. WARRIOR, MELEE)
+    """
+    id: str
+    name: str
+    description: str
+    primary_attributes: Dict[str, int]
+    combat_values: Dict[str, int]
+    skills: List[str]
+    tags: List[str]
+    
+    @staticmethod
+    def from_dict(char_id: str, data: Dict[str, Any]) -> 'CharacterTemplate':
+        """
+        Erstellt eine CharacterTemplate-Instanz aus einer Dictionary.
+        
+        Args:
+            char_id (str): Die ID des Charakters
+            data (Dict[str, Any]): Die Rohdaten aus der JSON5-Datei
+            
+        Returns:
+            CharacterTemplate: Eine neue CharacterTemplate-Instanz
+        """
+        return CharacterTemplate(
+            id=char_id,
+            name=data.get('name', char_id),
+            description=data.get('description', ''),
+            primary_attributes=data.get('primary_attributes', {}),
+            combat_values=data.get('combat_values', {}),
+            skills=data.get('skills', []),
+            tags=data.get('tags', []),
+        )
+    
+    def get_attribute(self, attribute: str) -> int:
+        """
+        Gibt den Wert eines Primärattributs zurück.
+        
+        Args:
+            attribute (str): Der Name des Attributs (z.B. 'STR')
+            
+        Returns:
+            int: Der Wert des Attributs oder 0, wenn nicht vorhanden
+        """
+        return self.primary_attributes.get(attribute, 0)
+    
+    def get_combat_value(self, value: str) -> int:
+        """
+        Gibt den Wert eines Kampfwerts zurück.
+        
+        Args:
+            value (str): Der Name des Kampfwerts (z.B. 'base_hp')
+            
+        Returns:
+            int: Der Wert oder 0, wenn nicht vorhanden
+        """
+        return self.combat_values.get(value, 0)
+    
+    def has_tag(self, tag: str) -> bool:
+        """
+        Prüft, ob der Charakter einen bestimmten Tag hat.
+        
+        Args:
+            tag (str): Der zu prüfende Tag
+            
+        Returns:
+            bool: True, wenn der Tag vorhanden ist, sonst False
+        """
+        return tag in self.tags
+
+
+class OpponentTemplate(CharacterTemplate):
+    """
+    Erweitert CharacterTemplate um gegner-spezifische Eigenschaften.
+    
+    Zusätzliche Attribute:
+        level (int): Das Level des Gegners
+        xp_reward (int): Die XP-Belohnung bei Besiegen des Gegners
+        ai_strategy (str): Die zu verwendende KI-Strategie-ID
+        weaknesses (List[str]): Schwächen gegen bestimmte Schadenstypen
+    """
+    
+    def __init__(self, 
+                 id: str,
+                 name: str,
+                 description: str,
+                 primary_attributes: Dict[str, int],
+                 combat_values: Dict[str, int],
+                 skills: List[str],
+                 tags: List[str],
+                 level: int,
+                 xp_reward: int,
+                 ai_strategy: str,
+                 weaknesses: Optional[List[str]] = None):
+        super().__init__(id, name, description, primary_attributes, 
+                         combat_values, skills, tags)
+        self.level = level
+        self.xp_reward = xp_reward
+        self.ai_strategy = ai_strategy
+        self.weaknesses = weaknesses or []
+    
+    @staticmethod
+    def from_dict(opp_id: str, data: Dict[str, Any]) -> 'OpponentTemplate':
+        """
+        Erstellt eine OpponentTemplate-Instanz aus einer Dictionary.
+        
+        Args:
+            opp_id (str): Die ID des Gegners
+            data (Dict[str, Any]): Die Rohdaten aus der JSON5-Datei
+            
+        Returns:
+            OpponentTemplate: Eine neue OpponentTemplate-Instanz
+        """
+        return OpponentTemplate(
+            id=opp_id,
+            name=data.get('name', opp_id),
+            description=data.get('description', ''),
+            primary_attributes=data.get('primary_attributes', {}),
+            combat_values=data.get('combat_values', {}),
+            skills=data.get('skills', []),
+            tags=data.get('tags', []),
+            level=data.get('level', 1),
+            xp_reward=data.get('xp_reward', 0),
+            ai_strategy=data.get('ai_strategy', 'basic_melee'),
+            weaknesses=data.get('weaknesses', []),
+        )
+
+
+===== src/definitions/__pycache__/__init__.cpython-312.pyc (Fehler beim Lesen) =====
+
+===== src/definitions/__pycache__/skill.cpython-312.pyc (Fehler beim Lesen) =====
+
+===== src/definitions/__pycache__/loader.cpython-312.pyc (Fehler beim Lesen) =====
+
+===== src/definitions/__pycache__/item.cpython-312.pyc (Fehler beim Lesen) =====
+
+===== src/definitions/__pycache__/character.cpython-312.pyc (Fehler beim Lesen) =====
+
+===== src/definitions/json_data/skills.json5 =====
+{
+  // Basisangriffe
+  "basic_attack_free": {
+    "name": "Angriff",
+    "description": "Ein einfacher Angriff, der keine Ressourcen kostet.",
+    "cost": {
+      "value": 0,
+      "type": "NONE"
+    },
+    "effects": {
+      "base_damage": 3,
+      "scaling_attribute": "STR",
+      "damage_type": "PHYSICAL",
+      "multiplier": 1.0
+    }
+  },
+  
+  "basic_strike_phys": {
+    "name": "Schlag",
+    "description": "Ein kräftiger Schlag mit einer Nahkampfwaffe.",
+    "cost": {
+      "value": 5,
+      "type": "STAMINA"
+    },
+    "effects": {
+      "base_damage": null,  // Nutzt den Standard-Waffenschaden
+      "scaling_attribute": "STR",
+      "damage_type": "PHYSICAL",
+      "multiplier": 1.0
+    }
+  },
+  
+  // [Rest der Datei bleibt unverändert]
+  "basic_magic_bolt": {
+    "name": "Magischer Pfeil",
+    "description": "Ein einfacher magischer Energiepfeil.",
+    "cost": {
+      "value": 5,
+      "type": "MANA"
+    },
+    "effects": {
+      "base_damage": null,  // Nutzt den Standard-Waffenschaden
+      "scaling_attribute": "INT",
+      "damage_type": "MAGICAL",
+      "multiplier": 1.0
+    }
+  },
+  
+  "basic_holy_spark": {
+    "name": "Heiliger Funke",
+    "description": "Ein Funke heiliger Energie.",
+    "cost": {
+      "value": 5,
+      "type": "MANA"
+    },
+    "effects": {
+      "base_damage": null,  // Nutzt den Standard-Waffenschaden
+      "scaling_attribute": "WIS",
+      "damage_type": "HOLY",
+      "multiplier": 1.0
+    }
+  },
+  
+  "basic_strike_finesse": {
+    "name": "Präziser Stich",
+    "description": "Ein präziser Stich mit einer Klinge.",
+    "cost": {
+      "value": 5,
+      "type": "ENERGY"
+    },
+    "effects": {
+      "base_damage": null,  // Nutzt den Standard-Waffenschaden
+      "scaling_attribute": "DEX",
+      "damage_type": "PHYSICAL",
+      "multiplier": 1.0
+    }
+  },
+  
+  "basic_shot_phys": {
+    "name": "Schuss",
+    "description": "Ein einfacher Schuss mit einer Fernkampfwaffe.",
+    "cost": {
+      "value": 5,
+      "type": "STAMINA"
+    },
+    "effects": {
+      "base_damage": null,  // Nutzt den Standard-Waffenschaden
+      "scaling_attribute": "DEX",
+      "damage_type": "PHYSICAL",
+      "multiplier": 1.0
+    }
+  },
+  
+  // Krieger-Skills
+  "power_strike": {
+    "name": "Mächtiger Schlag",
+    "description": "Ein kraftvoller Schlag, der zusätzlichen Schaden verursacht.",
+    "cost": {
+      "value": 15,
+      "type": "STAMINA"
+    },
+    "effects": {
+      "base_damage": 6,
+      "scaling_attribute": "STR",
+      "damage_type": "PHYSICAL",
+      "multiplier": 1.5
+    }
+  },
+  
+  "shield_bash": {
+    "name": "Schildschlag",
+    "description": "Ein Schlag mit dem Schild, der den Gegner betäubt.",
+    "cost": {
+      "value": 20,
+      "type": "STAMINA"
+    },
+    "effects": {
+      "base_damage": 2,
+      "scaling_attribute": "STR",
+      "damage_type": "PHYSICAL",
+      "multiplier": 1.0
+    },
+    "applies_effects": [
+      {
+        "id": "STUNNED",
+        "duration": 1,
+        "potency": 1
+      }
+    ]
+  },
+  
+  "cleave": {
+    "name": "Rundumschlag",
+    "description": "Ein weiter Schwung, der mehrere Gegner treffen kann.",
+    "cost": {
+      "value": 25,
+      "type": "STAMINA"
+    },
+    "effects": {
+      "base_damage": 7,
+      "scaling_attribute": "STR",
+      "damage_type": "PHYSICAL",
+      "multiplier": 1.2,
+      "area_type": "CLEAVE"
+    }
+  },
+  
+  // Magier-Skills
+  "fireball": {
+    "name": "Feuerball",
+    "description": "Ein explodierender Feuerball, der den Gegner verbrennt.",
+    "cost": {
+      "value": 20,
+      "type": "MANA"
+    },
+    "effects": {
+      "base_damage": 8,
+      "scaling_attribute": "INT",
+      "damage_type": "MAGICAL",
+      "multiplier": 1.5
+    },
+    "applies_effects": [
+      {
+        "id": "BURNING",
+        "duration": 2,
+        "potency": 3
+      }
+    ]
+  },
+  
+  "frostbolt": {
+    "name": "Frostblitz",
+    "description": "Ein Geschoss aus eisiger Kälte, das den Gegner verlangsamt.",
+    "cost": {
+      "value": 15,
+      "type": "MANA"
+    },
+    "effects": {
+      "base_damage": 6,
+      "scaling_attribute": "INT",
+      "damage_type": "MAGICAL",
+      "multiplier": 1.2
+    },
+    "applies_effects": [
+      {
+        "id": "SLOWED",
+        "duration": 2,
+        "potency": 2
+      }
+    ]
+  },
+  
+  "arcane_barrier": {
+    "name": "Arkane Barriere",
+    "description": "Eine magische Barriere, die Schaden absorbiert.",
+    "cost": {
+      "value": 30,
+      "type": "MANA"
+    },
+    "effects": {},
+    "applies_effects": [
+      {
+        "id": "SHIELDED",
+        "duration": 3,
+        "potency": 15
+      }
+    ],
+    "is_self_effect": true
+  },
+  
+  // Schurken-Skills
+  "precise_stab": {
+    "name": "Präziser Stich",
+    "description": "Ein präziser Stich an eine verwundbare Stelle.",
+    "cost": {
+      "value": 15,
+      "type": "ENERGY"
+    },
+    "effects": {
+      "base_damage": 7,
+      "scaling_attribute": "DEX",
+      "damage_type": "PHYSICAL",
+      "multiplier": 1.4,
+      "critical_chance": 25,
+      "critical_multiplier": 1.5
+    }
+  },
+  
+  "distraction": {
+    "name": "Ablenkung",
+    "description": "Lenkt den Gegner ab und reduziert seine Treffsicherheit.",
+    "cost": {
+      "value": 10,
+      "type": "ENERGY"
+    },
+    "effects": {},
+    "applies_effects": [
+      {
+        "id": "ACCURACY_DOWN",
+        "duration": 2,
+        "potency": 3
+      }
+    ]
+  },
+  
+  "sprint": {
+    "name": "Sprint",
+    "description": "Erhöht vorübergehend die eigene Initiative.",
+    "cost": {
+      "value": 15,
+      "type": "ENERGY"
+    },
+    "effects": {},
+    "applies_effects": [
+      {
+        "id": "INITIATIVE_UP",
+        "duration": 3,
+        "potency": 20
+      }
+    ],
+    "is_self_effect": true
+  },
+  
+  // Kleriker-Skills
+  "heal": {
+    "name": "Heilung",
+    "description": "Heilt Verletzungen des Ziels.",
+    "cost": {
+      "value": 20,
+      "type": "MANA"
+    },
+    "effects": {
+      "base_healing": 15,
+      "scaling_attribute": "WIS",
+      "healing_multiplier": 1.5
+    }
+  },
+  
+  "holy_light": {
+    "name": "Heiliges Licht",
+    "description": "Ein Strahl heiligen Lichts, besonders effektiv gegen Untote.",
+    "cost": {
+      "value": 25,
+      "type": "MANA"
+    },
+    "effects": {
+      "base_damage": 8,
+      "scaling_attribute": "WIS",
+      "damage_type": "HOLY",
+      "multiplier": 1.2,
+      "bonus_vs_type": "UNDEAD",
+      "bonus_multiplier": 2.0
+    }
+  },
+  
+  "protective_ward": {
+    "name": "Schutzfeld",
+    "description": "Erhöht die Verteidigung des Ziels.",
+    "cost": {
+      "value": 20,
+      "type": "MANA"
+    },
+    "effects": {},
+    "applies_effects": [
+      {
+        "id": "DEFENSE_UP",
+        "duration": 3,
+        "potency": 3
+      }
+    ]
+  },
+  
+  // Gegner-Skills
+  "weakening_curse": {
+    "name": "Schwächungsfluch",
+    "description": "Ein Fluch, der die Stärke des Opfers reduziert.",
+    "cost": {
+      "value": 10,
+      "type": "MANA"
+    },
+    "effects": {},
+    "applies_effects": [
+      {
+        "id": "WEAKENED",
+        "duration": 3,
+        "potency": 3
+      }
+    ]
+  },
+  
+  "heal_lesser": {
+    "name": "Geringe Heilung",
+    "description": "Heilt einen geringen Teil der Verletzungen.",
+    "cost": {
+      "value": 10,
+      "type": "MANA"
+    },
+    "effects": {
+      "base_healing": 10,
+      "scaling_attribute": "WIS",
+      "healing_multiplier": 0.3
+    }
+  },
+  
+  "area_fire_blast": {
+    "name": "Flächenbrand",
+    "description": "Eine Explosion aus Feuer, die mehrere Gegner trifft.",
+    "cost": {
+      "value": 25,
+      "type": "MANA"
+    },
+    "effects": {
+      "base_damage": 6,
+      "scaling_attribute": "INT",
+      "damage_type": "MAGICAL",
+      "multiplier": 1.0,
+      "area_type": "SPLASH"
+    },
+    "applies_effects": [
+      {
+        "id": "BURNING",
+        "duration": 1,
+        "potency": 2
+      }
+    ]
+  }
+}
+
+
+===== src/definitions/json_data/characters.json5 =====
+{
+  /* 
+   * Charakter-Templates
+   * 
+   * Diese Datei definiert die Basis-Templates für Spielercharaktere.
+   * Jeder Charakter hat Primärattribute, Kampfwerte und verfügbare Skills.
+   */
+  
+  "krieger": {
+    "name": "Krieger", // Angezeigter Name
+    "description": "Ein starker Nahkämpfer mit hoher Verteidigung und physischem Schaden",
+    "primary_attributes": {
+      "STR": 14, // Stärke
+      "DEX": 10, // Geschicklichkeit
+      "INT": 8,  // Intelligenz
+      "CON": 12, // Konstitution
+      "WIS": 8,  // Weisheit
+    },
+    "combat_values": {
+      "base_hp": 50,       // Basis-Lebenspunkte (wird durch CON erhöht)
+      "base_stamina": 100, // Ausdauer (Krieger-Ressource)
+      "base_mana": 0,      // Keine Mana für Krieger
+      "base_energy": 0,    // Keine Energie für Krieger
+      "armor": 5,          // Physische Schadensreduktion
+      "magic_resist": 1,   // Magische Schadensreduktion
+    },
+    "tags": ["WARRIOR", "MELEE"],
+    "skills": [
+      "basic_strike_phys", // Standard-Nahkampfangriff
+      "power_strike",      // Stärkerer Nahkampfangriff
+      "shield_bash",       // Angriff mit Betäubung
+      "cleave",            // Angriff auf mehrere Ziele
+    ],
+  },
+  
+  "magier": {
+    "name": "Magier",
+    "description": "Ein mächtiger Zauberwirker mit starken magischen Angriffen",
+    "primary_attributes": {
+      "STR": 8,
+      "DEX": 10,
+      "INT": 14,
+      "CON": 9,
+      "WIS": 11,
+    },
+    "combat_values": {
+      "base_hp": 50,
+      "base_mana": 120,    // Mana (Magier-Ressource)
+      "base_stamina": 0,
+      "base_energy": 0,
+      "armor": 1,
+      "magic_resist": 4,
+    },
+    "tags": ["MAGE", "CASTER"],
+    "skills": [
+      "basic_magic_bolt", // Standard-Magieangriff
+      "fireball",         // Flächenangriff mit Burning-Effekt
+      "frostbolt",        // Angriff mit Slowed-Effekt
+      "arcane_barrier",   // Defensive Fähigkeit
+    ],
+  },
+  
+  "schurke": {
+    "name": "Schurke",
+    "description": "Ein geschickter Nahkämpfer mit hohem Schaden und Ausweichen",
+    "primary_attributes": {
+      "STR": 10,
+      "DEX": 14,
+      "INT": 8,
+      "CON": 10,
+      "WIS": 8,
+    },
+    "combat_values": {
+      "base_hp": 50,
+      "base_mana": 0,
+      "base_stamina": 0,
+      "base_energy": 100,  // Energie (Schurken-Ressource)
+      "armor": 3,
+      "magic_resist": 2,
+    },
+    "tags": ["ROGUE", "MELEE"],
+    "skills": [
+      "basic_strike_finesse", // Standard-Finesse-Angriff
+      "precise_stab",         // Präziser Angriff
+      "distraction",          // Ablenkungsmanöver
+      "sprint",               // Erhöht Initiative
+    ],
+  },
+  
+  "kleriker": {
+    "name": "Kleriker",
+    "description": "Ein göttlicher Zauberwirker mit Heil- und Unterstützungsfähigkeiten",
+    "primary_attributes": {
+      "STR": 10,
+      "DEX": 8,
+      "INT": 10,
+      "CON": 11,
+      "WIS": 13,
+    },
+    "combat_values": {
+      "base_hp": 50,
+      "base_mana": 110,    // Mana (Kleriker-Ressource)
+      "base_stamina": 0,
+      "base_energy": 0,
+      "armor": 4,
+      "magic_resist": 3,
+    },
+    "tags": ["CLERIC", "CASTER", "SUPPORT"],
+    "skills": [
+      "basic_holy_spark", // Standard-Heiliger Angriff
+      "heal",             // Heilung
+      "holy_light",       // Starker Angriff gegen Untote
+      "protective_ward",  // Schutzbarriere
+    ],
+  },
+}
+
+
+===== src/definitions/json_data/opponents.json5 =====
+{
+  /* 
+   * Gegner-Definitionen
+   * 
+   * Diese Datei definiert alle Gegner-Templates im Spiel.
+   * Jeder Gegner hat Primärattribute, Kampfwerte, Skills und einen XP-Wert.
+   */
+  
+  "goblin_lv1": {
+    "name": "Goblin",
+    "description": "Ein kleiner, schwacher Goblin",
+    "level": 1,
+    "primary_attributes": {
+      "STR": 8,
+      "DEX": 12,
+      "INT": 6,
+      "CON": 9,
+      "WIS": 6,
+    },
+    "combat_values": {
+      "base_hp": 50,
+      "base_mana": 0,
+      "base_stamina": 0,
+      "base_energy": 0,
+      "armor": 2,
+      "magic_resist": 1,
+    },
+    "tags": ["GOBLINOID", "HUMANOID"],
+    "skills": [
+      "basic_strike_phys",
+    ],
+    "xp_reward": 50,
+    "ai_strategy": "basic_melee", // Bezieht sich auf die KI-Strategie in src/ai/strategies/
+  },
+  
+  "goblin_archer_lv2": {
+    "name": "Goblin Bogenschütze",
+    "description": "Ein Goblin mit Bogen und besserer Ausrüstung",
+    "level": 2,
+    "primary_attributes": {
+      "STR": 7,
+      "DEX": 14,
+      "INT": 7,
+      "CON": 8,
+      "WIS": 7,
+    },
+    "combat_values": {
+      "base_hp": 50,
+      "base_mana": 0,
+      "base_stamina": 0,
+      "base_energy": 0,
+      "armor": 1,
+      "magic_resist": 1,
+    },
+    "tags": ["GOBLINOID", "HUMANOID", "RANGED"],
+    "skills": [
+      "basic_shot_phys",
+    ],
+    "xp_reward": 75,
+    "ai_strategy": "basic_ranged",
+  },
+  
+  "goblin_schamane_lv3": {
+    "name": "Goblin Schamane",
+    "description": "Ein magisch begabter Goblin",
+    "level": 3,
+    "primary_attributes": {
+      "STR": 6,
+      "DEX": 10,
+      "INT": 14,
+      "CON": 9,
+      "WIS": 12,
+    },
+    "combat_values": {
+      "base_hp": 50,
+      "base_mana": 100,
+      "base_stamina": 0,
+      "base_energy": 0,
+      "armor": 1,
+      "magic_resist": 3,
+    },
+    "tags": ["GOBLINOID", "HUMANOID", "CASTER"],
+    "skills": [
+      "basic_magic_bolt",
+      "weakening_curse",
+      "heal_lesser",
+    ],
+    "xp_reward": 100,
+    "ai_strategy": "support_caster",
+  },
+  
+  "skeleton_lv2": {
+    "name": "Skelett",
+    "description": "Ein zum Leben erwecktes Skelett",
+    "level": 2,
+    "primary_attributes": {
+      "STR": 10,
+      "DEX": 8,
+      "INT": 5,
+      "CON": 10,
+      "WIS": 5,
+    },
+    "combat_values": {
+      "base_hp": 60,
+      "base_mana": 0,
+      "base_stamina": 0,
+      "base_energy": 0,
+      "armor": 3,
+      "magic_resist": 1,
+    },
+    "tags": ["UNDEAD", "SKELETON"],
+    "skills": [
+      "basic_strike_phys",
+    ],
+    "xp_reward": 75,
+    "ai_strategy": "basic_melee",
+    "weaknesses": ["HOLY"], // Zusätzliche Schwäche gegen heiligen Schaden
+  },
+  
+  "wolf_lv1": {
+    "name": "Wolf",
+    "description": "Ein hungriger Wolf",
+    "level": 1,
+    "primary_attributes": {
+      "STR": 9,
+      "DEX": 14,
+      "INT": 4,
+      "CON": 8,
+      "WIS": 8,
+    },
+    "combat_values": {
+      "base_hp": 40,
+      "base_mana": 0,
+      "base_stamina": 0,
+      "base_energy": 0,
+      "armor": 1,
+      "magic_resist": 1,
+      "initiative_bonus": 10, // Wölfe sind schneller und haben einen Initiative-Bonus
+    },
+    "tags": ["BEAST", "ANIMAL"],
+    "skills": [
+      "basic_strike_phys",
+    ],
+    "xp_reward": 40,
+    "ai_strategy": "basic_melee",
+  },
+}
+
+
+===== docs/ENTSCHEIDUNGEN.md =====
+# Wichtige Projekt-Entscheidungen
+
+Dieses Dokument protokolliert wichtige Designentscheidungen, die während der Entwicklung getroffen wurden.
+
+## 2025-05-08: Projektstart und grundlegende Strukturentscheidungen
+
+- **Entscheidung**: Verwendung von json5 für Konfigurationsdateien und Spieldefinitionen
+  - **Begründung**: Ermöglicht Kommentare und eine flexiblere Syntax für bessere Lesbarkeit und Wartbarkeit
+  - **Alternativen**: Standard JSON (weniger lesbar), YAML (zusätzliche Abhängigkeit)
+
+- **Entscheidung**: Modulare Projektstruktur mit klarer Trennung von Daten und Logik
+  - **Begründung**: Verbessert Wartbarkeit und Erweiterbarkeit, folgt dem Single Responsibility Prinzip
+  - **Implikation**: Mehr Initial-Setup, aber bessere Langzeitentwicklung
+
+## 2025-05-08: Logging-System und Konfigurationsverwaltung
+
+- **Entscheidung**: Implementierung eines zentralen Logging-Systems mit konfigurierbaren Levels
+  - **Begründung**: Ermöglicht feinere Kontrolle über die Ausgaben, unterstützt sowohl Konsolen- als auch Datei-Logs
+  - **Implikation**: Logger werden über eine zentrale Funktion (get_logger) bezogen, vereinheitlicht den Logging-Ansatz
+
+- **Entscheidung**: Konfigurationsdaten werden zentral über ein Singleton-Objekt verwaltet
+  - **Begründung**: Vermeidet Duplizierung von Konfigurationslesevorgängen, stellt konsistente Konfiguration im gesamten Projekt sicher
+  - **Alternativen**: Direktes Laden in einzelnen Modulen (würde zu Duplizierung führen)
+  - **Implikation**: Änderungen an der Konfiguration sind sofort im gesamten Projekt verfügbar
+
+- **Entscheidung**: Mehrere Betriebsmodi für das Spiel (manual, auto, train, evaluate)
+  - **Begründung**: Unterstützt verschiedene Anwendungsfälle (interaktives Spielen, automatische Simulation, RL-Training und -Evaluierung)
+  - **Implikation**: Erfordert eine klare Trennung der Logik für die verschiedenen Modi
+
+## 2025-05-08: Regelbasierte KI-Architektur
+
+- **Entscheidung**: Implementierung einer flexiblen, regelbasierten KI-Architektur mit Strategie-Pattern
+  - **Begründung**: Ermöglicht verschiedene Verhaltensweisen für unterschiedliche Gegnertypen
+  - **Alternativen**: Feste Logik pro Gegner (nicht erweiterbar), komplexe RL-basierte KI (zu früh im Projekt)
+  - **Implikation**: Einfache Erweiterbarkeit um neue Strategien, klare Trennung von Entscheidungslogik und Charakterzustand
+
+- **Entscheidung**: Drei Basis-KI-Strategien: Nahkampf, Fernkampf, Unterstützung
+  - **Begründung**: Deckt die Grundbedürfnisse des Spiels ab und passt zu den definierten Gegnertypen
+  - **Implikation**: Verschiedene Gegner verhalten sich taktisch unterschiedlich, was zu abwechslungsreichen Kampferfahrungen führt
+
+- **Entscheidung**: Einsatz eines AI-Dispatchers zur dynamischen Strategieauswahl
+  - **Begründung**: Zentralisierte Zuordnung von Charakteren zu Strategien, vereinfacht die Nutzung im Code
+  - **Implikation**: Strategien können zur Laufzeit gewechselt werden, erleichtert Testing und Erweiterung
+
+## 2025-05-08: CLI-Simulation und Game Loop
+
+- **Entscheidung**: Implementierung einer CLI-basierten Simulation für automatische Kampfabläufe
+  - **Begründung**: Ermöglicht frühes Testen des Spielsystems ohne komplexe UI-Implementierung
+  - **Alternativen**: Sofortige Implementierung einer GUI (zu zeitaufwendig), reines Backend ohne Ausgabe (schlecht für Testing)
+  - **Implikation**: Schnelle Iteration und Validierung der Spielmechaniken, einfaches Testen von Balance-Änderungen
+
+- **Entscheidung**: Formatierte Konsolenausgabe mit visuellen Elementen (Balken, Farbcodes)
+  - **Begründung**: Verbessert die Lesbarkeit und Benutzerfreundlichkeit der Textausgabe
+  - **Implikation**: Bessere Benutzererfahrung in der CLI-Phase, kann später durch grafische UI ersetzt werden
+
+- **Entscheidung**: Zufällige Generierung von Gegnern basierend auf Spieler-Level
+  - **Begründung**: Schafft Abwechslung und passt die Herausforderung dynamisch an
+  - **Implikation**: Ermöglicht Spieltests mit verschiedenen Gegnertypen und Schwierigkeitsgraden
+
+
+===== docs/IMPLEMENTIERUNGSDETAILS.md =====
+# Implementierungsdetails des RPG-Systems
+
+**Datum: 2025-05-08**
+
+Dieses Dokument beschreibt die konkreten technischen Implementierungsdetails, die im Rahmen des Python-RPG-Projekts umgesetzt wurden. Es ergänzt die Spiel-Definitionen aus dem ANNEX_GAME_DEFINITIONS_SUMMARY und erklärt, wie die konzeptionellen Mechaniken im Code realisiert wurden.
+
+## 1. Initiative & Zugreihenfolge
+
+Die zuvor offene Frage der Initiative wurde wie folgt implementiert:
+
+- **Basis-Initiative-Formel**: `base_initiative = DEX * 2`
+- **Gesamtinitiative**: `gesamt_initiative = base_initiative + status_mods['initiative']`
+
+Bei der Berechnung der Zugreihenfolge in einem Kampf:
+1. Für jeden lebenden Charakter wird die Initiative berechnet
+2. Charaktere werden absteigend nach Initiative sortiert (höchste Initiative zuerst)
+3. In jeder Runde wird diese Reihenfolge neu berechnet, um Status-Effekt-Änderungen zu berücksichtigen
+
+Implementiert in: `src/game_logic/entities.py` (get_initiative-Methode) und `src/game_logic/combat.py` (calculate_turn_order-Methode)
+
+## 2. Status-Effekte
+
+Status-Effekte wurden als polymorphe Klassen implementiert, die alle von einer gemeinsamen abstrakten Basisklasse `StatusEffect` erben:
+
+### Kern-Effekt-Mechanik
+- Jeder Effekt hat eine **Dauer** (Rundenzahl) und eine **Stärke** (potency)
+- Effekte implementieren drei Hauptmethoden:
+  - `on_apply(target)`: Wird beim ersten Anwenden des Effekts aufgerufen
+  - `on_tick(target)`: Wird in jeder Runde aufgerufen
+  - `on_remove(target)`: Wird beim Ablaufen des Effekts aufgerufen
+
+### Implementierte Effekte
+
+| Effekt-ID | Beschreibung | Implementierung |
+|-----------|--------------|----------------|
+| BURNING | Verursacht Schaden über Zeit | Direkter Schaden (ignoriert Rüstung): potency Punkte pro Runde |
+| STUNNED | Verhindert Aktionen | Setzt 'can_act' auf False |
+| SLOWED | Reduziert Initiative und Ausweichen | Initiative -5*potency, Ausweichen -potency |
+| WEAKENED | Reduziert Stärke | STR -potency |
+| ACCURACY_DOWN | Reduziert Treffergenauigkeit | Genauigkeit -potency |
+| INITIATIVE_UP | Erhöht Initiative | Initiative +potency |
+| SHIELDED | Absorbiert Schaden | Erzeugt shield_points in Höhe von potency |
+| DEFENSE_UP | Erhöht Rüstung und Magieresistenz | Rüstung +potency, Magieresistenz +potency |
+
+### Stapel-Mechanik
+Wenn ein bereits aktiver Effekt erneut angewendet wird:
+- Die Dauer wird auf MAX(alte_dauer, neue_dauer) gesetzt (Refresh)
+- Die Stärke wird auf den neuen Wert überschrieben (kein Stapeln)
+
+Implementiert in: `src/game_logic/effects.py`
+
+## 3. Schild-Mechanismus
+
+Ein Schutzschildmechanismus wurde implementiert, der nicht explizit im ursprünglichen Dokument definiert war:
+
+- Charaktere haben ein `shield_points`-Attribut (standardmäßig 0)
+- Bei Schadensanwendung wird zuerst der Schild reduziert, bevor HP verloren gehen
+- Der SHIELDED-Status-Effekt setzt die Schildpunkte auf den Stärkewert des Effekts
+- Nach Ablauf des Effekts werden Schildpunkte auf 0 zurückgesetzt
+
+Implementiert in: `src/game_logic/entities.py` (take_damage-Methode)
+
+## 4. KI-Strategien
+
+Drei verschiedene KI-Strategien wurden implementiert, die unterschiedliche Kampfverhalten für Gegner ermöglichen:
+
+### BasicMeleeStrategy
+- **Priorität**: Schwächere Ziele, starke Angriffe
+- **Zielauswahl**: 80% schwächstes Ziel, 20% zufällig
+- **Skill-Auswahl**: Bevorzugt offensive Skills, wählt mit 70% Chance den stärksten Angriff
+
+### BasicRangedStrategy
+- **Priorität**: Taktische Ziele (Magier/Heiler), Status-Effekte
+- **Zielauswahl**: 70% Zauberkundige, 60% schwächstes Ziel, Rest zufällig
+- **Skill-Auswahl**: Bevorzugt Skills mit Status-Effekten (60% Chance)
+
+### SupportCasterStrategy
+- **Priorität**: 1. Heilung, 2. Verbündeten-Buffs, 3. Gegner-Debuffs, 4. Angriffe
+- **Zielauswahl für Heilung**: Am stärksten verletzter Verbündeter
+- **Zielauswahl für Debuff**: Starke Gegner oder Zauberkundige
+
+Implementiert in: `src/ai/strategies/`
+
+## 5. Flächeneffekt-Logik
+
+Die Multi-Target-Logik für Skills wurde implementiert:
+
+### Flächeneffekt-Typen:
+- **CLEAVE**: Trifft das Hauptziel und ein sekundäres Ziel
+- **SPLASH**: Trifft alle Ziele im Bereich (implementiert als Hauptziel + alle anderen Ziele)
+
+Die Auswahl der sekundären Ziele erfolgt in den KI-Strategien und wird vom Kampfsystem bei der Schadensberechnung berücksichtigt.
+
+Implementiert in: `src/ai/strategies/*.py` und `src/game_logic/combat.py`
+
+## 6. XP- und Level-System
+
+Das XP- und Level-System wurde als separater Service implementiert:
+
+- **Benötigte XP für Level**: `math.ceil(xp_level_base * (xp_level_factor ^ (level - 1)))`
+- **Level-Up-Effekte**: Vollständige Wiederherstellung von HP und allen Ressourcen
+- **XP-Vergabe**: Auf alle überlebenden Spieler gleichmäßig verteilt
+
+Implementiert in: `src/game_logic/leveling.py`
+
+## 7. Trefferchance und Schadensberechnung
+
+Die Trefferchance- und Schadensformeln wurden wie folgt implementiert:
+
+### Trefferchance
+
+hit_chance = base_chance + (accuracy * accuracy_factor) - (evasion * evasion_factor) hit_chance = max(min_chance, min(max_chance, hit_chance))
+
+
+### Schadensberechnung
+
+raw_damage = floor((base_damage + attribute_bonus) * multiplier) final_damage = max(min_damage, raw_damage - defense)
+
+
+Für Gegner mit spezifischen Schwächen:
+
+if has_weakness: multiplier *= bonus_multiplier
+
+
+Implementiert in: `src/game_logic/formulas.py` und `src/game_logic/combat.py`
+
+## 8. CLI-Simulation
+
+Die Spielsimulation wurde als CLI-basierte automatische Kampfsimulation implementiert:
+
+- Zufällige Auswahl von Spielercharakteren aus verfügbaren Templates
+- Zufällige Generierung von Gegnern mit Level-Anpassung basierend auf Spieler-Durchschnittslevel
+- Automatische Kampfabwicklung mit visueller Ausgabe (Lebensbalken, formatierte Nachrichten)
+- XP-Vergabe und Level-Ups nach erfolgreichen Kämpfen
+
+Implementiert in: `src/ui/cli_main_loop.py` und `src/ui/cli_output.py`
+
+
+

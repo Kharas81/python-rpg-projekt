@@ -1,39 +1,47 @@
 import os
 
-def save_project_as_txt(project_dir: str, output_file: str) -> None:
+def save_project_to_single_txt(source_dir, output_file):
     """
     Speichert den gesamten Inhalt eines Projekts in einer einzigen .txt-Datei.
+    Der .git-Ordner wird ignoriert.
 
-    Args:
-        project_dir (str): Der Pfad zum Projektverzeichnis.
-        output_file (str): Der Pfad zur Ausgabedatei (.txt).
+    :param source_dir: Quellverzeichnis, das durchsucht werden soll
+    :param output_file: Pfad zur Ausgabedatei (.txt)
     """
     try:
-        with open(output_file, 'w') as outfile:
-            for root, _, files in os.walk(project_dir):
+        with open(output_file, 'w', encoding='utf-8') as outfile:
+            for root, dirs, files in os.walk(source_dir):
+                # .git-Ordner ignorieren
+                if '.git' in dirs:
+                    dirs.remove('.git')
+
                 for file in files:
-                    # Ignoriere bestimmte Dateitypen (z.B. __pycache__)
-                    if file.endswith('.pyc') or file == '__pycache__':
-                        continue
-                    
-                    file_path = os.path.join(root, file)
-                    outfile.write(f"===== {file_path} =====\n")
-                    
+                    source_file_path = os.path.join(root, file)
+                    relative_path = os.path.relpath(source_file_path, source_dir)
+
                     try:
-                        with open(file_path, 'r') as infile:
-                            outfile.write(infile.read())
+                        # Dateiinhalt lesen
+                        with open(source_file_path, 'r', encoding='utf-8') as infile:
+                            content = infile.read()
+
+                        # Dateiinhalt in die Ausgabedatei schreiben
+                        outfile.write(f"===== {relative_path} =====\n")
+                        outfile.write(content)
+                        outfile.write("\n\n")
+
+                        print(f"Gespeichert: {relative_path}")
+
                     except Exception as e:
-                        outfile.write(f"Fehler beim Lesen der Datei: {e}\n")
-                    
-                    outfile.write("\n\n")
-        
+                        print(f"Fehler beim Verarbeiten von {source_file_path}: {e}")
+                        outfile.write(f"===== {relative_path} (Fehler beim Lesen) =====\n\n")
+
         print(f"Projekt erfolgreich in {output_file} gespeichert.")
     except Exception as e:
         print(f"Fehler beim Speichern des Projekts: {e}")
 
-# Pfade definieren
-project_directory = "/workspaces/python-rpg-projekt"  # Dein Projektverzeichnis
-output_txt_file = "/workspaces/python-rpg-projekt/project_backup.txt"  # Ziel .txt-Datei
+if __name__ == "__main__":
+    # Quell- und Zielverzeichnis festlegen
+    source_directory = "/workspaces/python-rpg-projekt"  # Dein Projektverzeichnis
+    output_file_path = "/workspaces/python-rpg-projekt/sicherung.txt"  # Ziel-Datei
 
-# Funktion aufrufen
-save_project_as_txt(project_directory, output_txt_file)
+    save_project_to_single_txt(source_directory, output_file_path)
