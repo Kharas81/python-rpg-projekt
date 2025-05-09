@@ -1,125 +1,57 @@
 {
-  // Globale Spieleinstellungen
+  // Konfigurationen für verschiedene Teile des Spiels
   "game_settings": {
-    "min_damage": 1,                // Minimaler Schaden, der immer verursacht wird
-    "base_weapon_damage": 5,        // Basis-Waffenschaden für Skills ohne eigenen Basiswert
-    "hit_chance_base": 90,          // Basis-Trefferchance in Prozent
-    "hit_chance_accuracy_factor": 3, // Faktor für Accuracy beim Berechnen der Trefferchance
-    "hit_chance_evasion_factor": 2,  // Faktor für Evasion beim Berechnen der Trefferchance
-    "hit_chance_min": 5,            // Minimale Trefferchance in Prozent
-    "hit_chance_max": 95,           // Maximale Trefferchance in Prozent
-    "xp_level_base": 100,           // Basis-XP für Level-Ups
-    "xp_level_factor": 1.5,         // Faktor für XP-Steigerung pro Level
-    "resource_regen_percent": 5     // 5% der maximal verfügbaren Ressource wird pro Runde regeneriert
+    "min_damage": 1,
+    "base_weapon_damage": 5,
+    
+    // Trefferchance-Konfiguration
+    "hit_chance_base": 90,       // Basis-Trefferchance in Prozent
+    "hit_chance_accuracy_factor": 3,  // Multiplikator für Genauigkeitsbonus
+    "hit_chance_evasion_factor": 2,   // Multiplikator für Ausweichbonus
+    "hit_chance_min": 5,         // Minimale Trefferchance in Prozent
+    "hit_chance_max": 95,        // Maximale Trefferchance in Prozent
+    
+    // XP und Level-Konfiguration
+    "xp_level_base": 100,        // Basis-XP für Level 2
+    "xp_level_factor": 1.5,      // Exponentielle Zunahme der XP pro Level
+    
+    // Ressourcenregeneration pro Runde
+    "resource_regen_percent": 5  // 5% der maximal verfügbaren Ressource wird pro Runde regeneriert
   },
   
-  // Logging-Einstellungen
+  // Logging-Konfiguration
   "logging": {
-    "level": "INFO",                // Logging-Level: DEBUG, INFO, WARNING, ERROR, CRITICAL
-    "file": "logs/rpg_game.log",    // Pfad zur Log-Datei
-    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",  // Log-Format
-    "date_format": "%Y-%m-%d %H:%M:%S",  // Datumsformat für Logs
-    "console_level": "INFO"         // Logging-Level für die Konsole
+    "level": "INFO",           // Log-Level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "date_format": "%Y-%m-%d %H:%M:%S",
+    "file": "game.log"         // Pfad zur Log-Datei
   },
   
-  // Reinforcement Learning Einstellungen
+  // Reinforcement Learning (RL) Konfiguration
   "rl_settings": {
-    // Allgemeine RL-Parameter
-    "max_episode_steps": 100,       // Maximale Anzahl von Schritten pro Episode
-    "max_players": 4,               // Maximale Anzahl von Spielern für die Observation Space
-    "max_opponents": 6,             // Maximale Anzahl von Gegnern für die Observation Space
-    "max_skills_per_character": 10, // Maximale Anzahl von Skills pro Charakter für Action Space
-    "max_targets": 10,              // Maximale Anzahl von Zielen für Action Space
-    "max_status_effects": 5,        // Maximale Anzahl von Status-Effekten pro Charakter
-    
-    // Observation Space Konfiguration (aus Ihrer ursprünglichen Konfiguration)
     "observation_space": {
-      "include_allies": true,       // Verbündete in Beobachtungen einbeziehen
-      "include_enemies": true,      // Gegner in Beobachtungen einbeziehen
-      "max_allies": 4,              // Maximale Anzahl an Verbündeten in der Beobachtung
-      "max_enemies": 6              // Maximale Anzahl an Gegnern in der Beobachtung
+      "include_allies": true,   // Verbündete in Beobachtungen einbeziehen
+      "include_enemies": true,  // Gegner in Beobachtungen einbeziehen
+      "max_allies": 4,          // Maximale Anzahl an Verbündeten in der Beobachtung
+      "max_enemies": 6          // Maximale Anzahl an Gegnern in der Beobachtung
     },
-    
-    // MaskablePPO-Modellparameter
-    "model_kwargs": {
-      "learning_rate": 0.0003,      // Lernrate
-      "n_steps": 2048,              // Anzahl der Schritte pro Update
-      "batch_size": 64,             // Batch-Größe für Updates
-      "n_epochs": 10,               // Anzahl der Epochen pro Update
-      "gamma": 0.99,                // Discount-Faktor
-      "gae_lambda": 0.95,           // GAE-Lambda-Parameter
-      "clip_range": 0.2,            // PPO Clip-Range
-      "clip_range_vf": null,        // Value Function Clip-Range (null = gleich wie clip_range)
-      "ent_coef": 0.01,             // Entropiekoeffizient
-      "vf_coef": 0.5,               // Value Function Koeffizient
-      "max_grad_norm": 0.5          // Maximale Norm für Gradienten-Clipping
+    "reward_settings": {
+      "victory_reward": 100.0,  // Belohnung für einen Sieg
+      "defeat_penalty": -50.0,  // Strafe für eine Niederlage
+      "damage_dealt_factor": 0.1, // Multiplikator für verursachten Schaden
+      "damage_taken_factor": -0.1, // Multiplikator für erlittenen Schaden
+      "healing_factor": 0.2,    // Multiplikator für durchgeführte Heilung
+      "self_damage_factor": -0.5, // Multiplikator für selbst zugefügten Schaden
+      "time_penalty": -0.1      // Zeitstrafe pro Runde (um schnelle Lösungen zu fördern)
     },
-    
-    // Netzwerk-Architektur
-    "policy_kwargs": {
-      "net_arch": [
-        {
-          "pi": [256, 128],         // Policy-Netzwerk-Architektur
-          "vf": [256, 128]          // Value-Netzwerk-Architektur
-        }
-      ],
-      // ** Wichtiger Hinweis: JSON5 unterstützt keine Funktionsreferenzen **
-      // Daher bleibt "activation_fn" hier als String definiert.
-      // Dieser String wird im Python-Code auf die tatsächliche Funktion gemappt.
-      "activation_fn": "torch.nn.ReLU"  // Aktivierungsfunktion (als String, wird im Code konvertiert)
-    },
-    
-    // Belohnungsfunktionsparameter
-    "rewards": {
-      "victory": 10.0,              // Belohnung für Sieg (angepasst von ursprünglich 100.0)
-      "defeat": -10.0,              // Strafe für Niederlage (angepasst von ursprünglich -50.0)
-      "damage_factor": 0.1,         // Belohnungsfaktor für verursachten Schaden
-      "healing_factor": 0.2,        // Belohnungsfaktor für Heilung
-      "damage_taken_factor": -0.1,  // Multiplikator für erlittenen Schaden (aus Ihrer Konfiguration)
-      "self_damage_factor": -0.5,   // Multiplikator für selbst zugefügten Schaden (aus Ihrer Konfiguration)
-      "kill": 1.0,                  // Belohnung für das Besiegen eines Gegners
-      "ally_death": -1.0,           // Strafe für den Tod eines Verbündeten
-      "effect_application": 0.5,    // Belohnung für das Anwenden eines Status-Effekts
-      "resource_efficiency": 0.05,  // Belohnungsfaktor für Ressourceneffizienz
-      "time_penalty": -0.01,        // Kleine Strafe pro Runde (angepasst von ursprünglich -0.1)
-      "surviving_ally_bonus": 0.5,  // Bonus pro überlebenden Verbündeten
-      "round_efficiency_bonus": 5.0, // Bonus für schnelles Beenden des Kampfes
-      "defeated_enemy_bonus": 0.3   // Bonus pro besiegtem Gegner (bei Niederlage)
-    },
-    
-    // Curriculum Learning Konfiguration
-    "curriculum": {
-      "start_level": 0,             // Startlevel für das Training
-      "levels": {
-        "0": {                      // Level 0: Einfach (ein Spieler gegen einen schwachen Gegner)
-          "player_templates": ["krieger"],
-          "opponent_templates": ["goblin_lv1"]
-        },
-        "1": {                      // Level 1: Mittel (ein Spieler gegen einen stärkeren Gegner)
-          "player_templates": ["krieger"],
-          "opponent_templates": ["goblin_archer_lv2"]
-        },
-        "2": {                      // Level 2: Schwer (ein Spieler gegen zwei schwache Gegner)
-          "player_templates": ["krieger"],
-          "opponent_templates": ["goblin_lv1", "goblin_lv1"]
-        },
-        "3": {                      // Level 3: Sehr schwer (ein Spieler gegen einen starken Gegner)
-          "player_templates": ["krieger"],
-          "opponent_templates": ["goblin_schamane_lv3"]
-        },
-        "4": {                      // Level 4: Herausfordernd (gemischtes Team gegen gemischte Gegner)
-          "player_templates": ["krieger", "magier"],
-          "opponent_templates": ["goblin_archer_lv2", "goblin_lv1", "goblin_schamane_lv3"]
-        }
-      }
-    },
-    
-    // Ergänzung aus Ihrer ursprünglichen training-Konfiguration
     "training": {
-      "buffer_size": 100000,        // Größe des Replay-Puffers
-      "exploration_fraction": 0.1,  // Anteil der Gesamtschritte für Exploration-Verringerung
-      "exploration_initial": 1.0,   // Anfangswert für Explorations-Epsilon
-      "exploration_final": 0.05     // Endwert für Explorations-Epsilon
+      "learning_rate": 0.0003,  // Lernrate für den RL-Algorithmus
+      "batch_size": 64,         // Batch-Größe für Training
+      "buffer_size": 100000,    // Größe des Replay-Puffers
+      "exploration_fraction": 0.1, // Anteil der Gesamtschritte für Exploration-Verringerung
+      "exploration_initial": 1.0, // Anfangswert für Explorations-Epsilon
+      "exploration_final": 0.05, // Endwert für Explorations-Epsilon
+      "gamma": 0.99            // Discount-Faktor für zukünftige Belohnungen
     }
   }
 }
