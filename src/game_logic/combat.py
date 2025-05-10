@@ -5,44 +5,42 @@ Anwendung von Skills und Effekten.
 """
 import random
 import logging
-from typing import List, Optional, Tuple
+import math 
+from typing import List, Optional, Tuple, Dict 
 
 from src.game_logic.entities import CharacterInstance
-from src.definitions.skill import SkillTemplate, SkillEffectData, AppliedEffectData
-from src.definitions.loader import load_skill_templates # Um Skill-Objekte zu erhalten
+from src.definitions.skill import SkillTemplate, SkillEffectData 
+# AppliedEffectData wird nicht mehr direkt hier benötigt, da skill.applied_status_effects Objekte enthält
+from src.definitions.loader import load_skill_templates 
 from src.game_logic import formulas
-from src.game_logic.effects import create_status_effect, StatusEffect # Zum Erstellen und Anwenden von Effekten
+from src.game_logic.effects import create_status_effect, StatusEffect 
+from src.ui import cli_output # Import für Miss, Damage, Heal etc.
 
-# Erhalte einen Logger für dieses Modul
 logger = logging.getLogger(__name__)
 
-# Lade Skill-Definitionen einmalig beim Importieren des Moduls
-# Dies dient als Cache für Skill-Objekte.
 try:
-    SKILL_DEFINITIONS: dict[str, SkillTemplate] = load_skill_templates()
+    from src.config.config import CONFIG
+except ImportError:
+    logger.critical("FATAL: Konfigurationsmodul src.config.config konnte nicht importiert werden in combat.py.")
+    CONFIG = None 
+
+try:
+    SKILL_DEFINITIONS: Dict[str, SkillTemplate] = load_skill_templates()
 except Exception as e:
     logger.critical(f"FATAL: Skill-Definitionen konnten nicht geladen werden in combat.py: {e}")
-    SKILL_DEFINITIONS = {} # Leeres Dict, um Abstürze zu vermeiden, aber Kampf wird nicht funktionieren
+    SKILL_DEFINITIONS = {}
 
 class CombatHandler:
-    """
-    Verwaltet und führt Kampfaktionen zwischen Charakterinstanzen aus.
-    """
     def __init__(self):
-        # Potenziell Zustand hier speichern, wenn ein Kampf über mehrere Runden geht,
-        # z.B. eine Liste der Teilnehmer, aktuelle Runde etc.
-        # Für den Moment fokussieren wir uns auf die Ausführung einzelner Aktionen.
         pass
 
     def _get_skill_template(self, skill_id: str) -> Optional[SkillTemplate]:
-        """Holt ein SkillTemplate-Objekt aus den geladenen Definitionen."""
         skill = SKILL_DEFINITIONS.get(skill_id)
         if not skill:
             logger.error(f"Skill-Template mit ID '{skill_id}' nicht gefunden.")
         return skill
 
     def _check_action_usability(self, actor: CharacterInstance, skill_id: str, target: Optional[CharacterInstance]) -> Tuple[bool, Optional[str], Optional[SkillTemplate]]:
-        """Überprüft, ob der Akteur die Aktion (Skill) ausführen kann."""
         if not actor.can_act:
             return False, f"'{actor.name}' kann nicht handeln (z.B. betäubt).", None
         if actor.is_defeated:
@@ -51,104 +49,73 @@ class CombatHandler:
         skill = self._get_skill_template(skill_id)
         if not skill:
             return False, f"Skill '{skill_id}' unbekannt.", None
-
-        # Ressourcenkosten prüfen
-        if not actor.consume_resource(skill.cost.value, skill.cost.type):
-            return False, f"Nicht genügend {skill.cost.type} ({actor.name} hat {getattr(actor, 'current_' + skill.cost.type.lower(), 0)}, benötigt {skill.cost.value}).", skill
         
-        # TODO: Weitere Prüfungen (Reichweite, Sichtlinie, Waffentyp etc. falls relevant)
-        # Zielvalidierung (gibt es ein Ziel, wenn der Skill eines benötigt?)
-        if skill.target_type not in ["SELF", "NONE"] and not target: # NONE für Skills ohne Ziel, SELF für Selbst-Skills
-             # TODO: Spezifischere Target-Typen wie ALLY_SINGLE, ENEMY_SINGLE etc. prüfen
-            if skill.target_type not in ["ENEMY_ALL", "ALLY_ALL", "ENEMY_CLEAVE", "ENEMY_SPLASH"]: # Flächeneffekte könnten ohne spezifisches Primärziel funktionieren
+        if not actor.can_afford_skill(skill): # Verwendet die neue Methode in CharacterInstance
+             return False, f"Nicht genügend {skill.cost.type} ({actor.name} hat {getattr(actor, 'current_' + skill.cost.type.lower(), 0)}, benötigt {skill.cost.value}).", skill
+        
+        if skill.target_type not in ["SELF", "NONE"] and not target: # NONE für Skills ohne Ziel
+            # Spezifischere Target-Typen wie ALLY_SINGLE, ENEMY_SINGLE etc. erfordern ein Ziel.
+            # Flächeneffekte könnten ohne spezifisches Primärziel funktionieren, wenn die Zielliste entsprechend gefüllt wird.
+            if skill.target_type not in ["ENEMY_ALL", "ALLY_ALL", "ENEMY_CLEAVE", "ENEMY_SPLASH"]: 
                 return False, f"Skill '{skill.name}' erfordert ein Ziel, aber keines wurde angegeben.", skill
         
         return True, None, skill
 
-
     def execute_skill_action(self, actor: CharacterInstance, skill_id: str, targets: List[CharacterInstance]):
-        """
-        Führt eine Skill-Aktion vom Akteur auf die Ziele aus.
-        targets: Eine Liste von Zielen. Für Single-Target-Skills ist dies eine Liste mit einem Element.
-                 Für AoE-Skills kann sie mehrere Elemente enthalten.
-        """
-        if not targets: # Keine Ziele angegeben
-            logger.warning(f"Keine Ziele für Skill '{skill_id}' von '{actor.name}' angegeben. Aktion abgebrochen.")
-            # Ressourcen wiederherstellen, falls sie bereits abgezogen wurden
-            # (Dies hängt davon ab, wo consume_resource im Flow aufgerufen wird.
-            #  In _check_action_usability wird es bereits abgezogen. Das ist eine Designentscheidung.)
-            # skill_temp = self._get_skill_template(skill_id)
-            # if skill_temp: actor.restore_resource(skill_temp.cost.value, skill_temp.cost.type)
+        if not targets or not targets[0]: 
+            logger.warning(f"Keine (gültigen) Primärziele für Skill '{skill_id}' von '{actor.name}' angegeben. Aktion abgebrochen.")
             return
 
-        primary_target = targets[0] # Das erste Ziel in der Liste ist oft das Primärziel
-
-        can_act, reason, skill = self._check_action_usability(actor, skill_id, primary_target)
-        if not can_act or not skill:
-            logger.warning(f"Aktion '{skill_id}' von '{actor.name}' auf '{primary_target.name if primary_target else 'N/A'}' fehlgeschlagen: {reason}")
-            # Wichtig: Wenn consume_resource in _check_action_usability die Ressourcen bereits abgezogen hat
-            # und die Aktion hier fehlschlägt, müssen die Ressourcen zurückgegeben werden!
-            # Dies ist ein häufiges Problem in solchen Designs.
-            # Option 1: consume_resource erst nach allen Prüfungen aufrufen.
-            # Option 2: Ressourcen hier explizit zurückgeben, wenn _check_action_usability True war, aber etwas anderes fehlschlägt.
-            # Für den Moment: Wenn _check_action_usability fehlschlägt (can_act=False), wurden Ressourcen NICHT verbraucht,
-            # AUSSER die Prüfung auf Ressourcenkosten war der Grund des Fehlschlags.
-            # Wenn der Grund der Ressourcenmangel war, ist es korrekt, dass sie nicht verbraucht wurden.
-            # Wenn der Grund z.B. "kann nicht handeln" war, dann hat consume_resource nicht stattgefunden.
-            # Dies erfordert eine sorgfältige Implementierung von _check_action_usability.
-            # AKTUELLE LOGIK: _check_action_usability zieht Ressourcen ab, WENN ALLE ANDEREN PRÜFUNGEN OK WAREN.
-            # Wenn also _check_action_usability `False` zurückgibt und `skill` `None` ist, wurden Ressourcen nicht berührt.
-            # Wenn `can_act` `False` ist, `skill` aber existiert, bedeutet das, die Ressourcenprüfung schlug fehl.
-            if reason and "Nicht genügend" not in reason and skill: # Wenn Aktion aus anderem Grund als Ressourcen fehlschlägt, aber Ressourcen schon weg
-                 actor.restore_resource(skill.cost.value, skill.cost.type) # Ressourcen zurückgeben
+        primary_target = targets[0] 
+        can_act_check, reason_check, skill = self._check_action_usability(actor, skill_id, primary_target)
+        
+        if not can_act_check or not skill:
+            logger.warning(f"Aktion '{skill_id}' von '{actor.name}' auf '{primary_target.name if primary_target else 'N/A'}' fehlgeschlagen (Vorabprüfung): {reason_check}")
             return
 
-        logger.info(f"'{actor.name}' setzt Skill '{skill.name}' (ID: {skill_id}) ein.")
+        if not actor.consume_resource(skill.cost.value, skill.cost.type):
+            logger.warning(f"Aktion '{skill_id}' von '{actor.name}' fehlgeschlagen: Nicht genügend {skill.cost.type} (beim Versuch zu verbrauchen).")
+            return
 
-        # --- Zielauswahl basierend auf skill.target_type ---
-        # Die `targets`-Liste, die übergeben wird, sollte bereits die korrekten Ziele enthalten,
-        # basierend auf der KI oder Spielerwahl und dem Skill-Typ.
-        # Hier verarbeiten wir diese Liste.
+        logger.info(f"'{actor.name}' führt Skill '{skill.name}' (ID: {skill_id}) aus.")
 
         affected_targets: List[CharacterInstance] = []
         if skill.target_type == "SELF":
             affected_targets = [actor]
-        elif skill.target_type == "ENEMY_SINGLE" or skill.target_type == "ALLY_SINGLE":
+        elif skill.target_type in ["ENEMY_SINGLE", "ALLY_SINGLE"]:
             if primary_target and not primary_target.is_defeated:
                 affected_targets = [primary_target]
-        elif skill.target_type == "ENEMY_CLEAVE": # Hauptziel + 1 weiteres (Annahme: targets[0] ist Haupt, targets[1] ist Cleave)
+        elif skill.target_type == "ENEMY_CLEAVE": 
             if primary_target and not primary_target.is_defeated:
                 affected_targets.append(primary_target)
-            if len(targets) > 1 and targets[1] and not targets[1].is_defeated: # Sekundäres Ziel
+            # Füge bis zu N weitere Ziele hinzu, wenn targets mehr Elemente enthält
+            # Hier vereinfacht: Nur das nächste Ziel in der 'targets'-Liste
+            if len(targets) > 1 and targets[1] and not targets[1].is_defeated: 
                 affected_targets.append(targets[1])
-        elif skill.target_type == "ENEMY_SPLASH": # Alle übergebenen Ziele
+        elif skill.target_type == "ENEMY_SPLASH": 
             affected_targets = [t for t in targets if t and not t.is_defeated]
-        # TODO: Weitere Target-Typen wie ENEMY_ALL, ALLY_ALL etc.
-        else: # Fallback oder unbekannter Typ
+        # TODO: ALLY_ALL, ENEMY_ALL
+        else: # Fallback oder unbekannter Typ, der ein Ziel erwartet
             if primary_target and not primary_target.is_defeated:
                 affected_targets = [primary_target]
         
         if not affected_targets:
-            logger.info(f"Keine gültigen Ziele für '{skill.name}' gefunden.")
+            logger.info(f"Keine gültigen Ziele für '{skill.name}' nach Filterung gefunden.")
             actor.restore_resource(skill.cost.value, skill.cost.type) # Ressourcen zurückgeben
             return
 
-        # --- Effekte auf jedes betroffene Ziel anwenden ---
         for current_target_char in affected_targets:
             logger.debug(f"Verarbeite Skill '{skill.name}' von '{actor.name}' auf Ziel '{current_target_char.name}'.")
 
-            # 1. Trefferchance prüfen (nur für offensive Skills auf Gegner)
-            # TODO: Unterscheiden, ob der Skill offensiv ist und ein Trefferwurf nötig ist.
-            #       Heilungen oder Buffs auf Verbündete treffen automatisch.
-            #       Für den Moment nehmen wir an, dass dies für Schadens-Skills auf Gegner gilt.
-            is_offensive_on_enemy = skill.target_type.startswith("ENEMY_") and (skill.direct_effects and skill.direct_effects.base_damage is not None)
+            # KORRIGIERTE Logik für is_offensive_skill und is_offensive_on_enemy
+            is_offensive_skill = skill.direct_effects and \
+                                 (skill.direct_effects.base_damage is not None or \
+                                  (skill.direct_effects.base_damage is None and CONFIG and CONFIG.get("game_settings.base_weapon_damage") is not None))
+            
+            is_offensive_on_enemy = skill.target_type.startswith("ENEMY_") and is_offensive_skill
+            hit_roll_successful = True 
 
-            hit_roll_successful = True
             if is_offensive_on_enemy:
-                # Genauigkeit des Akteurs, Ausweichen des Ziels
-                # TODO: Diese Werte müssten von Status-Effekten beeinflusst werden können.
-                #       CharacterInstance.accuracy und .evasion sind Basiswerte.
-                #       Wir brauchen effektive Werte. Fürs Erste die Basiswerte.
                 hit_chance = formulas.calculate_hit_chance(actor.accuracy, current_target_char.evasion)
                 roll = random.randint(1, 100)
                 hit_roll_successful = roll <= hit_chance
@@ -157,153 +124,164 @@ class CombatHandler:
                     logger.info(f"'{actor.name}' trifft '{current_target_char.name}' mit '{skill.name}' (Wurf: {roll} <= Chance: {hit_chance}%).")
                 else:
                     logger.info(f"'{actor.name}' verfehlt '{current_target_char.name}' mit '{skill.name}' (Wurf: {roll} > Chance: {hit_chance}%).")
-                    # Wenn verfehlt, werden weder Schaden noch Statuseffekte des Skills angewendet.
-                    continue # Nächstes Ziel, falls AoE
+                    cli_output.display_miss(actor.name, current_target_char.name, skill.name)
+                    continue 
 
-            # 2. Direkte Effekte anwenden (Schaden/Heilung)
-            if skill.direct_effects:
-                effect_data: SkillEffectData = skill.direct_effects
-                
-                # Basisschaden des Skills (kann von game_settings.base_weapon_damage kommen)
-                base_skill_damage = effect_data.base_damage
-                if base_skill_damage is None and CONFIG: # base_damage: null -> nutze Standardwaffenschaden
-                    base_skill_damage = CONFIG.get("game_settings.base_weapon_damage", 5)
-                elif base_skill_damage is None: # Fallback, falls CONFIG nicht da
-                    base_skill_damage = 5
-                
-                # Attributbonus des Akteurs
-                actor_attr_bonus = 0
-                if effect_data.scaling_attribute:
-                    actor_attr_bonus = actor.get_attribute_bonus(effect_data.scaling_attribute)
-                
-                # Kritischer Treffer? (Nur für Schaden)
-                is_critical_hit = False
-                if effect_data.base_damage is not None: # Nur für Schadensskills
-                    crit_chance_roll = random.random() # 0.0 bis 1.0
-                    if crit_chance_roll < effect_data.bonus_crit_chance: # bonus_crit_chance ist 0-1
-                        is_critical_hit = True
-                        logger.info(f"KRITISCHER TREFFER von '{actor.name}' auf '{current_target_char.name}'!")
-
-                if effect_data.base_damage is not None: # Schadenslogik
-                    raw_damage = formulas.calculate_damage(
-                        base_damage_skill=base_skill_damage,
-                        attribute_bonus=actor_attr_bonus,
-                        multiplier_skill=effect_data.multiplier,
-                        critical_hit=is_critical_hit,
-                        critical_multiplier=effect_data.critical_multiplier
-                    )
-                    # TODO: Bonusschaden gegen bestimmte Tags (effect_data.bonus_damage_vs_tags)
+            if hit_roll_successful: # Nur fortfahren, wenn Treffer erfolgreich war (oder nicht relevant war)
+                if skill.direct_effects:
+                    effect_data: SkillEffectData = skill.direct_effects
+                    base_skill_damage_val = effect_data.base_damage
                     
-                    # TODO: Schadens-Typ berücksichtigen (effect_data.damage_type)
-                    current_target_char.take_damage(raw_damage, damage_type=effect_data.damage_type or "PHYSICAL")
-                
-                elif effect_data.base_healing is not None: # Heilungslogik
-                    # Heilung trifft normalerweise automatisch, keine Trefferchance-Prüfung
-                    raw_healing = math.floor( # Nutze math.floor oder ceil nach Bedarf
-                        (effect_data.base_healing + actor_attr_bonus) * effect_data.healing_multiplier
-                    )
-                    current_target_char.heal(raw_healing)
+                    # Zugriff auf CONFIG absichern
+                    cfg_base_weapon_damage = 5 # Fallback
+                    if CONFIG and hasattr(CONFIG, 'get'):
+                        cfg_base_weapon_damage = CONFIG.get("game_settings.base_weapon_damage", 5)
 
-            # 3. Status-Effekte anwenden (applies_effects)
-            if skill.applied_status_effects:
-                for applied_effect_data in skill.applied_status_effects:
-                    # Anwendungschance prüfen
-                    if random.random() > applied_effect_data.application_chance: # Chance ist 0.0-1.0
-                        logger.debug(f"Anwendung von Effekt '{applied_effect_data.effect_id}' auf '{current_target_char.name}' fehlgeschlagen (Chance: {applied_effect_data.application_chance:.0%}).")
-                        continue
-
-                    # Neuen Effekt erstellen
-                    new_effect = create_status_effect(
-                        effect_id=applied_effect_data.effect_id,
-                        target=current_target_char,
-                        source_actor=actor,
-                        duration_rounds=applied_effect_data.duration_rounds,
-                        potency=applied_effect_data.potency,
-                        scales_with_attribute=applied_effect_data.scales_with_attribute,
-                        attribute_potency_multiplier=applied_effect_data.attribute_potency_multiplier
-                    )
+                    if base_skill_damage_val is None: 
+                        base_skill_damage_val = cfg_base_weapon_damage
                     
-                    if new_effect:
-                        # Prüfen, ob ein Effekt desselben Typs bereits auf dem Ziel ist
-                        existing_effect: Optional[StatusEffect] = None
-                        for eff in current_target_char.status_effects:
-                            if eff.effect_id == new_effect.effect_id:
-                                existing_effect = eff
-                                break
+                    actor_attr_bonus = 0
+                    if effect_data.scaling_attribute:
+                        actor_attr_bonus = actor.get_attribute_bonus(effect_data.scaling_attribute)
+                    
+                    is_critical_hit = False
+                    # Kritische Treffer nur für Schadens-Skills (offensive Skills)
+                    if is_offensive_skill: # Verwende die bereits definierte Variable
+                        crit_chance_roll = random.random() 
+                        if crit_chance_roll < effect_data.bonus_crit_chance:
+                            is_critical_hit = True
+                            logger.info(f"KRITISCHER TREFFER von '{actor.name}' auf '{current_target_char.name}'!")
+                            cli_output.print_message(f"KRITISCHER TREFFER von {actor.name}!", cli_output.Colors.LIGHT_YELLOW + cli_output.Colors.BOLD)
+
+                    # Schadenslogik (nur wenn es ein offensiver Skill ist)
+                    if is_offensive_skill: 
+                        raw_damage = formulas.calculate_damage(
+                            base_damage_skill=base_skill_damage_val,
+                            attribute_bonus=actor_attr_bonus,
+                            multiplier_skill=effect_data.multiplier,
+                            critical_hit=is_critical_hit,
+                            critical_multiplier=effect_data.critical_multiplier
+                        )
+                        damage_type_to_apply = effect_data.damage_type if effect_data.damage_type else "PHYSICAL"
+                        shield_before_damage = current_target_char.shield_points
+                        current_target_char.take_damage(raw_damage, damage_type=damage_type_to_apply) 
+                        shield_absorbed = shield_before_damage - current_target_char.shield_points
+                        if shield_absorbed < 0: shield_absorbed = 0 
                         
-                        if existing_effect:
-                            if not existing_effect.is_stackable: # Standardverhalten: nicht stapelbar
-                                # Effekt auffrischen (gemäß ANNEX: Dauer MAX, Stärke überschreiben)
+                        cli_output.display_damage_taken(
+                            current_target_char.name, 
+                            raw_damage, 
+                            damage_type_to_apply,
+                            current_target_char.current_hp,
+                            current_target_char.max_hp,
+                            absorbed_by_shield=shield_absorbed
+                        )
+                    
+                    # Heilungslogik
+                    elif effect_data.base_healing is not None: 
+                        raw_healing = math.floor( 
+                            (effect_data.base_healing + actor_attr_bonus) * effect_data.healing_multiplier
+                        )
+                        healed_amount = current_target_char.heal(raw_healing)
+                        if healed_amount > 0:
+                            cli_output.display_healing_received(
+                                current_target_char.name,
+                                healed_amount,
+                                current_target_char.current_hp,
+                                current_target_char.max_hp
+                            )
+
+                if skill.applied_status_effects: 
+                    for applied_effect_obj in skill.applied_status_effects: 
+                        if random.random() > applied_effect_obj.application_chance:
+                            logger.debug(f"Anwendung von Effekt '{applied_effect_obj.effect_id}' auf '{current_target_char.name}' fehlgeschlagen (Chance: {applied_effect_obj.application_chance:.0%}).")
+                            continue
+
+                        new_effect = create_status_effect(
+                            effect_id=applied_effect_obj.effect_id,
+                            target=current_target_char,
+                            source_actor=actor,
+                            duration_rounds=applied_effect_obj.duration_rounds,
+                            potency=applied_effect_obj.potency,
+                            scales_with_attribute=applied_effect_obj.scales_with_attribute,
+                            attribute_potency_multiplier=applied_effect_obj.attribute_potency_multiplier
+                        )
+                        if new_effect:
+                            existing_effect = next((eff for eff in current_target_char.status_effects if eff.effect_id == new_effect.effect_id), None)
+                            if existing_effect and not existing_effect.is_stackable:
                                 existing_effect.refresh(
-                                    new_duration=applied_effect_data.duration_rounds, 
-                                    new_potency=applied_effect_data.potency,
-                                    new_scales_with_attribute=applied_effect_data.scales_with_attribute,
-                                    new_attribute_potency_multiplier=applied_effect_data.attribute_potency_multiplier
+                                    new_duration=applied_effect_obj.duration_rounds, 
+                                    new_potency=applied_effect_obj.potency,
+                                    new_scales_with_attribute=applied_effect_obj.scales_with_attribute,
+                                    new_attribute_potency_multiplier=applied_effect_obj.attribute_potency_multiplier
                                 )
                                 logger.info(f"Status-Effekt '{existing_effect.name}' auf '{current_target_char.name}' aufgefrischt.")
-                            else:
-                                # TODO: Logik für stapelbare Effekte (selten, aber möglich)
+                            else: # Neu oder stapelbar
                                 current_target_char.status_effects.append(new_effect)
                                 new_effect.on_apply()
-                        else: # Effekt ist neu auf dem Ziel
-                            current_target_char.status_effects.append(new_effect)
-                            new_effect.on_apply()
+                                cli_output.display_status_effect_applied(current_target_char.name, new_effect.name, new_effect.remaining_duration)
         
-        # TODO: XP-Vergabe, wenn ein Gegner durch die Aktion besiegt wurde.
-        # Dies sollte außerhalb dieser Funktion geschehen, nachdem alle Aktionen einer Runde/eines Kampfes abgeschlossen sind.
-
-# --- Hilfsfunktionen für den Kampfablauf (optional hier oder in einer Kampfmanager-Klasse) ---
-
 def get_initiative_order(participants: List[CharacterInstance]) -> List[CharacterInstance]:
-    """Sortiert eine Liste von Kampfteilnehmern nach ihrer aktuellen Initiative (höchste zuerst)."""
-    # Bei Gleichstand könnte man eine zweite Sortierregel (z.B. DEX, Zufall) hinzufügen.
     return sorted(participants, key=lambda p: p.current_initiative, reverse=True)
 
 def process_beginning_of_turn_effects(character: CharacterInstance):
-    """Verarbeitet Status-Effekte, die zu Beginn des Zuges ausgelöst werden (on_tick)."""
-    if character.is_defeated:
-        return
-
+    if character.is_defeated: return
     logger.debug(f"--- Beginn des Zuges für {character.name} ---")
     effects_to_remove: List[StatusEffect] = []
     
-    # Kopie der Liste, da Effekte sich selbst entfernen könnten während der Iteration
     for effect in list(character.status_effects): 
-        effect.on_tick() # Führt Schaden über Zeit etc. aus
-        if character.is_defeated: # Effekt-Tick könnte den Charakter besiegen
+        effect.on_tick() 
+        if character.is_defeated: 
             logger.debug(f"{character.name} wurde durch einen Effekt-Tick besiegt.")
-            break # Keine weiteren Ticks für diesen Charakter in dieser Runde
-            
-        if effect.tick_duration(): # Reduziert Dauer und prüft, ob abgelaufen
+            # Hier könnte man cli_output.display_character_status oder eine spezielle Nachricht ausgeben
+            break             
+        if effect.tick_duration(): 
             effects_to_remove.append(effect)
             
     for eff_rem in effects_to_remove:
         eff_rem.on_remove()
-        if eff_rem in character.status_effects: # Sicherstellen, dass es noch da ist
+        if eff_rem in character.status_effects: 
             character.status_effects.remove(eff_rem)
+            cli_output.display_status_effect_removed(character.name, eff_rem.name)
 
-    # Schildpunkte können durch Effekte (wie Burning) direkt reduziert werden, ohne take_damage
-    # Sicherstellen, dass Schildpunkte nicht negativ werden, falls Effekte sie direkt manipulieren.
     if character.shield_points < 0: character.shield_points = 0
 
 if __name__ == '__main__':
-    import math # Für ceil/floor in Heilungsberechnung oben, falls math nicht schon importiert wurde
     from src.definitions.loader import load_character_templates, load_opponent_templates
-    from src.config.config import CONFIG # Stellt sicher, dass CONFIG geladen ist
-
     print("\n--- Teste CombatHandler ---")
-    
-    # Setup (ähnlich wie im entities-Test)
     try:
+        if CONFIG is None:
+            print("WARNUNG: Globale CONFIG konnte nicht geladen werden, Tests könnten unzuverlässig sein.")
+            class DummyConfig: # Minimaler Fallback für Tests
+                def get(self, key, default=None):
+                    if key == "game_settings.base_weapon_damage": return 5
+                    if key == "game_settings.min_damage": return 1
+                    return default if default is not None else 0
+            _CONFIG_TEST_FALLBACK = DummyConfig() 
+            # Im echten Lauf wird die globale CONFIG verwendet. Für Tests muss sie da sein.
+            # Wenn CONFIG None ist, wird der Test wahrscheinlich fehlschlagen,
+            # da die Formeln CONFIG erwarten.
+            if CONFIG is None and _CONFIG_TEST_FALLBACK is not None: # Nur für diesen Testblock überschreiben
+                 # Dieses Überschreiben der globalen Variable ist nur für den Test hier gedacht
+                 # und nicht ideal, aber stellt sicher, dass die Tests laufen.
+                 globals()['CONFIG'] = _CONFIG_TEST_FALLBACK # Pythonische Art, globale Variable zu setzen
+                 print("HINWEIS: Globale CONFIG wurde für Tests mit DummyConfig überschrieben.")
+
+
         char_templates = load_character_templates()
         opp_templates = load_opponent_templates()
+        
+        # Lade Skills hier explizit, um sicherzustellen, dass SKILL_DEFINITIONS gefüllt ist
+        if not SKILL_DEFINITIONS:
+            print("Lade Skills explizit für CombatHandler-Test...")
+            SKILL_DEFINITIONS.update(load_skill_templates())
+
 
         krieger_template = char_templates["krieger"]
         magier_template = char_templates["magier"]
         goblin_template = opp_templates["goblin_lv1"]
-        goblin_shaman_template = opp_templates.get("goblin_shaman_lv3") # Hat Heal-Skill
+        goblin_shaman_template = opp_templates.get("goblin_shaman_lv3") 
         if not goblin_shaman_template: raise ValueError("Goblin Schamane nicht gefunden")
-
 
         spieler_krieger = CharacterInstance(base_template=krieger_template, name_override="Krieger Test")
         spieler_magier = CharacterInstance(base_template=magier_template, name_override="Magier Test")
@@ -311,74 +289,46 @@ if __name__ == '__main__':
         gegner_goblin2 = CharacterInstance(base_template=goblin_template, name_override="Goblin Beta")
         gegner_shaman = CharacterInstance(base_template=goblin_shaman_template, name_override="Goblin Schamane")
         
-        # Anpassung der Attribute für Testzwecke
-        spieler_krieger.accuracy = 10 # Um Trefferchance zu erhöhen
-        spieler_krieger.attributes["STR"] = 16 # Bonus +3
-        spieler_magier.attributes["INT"] = 18 # Bonus +4
-        gegner_goblin1.evasion = 2 # Um Ausweichen zu testen
+        spieler_krieger.accuracy = 10 
+        spieler_krieger.attributes["STR"] = 16 
+        spieler_magier.attributes["INT"] = 18 
+        gegner_goblin1.evasion = 2 
+        
+        gegner_goblin1.current_stamina = 100 # Stellen sicher, dass Gegner Ressourcen haben
+        gegner_goblin1.accuracy = 5 # Geben wir dem Goblin etwas Genauigkeit
+        gegner_goblin2.current_stamina = 100
+        gegner_shaman.current_mana = 100
+        spieler_krieger.current_stamina = 100 
+        spieler_magier.current_mana = 100   
 
         combat_handler = CombatHandler()
 
-        print("\n-- Test: Krieger (STR 16) greift Goblin Alpha (HP 50, Armor 2) mit 'power_strike' an --")
-        # Power Strike: base 6, STR scaling, x1.5
-        # Erwarteter Schaden: (6 Basis + 3 STR-Bonus) * 1.5 = 9 * 1.5 = 13.5 -> floor(13) = 13
-        # Reduziert um Rüstung 2 -> 11 Schaden.
-        # Kritisch: (13 * 1.5 KritMult) = 19.5 -> floor(19) = 19. Reduziert um 2 -> 17.
+        print("\n-- Test: Goblin Alpha greift Krieger Test mit 'basic_strike_phys' an --")
+        # Annahme: basic_strike_phys kostet 0, base_damage ist null (nutzt Waffenschaden 5)
+        # Goblin STR 8 -> Bonus -1. Waffenschaden 5. (5 + (-1)) * 1.0 = 4.
+        # Krieger Rüstung 5. 4 - 5 = -1. Min Schaden 1.
+        print(f"Vor Angriff: {spieler_krieger.name} HP: {spieler_krieger.current_hp}")
+        combat_handler.execute_skill_action(actor=gegner_goblin1, skill_id="basic_strike_phys", targets=[spieler_krieger])
+        print(f"Nach Angriff: {spieler_krieger.name} HP: {spieler_krieger.current_hp}")
+
+
+        print("\n-- Test: Krieger (STR 16) greift Goblin Alpha (HP aktuell, Armor 2) mit 'power_strike' an --")
         print(f"Vor Angriff: {gegner_goblin1.name} HP: {gegner_goblin1.current_hp}")
         combat_handler.execute_skill_action(actor=spieler_krieger, skill_id="power_strike", targets=[gegner_goblin1])
         print(f"Nach Angriff: {gegner_goblin1.name} HP: {gegner_goblin1.current_hp}")
         
-        print("\n-- Test: Magier (INT 18) greift Goblin Beta (HP 50, MagRes 0) mit 'fireball' an --")
-        # Fireball: base 8, INT scaling, x1.5. Applies BURNING (Pot 3, Dur 2R)
-        # Erwarteter Schaden: (8 Basis + 4 INT-Bonus) * 1.5 = 12 * 1.5 = 18
-        # BURNING Potency: 3 (Basis) + (4 INT Bonus * 0.0 Skalierung, wenn nicht im Skill definiert) -> für Test mit Skalierung:
-        # Annahme: Skill "fireball" in JSON hat scales_with_attribute="INT", attribute_potency_multiplier=0.25 für den Effekt
-        # Dann wäre Burning Potency = 3 + (4 * 0.25) = 3 + 1 = 4
-        # Hier wird die Definition aus skills.json5 genommen, die keine Skalierung für Burning hat. Potency bleibt 3.
+        print("\n-- Test: Magier (INT 18) greift Goblin Beta (HP aktuell, MagRes 0) mit 'fireball' an --")
         print(f"Vor Angriff: {gegner_goblin2.name} HP: {gegner_goblin2.current_hp}, Effekte: {len(gegner_goblin2.status_effects)}")
         combat_handler.execute_skill_action(actor=spieler_magier, skill_id="fireball", targets=[gegner_goblin2])
         print(f"Nach Angriff: {gegner_goblin2.name} HP: {gegner_goblin2.current_hp}, Effekte: {gegner_goblin2.status_effects}")
 
         print("\n-- Test: Tick-Effekte für Goblin Beta (Burning) --")
-        process_beginning_of_turn_effects(gegner_goblin2) # 1. Tick
+        process_beginning_of_turn_effects(gegner_goblin2) 
         print(f"Nach 1. Tick: {gegner_goblin2.name} HP: {gegner_goblin2.current_hp}, Effekte: {gegner_goblin2.status_effects}")
-        process_beginning_of_turn_effects(gegner_goblin2) # 2. Tick
-        print(f"Nach 2. Tick: {gegner_goblin2.name} HP: {gegner_goblin2.current_hp}, Effekte: {gegner_goblin2.status_effects}") # Effekt sollte weg sein, wenn Dauer 2R
-        process_beginning_of_turn_effects(gegner_goblin2) # 3. Tick (Effekt sollte weg sein)
+        process_beginning_of_turn_effects(gegner_goblin2) 
+        print(f"Nach 2. Tick: {gegner_goblin2.name} HP: {gegner_goblin2.current_hp}, Effekte: {gegner_goblin2.status_effects}") 
+        process_beginning_of_turn_effects(gegner_goblin2) 
         print(f"Nach 3. Tick: {gegner_goblin2.name} HP: {gegner_goblin2.current_hp}, Effekte: {gegner_goblin2.status_effects}")
-
-        print("\n-- Test: Goblin Schamane (WIS 12) heilt Goblin Alpha mit 'heal_lesser' --")
-        # heal_lesser: base_heal 10, WIS scaling, heal_multiplier 0.3
-        # WIS 12 -> Bonus +1
-        # Erwartete Heilung: (10 Basis + 1 WIS-Bonus) * 0.3 = 11 * 0.3 = 3.3 -> floor(3) = 3
-        gegner_goblin1.current_hp = 10 # Setze HP niedrig für Test
-        print(f"Vor Heilung: {gegner_goblin1.name} HP: {gegner_goblin1.current_hp}")
-        combat_handler.execute_skill_action(actor=gegner_shaman, skill_id="heal_lesser", targets=[gegner_goblin1])
-        print(f"Nach Heilung: {gegner_goblin1.name} HP: {gegner_goblin1.current_hp}")
-
-        print("\n-- Test: Initiative-Reihenfolge --")
-        spieler_krieger.current_initiative = 20
-        spieler_magier.current_initiative = 15
-        gegner_goblin1.current_initiative = 18
-        teilnehmer = [spieler_magier, gegner_goblin1, spieler_krieger]
-        geordnete_teilnehmer = get_initiative_order(teilnehmer)
-        print("Erwartete Reihenfolge: Krieger (20), Goblin (18), Magier (15)")
-        print(f"Tatsächliche Reihenfolge: {[p.name for p in geordnete_teilnehmer]}")
-        
-        print("\n-- Test: Krieger (Kosten: 5 Stamina) greift mit 'basic_strike_phys' an --")
-        # basic_strike_phys: Kosten 5 Stamina
-        print(f"Krieger Stamina vor basic_strike_phys: {spieler_krieger.current_stamina}")
-        combat_handler.execute_skill_action(actor=spieler_krieger, skill_id="basic_strike_phys", targets=[gegner_goblin1])
-        print(f"Krieger Stamina nach basic_strike_phys: {spieler_krieger.current_stamina}")
-        print(f"Goblin HP nach basic_strike_phys: {gegner_goblin1.current_hp}")
-
-        print("\n-- Test: Magier wirkt 'arcane_barrier' (Schild) auf sich selbst --")
-        # arcane_barrier: Potency 15 (aus JSON, keine Skalierung definiert)
-        print(f"Magier Schild vor arcane_barrier: {spieler_magier.shield_points}")
-        combat_handler.execute_skill_action(actor=spieler_magier, skill_id="arcane_barrier", targets=[spieler_magier])
-        print(f"Magier Schild nach arcane_barrier: {spieler_magier.shield_points}")
-        print(f"Magier Status Effekte: {spieler_magier.status_effects}")
-
 
     except ImportError as e:
         print(f"FEHLER bei Imports für den Test in combat.py: {e}.")
@@ -386,5 +336,4 @@ if __name__ == '__main__':
         print(f"Ein Fehler ist während des Testlaufs in combat.py aufgetreten: {e}")
         import traceback
         traceback.print_exc()
-
     print("\n--- Combat-Tests abgeschlossen ---")

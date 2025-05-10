@@ -1,0 +1,60 @@
+# Python RPG Projekt
+
+Dieses Projekt ist ein textbasiertes RPG, das in Python entwickelt wird.
+
+## Ausführung
+
+Alle Befehle sollten aus dem **Root-Verzeichnis des Projekts** ausgeführt werden.
+
+### Voraussetzungen
+
+- Python 3.10 oder höher
+- Die in `requirements.txt` aufgeführten Pakete (`pip install -r requirements.txt`)
+  - Aktuell: `json5`
+
+### Haupt-Skript ausführen (`src/main.py`)
+
+Das Haupt-Skript `src/main.py` steuert die verschiedenen Betriebsmodi des Spiels.
+
+**Syntax:**
+`python -m src.main [OPTIONEN]`
+
+**Verfügbare Modi (`--mode`):**
+
+*   **`auto` (Standard):** Startet eine automatische Simulation von Kampfbegegnungen.
+    *   `python -m src.main` (startet den Auto-Modus mit 1 Begegnung)
+    *   `python -m src.main --mode auto` (expliziter Aufruf)
+    *   **Anzahl der Begegnungen ändern (`--encounters`):**
+        *   `python -m src.main --encounters 3` (simuliert 3 Begegnungen)
+
+*   **`manual`:** Platzhalter für einen zukünftigen manuell spielbaren Modus. Zeigt aktuell nur eine Nachricht an.
+    *   `python -m src.main --mode manual`
+
+*   **`train_rl`:** Platzhalter für einen zukünftigen Modus zum Trainieren eines Reinforcement Learning Agenten. Zeigt aktuell nur eine Nachricht an.
+    *   `python -m src.main --mode train_rl`
+
+**Hilfe anzeigen:**
+
+Um eine Übersicht aller verfügbaren Optionen zu erhalten:
+`python -m src.main --help`
+
+### Beispielaufrufe
+
+1.  **Automatische Simulation mit einer Kampfbegegnung starten:**
+    ```bash
+    python -m src.main --encounters 1
+    ```
+    oder einfach:
+    ```bash
+    python -m src.main
+    ```
+
+2.  **Automatische Simulation mit fünf Kampfbegegnungen starten:**
+    ```bash
+    python -m src.main --encounters 5
+    ```
+
+### Log-Dateien
+
+Die Simulation und das Programm schreiben Log-Nachrichten in das Verzeichnis `logs/`. Die Haupt-Logdatei ist typischerweise `logs/rpg_game.log`.
+Der Loglevel und andere Logging-Parameter können in `src/config/settings.json5` angepasst werden.

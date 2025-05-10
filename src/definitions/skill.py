@@ -94,15 +94,20 @@ class SkillTemplate:
         self.cost: SkillCostData = SkillCostData(**cost)
         self.target_type: str = target_type
         
-        self.direct_effects: Optional[SkillEffectData] = SkillEffectData(**effects) if effects else None
+        self.direct_effects: Optional[SkillEffectData] = SkillEffectData(**effects) if effects and isinstance(effects, dict) else None
         
         self.applied_status_effects: List[AppliedEffectData] = []
         if applies_effects:
             for effect_data in applies_effects:
                 # Stelle sicher, dass 'effect_id' aus 'id' gelesen wird, falls so in JSON vorhanden
-                if 'id' in effect_data and 'effect_id' not in effect_data:
-                    effect_data['effect_id'] = effect_data.pop('id')
-                self.applied_status_effects.append(AppliedEffectData(**effect_data))
+                # Und 'duration' zu 'duration_rounds' gemappt wird
+                processed_effect_data = dict(effect_data) # Kopie, um Original nicht zu ändern
+                if 'id' in processed_effect_data and 'effect_id' not in processed_effect_data:
+                    processed_effect_data['effect_id'] = processed_effect_data.pop('id')
+                if 'duration' in processed_effect_data and 'duration_rounds' not in processed_effect_data:
+                    processed_effect_data['duration_rounds'] = processed_effect_data.pop('duration')
+                
+                self.applied_status_effects.append(AppliedEffectData(**processed_effect_data))
 
     def __repr__(self) -> str:
         return (f"SkillTemplate(id='{self.id}', name='{self.name}', cost={self.cost}, "
@@ -141,22 +146,19 @@ if __name__ == '__main__':
         "description": "Eine magische Barriere, die Schaden absorbiert.",
         "cost": { "value": 30, "type": "MANA" },
         "target_type": "SELF",
-        "effects": {}, // In JSON als leeres Objekt {}
+        "effects": {}, # In JSON als leeres Objekt {}  <-- KORRIGIERTER PYTHON-KOMMENTAR
         "applies_effects": [
           { "effect_id": "SHIELDED", "potency": 15, "duration_rounds": 3 }
         ]
     }
-    # Wichtig: Wenn "effects" ein leeres Objekt ist, muss es als None oder mit Standardwerten initialisiert werden.
-    # Die **-Entpackung eines leeren dicts für SkillEffectData ist in Ordnung, da alle Argumente Optional sind.
     arcane_barrier_skill = SkillTemplate(skill_id="arcane_barrier", **arcane_barrier_data)
     print(arcane_barrier_skill)
-    if arcane_barrier_skill.direct_effects:
-         print(f"  Direct Effects: {arcane_barrier_skill.direct_effects}") # Sollte Standardwerte zeigen
+    if arcane_barrier_skill.direct_effects: # Sollte jetzt None oder ein leeres SkillEffectData sein
+         print(f"  Direct Effects: {arcane_barrier_skill.direct_effects}") 
     if arcane_barrier_skill.applied_status_effects:
         for applied_effect in arcane_barrier_skill.applied_status_effects:
             print(f"  Applies: {applied_effect}")
 
-    # Behandlung von 'id' vs 'effect_id' in applies_effects (aus der area_fire_blast Definition)
     area_fire_blast_data = {
         "name": "Flächenbrand",
         "description": "Eine Explosion aus Feuer, die mehrere Gegner trifft.",
@@ -166,13 +168,15 @@ if __name__ == '__main__':
             "base_damage": 6, "scaling_attribute": "INT", "damage_type": "FIRE", "multiplier": 1.0
         },
         "applies_effects": [
-            {"id": "BURNING", "duration": 1, "potency": 2} // Beachte 'id' und 'duration'
+            # Hier wurde 'id' und 'duration' in der JSON-Vorlage verwendet,
+            # der Konstruktor von SkillTemplate sollte das mappen.
+            {"id": "BURNING", "duration": 1, "potency": 2} 
         ]
     }
     area_fire_blast_skill = SkillTemplate(skill_id="area_fire_blast", **area_fire_blast_data)
     print(area_fire_blast_skill)
     if area_fire_blast_skill.applied_status_effects:
         for ap_effect in area_fire_blast_skill.applied_status_effects:
-            print(f"  Applies: {ap_effect}") # Sollte effect_id='BURNING', duration_rounds=1 zeigen
-            assert ap_effect.effect_id == "BURNING" # Test
-            assert ap_effect.duration_rounds == 1 # Test
+            print(f"  Applies: {ap_effect}") 
+            assert ap_effect.effect_id == "BURNING" 
+            assert ap_effect.duration_rounds == 1

@@ -20,8 +20,8 @@
     "name": "Schlag",
     "description": "Ein kräftiger Schlag mit einer Nahkampfwaffe.",
     "cost": {
-      "value": 0,
-      "type": "NONE"
+      "value": 5, // Angepasste Kosten
+      "type": "STAMINA"
     },
     "target_type": "ENEMY_SINGLE",
     "effects": {
@@ -36,14 +36,14 @@
     "name": "Magischer Pfeil",
     "description": "Ein einfacher magischer Energiepfeil.",
     "cost": {
-      "value": 5,
+      "value": 5, // Angepasste Kosten
       "type": "MANA"
     },
     "target_type": "ENEMY_SINGLE",
     "effects": {
-      "base_damage": null,  // Nutzt game_settings.base_weapon_damage (oder einen magischen Basiswert?)
+      "base_damage": null,  // Nutzt game_settings.base_weapon_damage (oder einen magischen Basiswert?) - hier Annahme gemäß deiner Vorlage
       "scaling_attribute": "INT",
-      "damage_type": "MAGIC", // Beibehalten von "MAGIC" für Konsistenz mit ANNEX
+      "damage_type": "MAGIC", // Geändert von MAGICAL zu MAGIC für Konsistenz mit ANNEX, oder wir einigen uns auf MAGICAL
       "multiplier": 1.0
     }
   },
@@ -52,7 +52,7 @@
     "name": "Heiliger Funke",
     "description": "Ein Funke heiliger Energie.",
     "cost": {
-      "value": 5,
+      "value": 5, // Angepasste Kosten
       "type": "MANA"
     },
     "target_type": "ENEMY_SINGLE",
@@ -65,10 +65,10 @@
   },
   
   "basic_strike_finesse": {
-    "name": "Präziser Stich", 
+    "name": "Präziser Stich", // Name aus deiner Vorlage, ANNEX hatte "Präziser Stich" für den nicht-Basis Skill.
     "description": "Ein präziser Stich mit einer Klinge.",
     "cost": {
-      "value": 5,
+      "value": 5, // Angepasste Kosten
       "type": "ENERGY"
     },
     "target_type": "ENEMY_SINGLE",
@@ -84,8 +84,8 @@
     "name": "Schuss",
     "description": "Ein einfacher Schuss mit einer Fernkampfwaffe.",
     "cost": {
-      "value": 0,
-      "type": "NONE" 
+      "value": 5, // Angepasste Kosten, ANNEX hatte 0
+      "type": "STAMINA" // Oder NONE/ENERGY für manche Fernkämpfer? Hier STAMINA wie bei dir.
     },
     "target_type": "ENEMY_SINGLE",
     "effects": {
@@ -98,15 +98,15 @@
   
   // Krieger-Skills
   "power_strike": {
-    "name": "Mächtiger Schlag", 
+    "name": "Mächtiger Schlag", // Name aus deiner Vorlage, ANNEX hatte "Mächtiger Hieb"
     "description": "Ein kraftvoller Schlag, der zusätzlichen Schaden verursacht.",
     "cost": {
-      "value": 15, 
+      "value": 15, // Angepasste Kosten, ANNEX hatte 20
       "type": "STAMINA"
     },
     "target_type": "ENEMY_SINGLE",
     "effects": {
-      "base_damage": 6, 
+      "base_damage": 6, // Angepasster Wert, ANNEX hatte null (base_weapon_damage) und multiplier 1.5
       "scaling_attribute": "STR",
       "damage_type": "PHYSICAL",
       "multiplier": 1.5
@@ -117,40 +117,39 @@
     "name": "Schildschlag",
     "description": "Ein Schlag mit dem Schild, der den Gegner betäubt.",
     "cost": {
-      "value": 20, 
+      "value": 20, // Angepasste Kosten, ANNEX hatte 15
       "type": "STAMINA"
     },
     "target_type": "ENEMY_SINGLE",
     "effects": {
-      "base_damage": 2, 
+      "base_damage": 2, // ANNEX hatte 2 und attr_multiplier 0.8
       "scaling_attribute": "STR",
       "damage_type": "PHYSICAL",
-      "multiplier": 1.0 
+      "multiplier": 1.0 // ANNEX hatte 0.8
     },
-    "applies_effects": [ 
+    "applies_effects": [ // Status-Effekte, die angewendet werden
       {
-        "effect_id": "STUNNED", // Beachte: "id" wurde zu "effect_id" geändert für Konsistenz mit SkillTemplate Klasse
-        "duration_rounds": 1,   // "duration" wurde zu "duration_rounds"
-        "potency": 1,
-        "application_chance": 0.75 // Hinzugefügt für Klarheit, Standard wäre 1.0
+        "effect_id": "STUNNED", // ID des Status-Effekts
+        "potency": 1,           // Stärke/Wert des Effekts
+        "duration_rounds": 1,   // Dauer in Runden
+        "application_chance": 0.75 // ANNEX hatte 0.75, hier nicht explizit, nehme Default 1.0 an oder füge hinzu. Für jetzt ohne.
       }
     ]
   },
   
   "cleave": {
-    "name": "Rundumschlag", 
+    "name": "Rundumschlag", // Name aus deiner Vorlage, ANNEX hatte "Spalten"
     "description": "Ein weiter Schwung, der mehrere Gegner treffen kann.",
     "cost": {
-      "value": 25, 
+      "value": 25, // Kosten wie ANNEX
       "type": "STAMINA"
     },
-    "target_type": "ENEMY_CLEAVE", 
+    "target_type": "ENEMY_CLEAVE", // Expliziter Typ, ANNEX hatte das auch.
     "effects": {
-      "base_damage": 7, 
+      "base_damage": 7, // Angepasster Wert, ANNEX hatte null und attr_multiplier 0.9
       "scaling_attribute": "STR",
       "damage_type": "PHYSICAL",
-      "multiplier": 1.2,
-      "area_type": "CLEAVE" // Dieses Feld war in deiner Vorlage, beibehalten
+      "multiplier": 1.2 // ANNEX hatte 0.9
     }
   },
   
@@ -159,22 +158,22 @@
     "name": "Feuerball",
     "description": "Ein explodierender Feuerball, der den Gegner verbrennt.",
     "cost": {
-      "value": 20, 
+      "value": 20, // Angepasste Kosten, ANNEX hatte 30
       "type": "MANA"
     },
-    "target_type": "ENEMY_SINGLE", 
+    "target_type": "ENEMY_SINGLE", // ANNEX hatte single. Wenn splash, dann ENEMY_SPLASH
     "effects": {
-      "base_damage": 8,  
+      "base_damage": 8,  // Angepasster Wert, ANNEX hatte 10
       "scaling_attribute": "INT",
-      "damage_type": "FIRE", // Geändert von "MAGICAL" zu "FIRE" für Spezifität
-      "multiplier": 1.5 
+      "damage_type": "FIRE", // Korrekt, spezifischer Typ
+      "multiplier": 1.5 // Angepasster Wert, ANNEX hatte 2.0
     },
     "applies_effects": [
       {
         "effect_id": "BURNING",
-        "duration_rounds": 2, 
-        "potency": 3,
-        "application_chance": 0.9 // Hinzugefügt für Klarheit
+        "potency": 3, // ANNEX hatte 3
+        "duration_rounds": 2 // ANNEX hatte 2
+        // "application_chance": 0.9 // ANNEX hatte 0.9, hier nicht explizit
       }
     ]
   },
@@ -183,22 +182,22 @@
     "name": "Frostblitz",
     "description": "Ein Geschoss aus eisiger Kälte, das den Gegner verlangsamt.",
     "cost": {
-      "value": 15, 
+      "value": 15, // Angepasste Kosten, ANNEX hatte 25
       "type": "MANA"
     },
     "target_type": "ENEMY_SINGLE",
     "effects": {
-      "base_damage": 6,  
+      "base_damage": 6,  // Angepasster Wert, ANNEX hatte 8
       "scaling_attribute": "INT",
-      "damage_type": "ICE", // Geändert von "MAGICAL" zu "ICE"
-      "multiplier": 1.2 
+      "damage_type": "ICE", // Korrekt
+      "multiplier": 1.2 // Angepasster Wert, ANNEX hatte 2.0
     },
     "applies_effects": [
       {
         "effect_id": "SLOWED",
-        "duration_rounds": 2, 
-        "potency": 2,
-        "application_chance": 1.0 // Hinzugefügt
+        "potency": 2, // ANNEX hatte 1
+        "duration_rounds": 2 // ANNEX hatte 1
+        // "application_chance": 1.0 // ANNEX hatte 1.0
       }
     ]
   },
@@ -207,40 +206,37 @@
     "name": "Arkane Barriere",
     "description": "Eine magische Barriere, die Schaden absorbiert.",
     "cost": {
-      "value": 30, 
+      "value": 30, // Angepasste Kosten, ANNEX hatte 20
       "type": "MANA"
     },
-    "target_type": "SELF", 
+    "target_type": "SELF", // Korrekt, aus ANNEX übernommen
     "effects": {}, // Kein direkter Schaden/Heilung
     "applies_effects": [
       {
         "effect_id": "SHIELDED",
-        "duration_rounds": 3,
-        "potency": 15,
-        // "scales_with_attribute": "INT", // Optional: Skalierung der Potenz
-        // "attribute_potency_multiplier": 0.5, // Wenn skaliert
-        "application_chance": 1.0 // Hinzugefügt
+        "potency": 15, // ANNEX hatte 30 und Skalierung mit INT (attribute_potency_multiplier)
+        "duration_rounds": 3
       }
     ]
-    // "is_self_effect": true // target_type: "SELF" macht das implizit.
+    // "is_self_effect": true // target_type: "SELF" macht das implizit. Doppelt?
   },
   
   // Schurken-Skills
   "precise_stab": {
-    "name": "Präziser Stich", 
+    "name": "Präziser Stich", // Name aus deiner Vorlage, ANNEX hatte "Gezielter Stich"
     "description": "Ein präziser Stich an eine verwundbare Stelle.",
     "cost": {
-      "value": 15, 
+      "value": 15, // Angepasste Kosten, ANNEX hatte 20
       "type": "ENERGY"
     },
     "target_type": "ENEMY_SINGLE",
     "effects": {
-      "base_damage": 7, 
+      "base_damage": 7, // Angepasster Wert, ANNEX hatte null und attr_multiplier 1.2
       "scaling_attribute": "DEX",
       "damage_type": "PHYSICAL",
-      "multiplier": 1.4, 
-      "bonus_crit_chance": 0.25, // In deiner Vorlage als "critical_chance", angepasst an SkillTemplate
-      "critical_multiplier": 1.5 
+      "multiplier": 1.4, // ANNEX hatte 1.2
+      "bonus_crit_chance": 0.25, // ANNEX hatte das auch (als bonus_crit_chance)
+      "critical_multiplier": 1.5 // Neues Feld, Standard-Krit-Multiplikator?
     }
   },
   
@@ -248,7 +244,7 @@
     "name": "Ablenkung",
     "description": "Lenkt den Gegner ab und reduziert seine Treffsicherheit.",
     "cost": {
-      "value": 10, 
+      "value": 10, // Angepasste Kosten, ANNEX hatte 15
       "type": "ENERGY"
     },
     "target_type": "ENEMY_SINGLE",
@@ -256,9 +252,8 @@
     "applies_effects": [
       {
         "effect_id": "ACCURACY_DOWN",
-        "duration_rounds": 2, 
-        "potency": 3,
-        "application_chance": 1.0 // Hinzugefügt
+        "potency": 3, // ANNEX hatte 3
+        "duration_rounds": 2 // ANNEX hatte 2
       }
     ]
   },
@@ -267,7 +262,7 @@
     "name": "Sprint",
     "description": "Erhöht vorübergehend die eigene Initiative.",
     "cost": {
-      "value": 15, 
+      "value": 15, // Angepasste Kosten, ANNEX hatte 10
       "type": "ENERGY"
     },
     "target_type": "SELF",
@@ -275,11 +270,11 @@
     "applies_effects": [
       {
         "effect_id": "INITIATIVE_UP",
-        "duration_rounds": 3, 
-        "potency": 20,
-        "application_chance": 1.0 // Hinzugefügt
+        "potency": 20, // ANNEX hatte 20
+        "duration_rounds": 3 // ANNEX hatte 1
       }
     ]
+    // "is_self_effect": true // target_type: "SELF" macht das implizit.
   },
   
   // Kleriker-Skills
@@ -287,14 +282,14 @@
     "name": "Heilung",
     "description": "Heilt Verletzungen des Ziels.",
     "cost": {
-      "value": 20, 
+      "value": 20, // Angepasste Kosten, ANNEX hatte 25
       "type": "MANA"
     },
-    "target_type": "ALLY_SINGLE", 
-    "effects": { 
+    "target_type": "ALLY_SINGLE", // ANNEX hatte ALLY_SINGLE
+    "effects": { // Wurde zu einem Effekt-Objekt, ANNEX hatte base_heal und attribute_multiplier
       "base_healing": 15,
       "scaling_attribute": "WIS",
-      "healing_multiplier": 1.5 
+      "healing_multiplier": 1.5 // ANNEX hatte attr_multiplier 0.5
     }
   },
   
@@ -302,56 +297,55 @@
     "name": "Heiliges Licht",
     "description": "Ein Strahl heiligen Lichts, besonders effektiv gegen Untote.",
     "cost": {
-      "value": 25, 
+      "value": 25, // Angepasste Kosten, ANNEX hatte 30
       "type": "MANA"
     },
     "target_type": "ENEMY_SINGLE",
     "effects": {
-      "base_damage": 8, 
+      "base_damage": 8, // ANNEX hatte 12
       "scaling_attribute": "WIS",
       "damage_type": "HOLY",
-      "multiplier": 1.2, 
-      "bonus_damage_vs_tags": [ 
-         { "tag": "UNDEAD", "multiplier": 2.0 } // "bonus_vs_type" wurde zu "tag" und "bonus_multiplier" zu "multiplier" für Konsistenz mit SkillEffectData
+      "multiplier": 1.2, // ANNEX hatte 1.5
+      "bonus_damage_vs_tags": [ // ANNEX Format war ähnlich
+         { "tag": "UNDEAD", "multiplier": 2.0 } // ANNEX hatte bonus_multiplier 1.5
       ]
     }
   },
   
   "protective_ward": {
-    "name": "Schutzfeld", 
+    "name": "Schutzfeld", // Name aus deiner Vorlage, ANNEX hatte "Schutzsegen"
     "description": "Erhöht die Verteidigung des Ziels.",
     "cost": {
-      "value": 20, 
+      "value": 20, // Kosten wie ANNEX
       "type": "MANA"
     },
-    "target_type": "ALLY_SINGLE", 
+    "target_type": "ALLY_SINGLE", // ANNEX hatte ALLY_SINGLE
     "effects": {},
     "applies_effects": [
       {
         "effect_id": "DEFENSE_UP",
-        "duration_rounds": 3, 
-        "potency": 3,
-        "application_chance": 1.0 // Hinzugefügt
+        "potency": 3, // Wie ANNEX
+        "duration_rounds": 3 // Wie ANNEX
       }
     ]
   },
   
   // Gegner-Skills
   "weakening_curse": {
-    "name": "Schwächungsfluch", 
+    "name": "Schwächungsfluch", // Name aus deiner Vorlage
     "description": "Ein Fluch, der die Stärke des Opfers reduziert.",
     "cost": {
-      "value": 10, 
-      "type": "MANA" 
+      "value": 10, // ANNEX hatte 0
+      "type": "MANA" // ANNEX hatte MANA
     },
     "target_type": "ENEMY_SINGLE",
     "effects": {},
     "applies_effects": [
       {
         "effect_id": "WEAKENED",
-        "duration_rounds": 3, 
-        "potency": 3,
-        "application_chance": 0.85 // Hinzugefügt, basierend auf früherer Annahme, da nicht in deiner Vorlage
+        "potency": 3, // Wie ANNEX
+        "duration_rounds": 3 // Wie ANNEX
+        // "application_chance": 0.85 // ANNEX hatte dies
       }
     ]
   },
@@ -360,38 +354,36 @@
     "name": "Geringe Heilung",
     "description": "Heilt einen geringen Teil der Verletzungen.",
     "cost": {
-      "value": 10, 
-      "type": "MANA" 
+      "value": 10, // ANNEX hatte 0
+      "type": "MANA" // ANNEX hatte MANA
     },
-    "target_type": "ALLY_SINGLE", 
+    "target_type": "ALLY_SINGLE", // ANNEX hatte ALLY_SINGLE
     "effects": {
-      "base_healing": 10, 
-      "scaling_attribute": "WIS", 
-      "healing_multiplier": 0.3 
+      "base_healing": 10, // Wie ANNEX
+      "scaling_attribute": "WIS", // Wie ANNEX
+      "healing_multiplier": 0.3 // Wie ANNEX (als attr_multiplier)
     }
   },
 
-  "area_fire_blast": { 
+  "area_fire_blast": { // Neuer Skill
     "name": "Flächenbrand",
     "description": "Eine Explosion aus Feuer, die mehrere Gegner trifft.",
     "cost": {
       "value": 25,
       "type": "MANA"
     },
-    "target_type": "ENEMY_SPLASH", 
+    "target_type": "ENEMY_SPLASH", // Annahme für "mehrere Gegner"
     "effects": {
       "base_damage": 6,
       "scaling_attribute": "INT",
-      "damage_type": "FIRE", // Angepasst von "MAGICAL" zu "FIRE"
-      "multiplier": 1.0,
-      "area_type": "SPLASH" // Dieses Feld war in deiner Vorlage, beibehalten
+      "damage_type": "FIRE", // Sollte FIRE sein, nicht MAGICAL, wenn es ein Feuer-Skill ist
+      "multiplier": 1.0
     },
     "applies_effects": [
       {
-        "effect_id": "BURNING", // "id" wurde zu "effect_id"
-        "duration_rounds": 1,  // "duration" wurde zu "duration_rounds"
-        "potency": 2,
-        "application_chance": 0.9 // Hinzugefügt
+        "id": "BURNING", // Sollte "effect_id" sein für Konsistenz
+        "duration": 1,  // Sollte "duration_rounds" sein
+        "potency": 2
       }
     ]
   }

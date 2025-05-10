@@ -347,10 +347,10 @@ EFFECT_CLASS_MAP: Dict[str, Callable[..., StatusEffect]] = {
     "STUNNED": StunnedEffect,
     "SLOWED": SlowedEffect,
     "SHIELDED": ShieldedEffect,
-    "WEAKENED": WeakenedEffect, // Effekt für STR -potency
-    "ACCURACY_DOWN": AccuracyDownEffect, // Effekt für Genauigkeit -potency
-    "INITIATIVE_UP": InitiativeUpEffect, // Effekt für Initiative +potency
-    "DEFENSE_UP": DefenseUpEffect, // Effekt für Rüstung +potency, Magieresistenz +potency
+    "WEAKENED": WeakenedEffect, # Effekt für STR -potency
+    "ACCURACY_DOWN": AccuracyDownEffect, # Effekt für Genauigkeit -potency
+    "INITIATIVE_UP": InitiativeUpEffect, # Effekt für Initiative +potency
+    "DEFENSE_UP": DefenseUpEffect, # Effekt für Rüstung +potency, Magieresistenz +potency
     # Weitere Effekte hier registrieren
 }
 
