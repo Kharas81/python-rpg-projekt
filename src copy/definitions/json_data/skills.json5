@@ -1,0 +1,398 @@
+{
+  // Basisangriffe
+  "basic_attack_free": {
+    "name": "Angriff",
+    "description": "Ein einfacher Angriff, der keine Ressourcen kostet.",
+    "cost": {
+      "value": 0,
+      "type": "NONE" // Spezieller Typ für kostenlose Aktionen
+    },
+    "target_type": "ENEMY_SINGLE", // Annahme: Einzelziel
+    "effects": { // Direkte Schadens-/Heilungseffekte
+      "base_damage": 3,
+      "scaling_attribute": "STR", // Standardmäßig STR, könnte später variieren
+      "damage_type": "PHYSICAL",
+      "multiplier": 1.0
+    }
+  },
+  
+  "basic_strike_phys": {
+    "name": "Schlag",
+    "description": "Ein kräftiger Schlag mit einer Nahkampfwaffe.",
+    "cost": {
+      "value": 0,
+      "type": "NONE"
+    },
+    "target_type": "ENEMY_SINGLE",
+    "effects": {
+      "base_damage": null,  // Nutzt game_settings.base_weapon_damage
+      "scaling_attribute": "STR",
+      "damage_type": "PHYSICAL",
+      "multiplier": 1.0
+    }
+  },
+  
+  "basic_magic_bolt": {
+    "name": "Magischer Pfeil",
+    "description": "Ein einfacher magischer Energiepfeil.",
+    "cost": {
+      "value": 5,
+      "type": "MANA"
+    },
+    "target_type": "ENEMY_SINGLE",
+    "effects": {
+      "base_damage": null,  // Nutzt game_settings.base_weapon_damage (oder einen magischen Basiswert?)
+      "scaling_attribute": "INT",
+      "damage_type": "MAGIC", // Beibehalten von "MAGIC" für Konsistenz mit ANNEX
+      "multiplier": 1.0
+    }
+  },
+  
+  "basic_holy_spark": {
+    "name": "Heiliger Funke",
+    "description": "Ein Funke heiliger Energie.",
+    "cost": {
+      "value": 5,
+      "type": "MANA"
+    },
+    "target_type": "ENEMY_SINGLE",
+    "effects": {
+      "base_damage": null,  // Nutzt game_settings.base_weapon_damage
+      "scaling_attribute": "WIS",
+      "damage_type": "HOLY",
+      "multiplier": 1.0
+    }
+  },
+  
+  "basic_strike_finesse": {
+    "name": "Präziser Stich", 
+    "description": "Ein präziser Stich mit einer Klinge.",
+    "cost": {
+      "value": 5,
+      "type": "ENERGY"
+    },
+    "target_type": "ENEMY_SINGLE",
+    "effects": {
+      "base_damage": null,  // Nutzt game_settings.base_weapon_damage
+      "scaling_attribute": "DEX",
+      "damage_type": "PHYSICAL",
+      "multiplier": 1.0
+    }
+  },
+  
+  "basic_shot_phys": {
+    "name": "Schuss",
+    "description": "Ein einfacher Schuss mit einer Fernkampfwaffe.",
+    "cost": {
+      "value": 0,
+      "type": "NONE" 
+    },
+    "target_type": "ENEMY_SINGLE",
+    "effects": {
+      "base_damage": null,  // Nutzt game_settings.base_weapon_damage
+      "scaling_attribute": "DEX",
+      "damage_type": "PHYSICAL",
+      "multiplier": 1.0
+    }
+  },
+  
+  // Krieger-Skills
+  "power_strike": {
+    "name": "Mächtiger Schlag", 
+    "description": "Ein kraftvoller Schlag, der zusätzlichen Schaden verursacht.",
+    "cost": {
+      "value": 15, 
+      "type": "STAMINA"
+    },
+    "target_type": "ENEMY_SINGLE",
+    "effects": {
+      "base_damage": 6, 
+      "scaling_attribute": "STR",
+      "damage_type": "PHYSICAL",
+      "multiplier": 1.5
+    }
+  },
+  
+  "shield_bash": {
+    "name": "Schildschlag",
+    "description": "Ein Schlag mit dem Schild, der den Gegner betäubt.",
+    "cost": {
+      "value": 20, 
+      "type": "STAMINA"
+    },
+    "target_type": "ENEMY_SINGLE",
+    "effects": {
+      "base_damage": 2, 
+      "scaling_attribute": "STR",
+      "damage_type": "PHYSICAL",
+      "multiplier": 1.0 
+    },
+    "applies_effects": [ 
+      {
+        "effect_id": "STUNNED", // Beachte: "id" wurde zu "effect_id" geändert für Konsistenz mit SkillTemplate Klasse
+        "duration_rounds": 1,   // "duration" wurde zu "duration_rounds"
+        "potency": 1,
+        "application_chance": 0.75 // Hinzugefügt für Klarheit, Standard wäre 1.0
+      }
+    ]
+  },
+  
+  "cleave": {
+    "name": "Rundumschlag", 
+    "description": "Ein weiter Schwung, der mehrere Gegner treffen kann.",
+    "cost": {
+      "value": 25, 
+      "type": "STAMINA"
+    },
+    "target_type": "ENEMY_CLEAVE", 
+    "effects": {
+      "base_damage": 7, 
+      "scaling_attribute": "STR",
+      "damage_type": "PHYSICAL",
+      "multiplier": 1.2,
+      "area_type": "CLEAVE" // Dieses Feld war in deiner Vorlage, beibehalten
+    }
+  },
+  
+  // Magier-Skills
+  "fireball": {
+    "name": "Feuerball",
+    "description": "Ein explodierender Feuerball, der den Gegner verbrennt.",
+    "cost": {
+      "value": 20, 
+      "type": "MANA"
+    },
+    "target_type": "ENEMY_SINGLE", 
+    "effects": {
+      "base_damage": 8,  
+      "scaling_attribute": "INT",
+      "damage_type": "FIRE", // Geändert von "MAGICAL" zu "FIRE" für Spezifität
+      "multiplier": 1.5 
+    },
+    "applies_effects": [
+      {
+        "effect_id": "BURNING",
+        "duration_rounds": 2, 
+        "potency": 3,
+        "application_chance": 0.9 // Hinzugefügt für Klarheit
+      }
+    ]
+  },
+  
+  "frostbolt": {
+    "name": "Frostblitz",
+    "description": "Ein Geschoss aus eisiger Kälte, das den Gegner verlangsamt.",
+    "cost": {
+      "value": 15, 
+      "type": "MANA"
+    },
+    "target_type": "ENEMY_SINGLE",
+    "effects": {
+      "base_damage": 6,  
+      "scaling_attribute": "INT",
+      "damage_type": "ICE", // Geändert von "MAGICAL" zu "ICE"
+      "multiplier": 1.2 
+    },
+    "applies_effects": [
+      {
+        "effect_id": "SLOWED",
+        "duration_rounds": 2, 
+        "potency": 2,
+        "application_chance": 1.0 // Hinzugefügt
+      }
+    ]
+  },
+  
+  "arcane_barrier": {
+    "name": "Arkane Barriere",
+    "description": "Eine magische Barriere, die Schaden absorbiert.",
+    "cost": {
+      "value": 30, 
+      "type": "MANA"
+    },
+    "target_type": "SELF", 
+    "effects": {}, // Kein direkter Schaden/Heilung
+    "applies_effects": [
+      {
+        "effect_id": "SHIELDED",
+        "duration_rounds": 3,
+        "potency": 15,
+        // "scales_with_attribute": "INT", // Optional: Skalierung der Potenz
+        // "attribute_potency_multiplier": 0.5, // Wenn skaliert
+        "application_chance": 1.0 // Hinzugefügt
+      }
+    ]
+    // "is_self_effect": true // target_type: "SELF" macht das implizit.
+  },
+  
+  // Schurken-Skills
+  "precise_stab": {
+    "name": "Präziser Stich", 
+    "description": "Ein präziser Stich an eine verwundbare Stelle.",
+    "cost": {
+      "value": 15, 
+      "type": "ENERGY"
+    },
+    "target_type": "ENEMY_SINGLE",
+    "effects": {
+      "base_damage": 7, 
+      "scaling_attribute": "DEX",
+      "damage_type": "PHYSICAL",
+      "multiplier": 1.4, 
+      "bonus_crit_chance": 0.25, // In deiner Vorlage als "critical_chance", angepasst an SkillTemplate
+      "critical_multiplier": 1.5 
+    }
+  },
+  
+  "distraction": {
+    "name": "Ablenkung",
+    "description": "Lenkt den Gegner ab und reduziert seine Treffsicherheit.",
+    "cost": {
+      "value": 10, 
+      "type": "ENERGY"
+    },
+    "target_type": "ENEMY_SINGLE",
+    "effects": {},
+    "applies_effects": [
+      {
+        "effect_id": "ACCURACY_DOWN",
+        "duration_rounds": 2, 
+        "potency": 3,
+        "application_chance": 1.0 // Hinzugefügt
+      }
+    ]
+  },
+  
+  "sprint": {
+    "name": "Sprint",
+    "description": "Erhöht vorübergehend die eigene Initiative.",
+    "cost": {
+      "value": 15, 
+      "type": "ENERGY"
+    },
+    "target_type": "SELF",
+    "effects": {},
+    "applies_effects": [
+      {
+        "effect_id": "INITIATIVE_UP",
+        "duration_rounds": 3, 
+        "potency": 20,
+        "application_chance": 1.0 // Hinzugefügt
+      }
+    ]
+  },
+  
+  // Kleriker-Skills
+  "heal": {
+    "name": "Heilung",
+    "description": "Heilt Verletzungen des Ziels.",
+    "cost": {
+      "value": 20, 
+      "type": "MANA"
+    },
+    "target_type": "ALLY_SINGLE", 
+    "effects": { 
+      "base_healing": 15,
+      "scaling_attribute": "WIS",
+      "healing_multiplier": 1.5 
+    }
+  },
+  
+  "holy_light": {
+    "name": "Heiliges Licht",
+    "description": "Ein Strahl heiligen Lichts, besonders effektiv gegen Untote.",
+    "cost": {
+      "value": 25, 
+      "type": "MANA"
+    },
+    "target_type": "ENEMY_SINGLE",
+    "effects": {
+      "base_damage": 8, 
+      "scaling_attribute": "WIS",
+      "damage_type": "HOLY",
+      "multiplier": 1.2, 
+      "bonus_damage_vs_tags": [ 
+         { "tag": "UNDEAD", "multiplier": 2.0 } // "bonus_vs_type" wurde zu "tag" und "bonus_multiplier" zu "multiplier" für Konsistenz mit SkillEffectData
+      ]
+    }
+  },
+  
+  "protective_ward": {
+    "name": "Schutzfeld", 
+    "description": "Erhöht die Verteidigung des Ziels.",
+    "cost": {
+      "value": 20, 
+      "type": "MANA"
+    },
+    "target_type": "ALLY_SINGLE", 
+    "effects": {},
+    "applies_effects": [
+      {
+        "effect_id": "DEFENSE_UP",
+        "duration_rounds": 3, 
+        "potency": 3,
+        "application_chance": 1.0 // Hinzugefügt
+      }
+    ]
+  },
+  
+  // Gegner-Skills
+  "weakening_curse": {
+    "name": "Schwächungsfluch", 
+    "description": "Ein Fluch, der die Stärke des Opfers reduziert.",
+    "cost": {
+      "value": 10, 
+      "type": "MANA" 
+    },
+    "target_type": "ENEMY_SINGLE",
+    "effects": {},
+    "applies_effects": [
+      {
+        "effect_id": "WEAKENED",
+        "duration_rounds": 3, 
+        "potency": 3,
+        "application_chance": 0.85 // Hinzugefügt, basierend auf früherer Annahme, da nicht in deiner Vorlage
+      }
+    ]
+  },
+  
+  "heal_lesser": {
+    "name": "Geringe Heilung",
+    "description": "Heilt einen geringen Teil der Verletzungen.",
+    "cost": {
+      "value": 10, 
+      "type": "MANA" 
+    },
+    "target_type": "ALLY_SINGLE", 
+    "effects": {
+      "base_healing": 10, 
+      "scaling_attribute": "WIS", 
+      "healing_multiplier": 0.3 
+    }
+  },
+
+  "area_fire_blast": { 
+    "name": "Flächenbrand",
+    "description": "Eine Explosion aus Feuer, die mehrere Gegner trifft.",
+    "cost": {
+      "value": 25,
+      "type": "MANA"
+    },
+    "target_type": "ENEMY_SPLASH", 
+    "effects": {
+      "base_damage": 6,
+      "scaling_attribute": "INT",
+      "damage_type": "FIRE", // Angepasst von "MAGICAL" zu "FIRE"
+      "multiplier": 1.0,
+      "area_type": "SPLASH" // Dieses Feld war in deiner Vorlage, beibehalten
+    },
+    "applies_effects": [
+      {
+        "effect_id": "BURNING", // "id" wurde zu "effect_id"
+        "duration_rounds": 1,  // "duration" wurde zu "duration_rounds"
+        "potency": 2,
+        "application_chance": 0.9 // Hinzugefügt
+      }
+    ]
+  }
+}

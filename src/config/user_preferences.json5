@@ -1,0 +1,12 @@
+{
+  "simulation_settings": {
+    "num_encounters": 1,
+    "player_hero_id": "krieger",
+    "opponent_config": {
+      "num_opponents": 2,
+      "level_pool": "1-2"
+    }
+  },
+  "preferred_loglevel": "WARNING",
+  "last_selected_rl_setup_file": "/workspaces/python-rpg-projekt/src/config/rl_setups/test_training.json5"
+}

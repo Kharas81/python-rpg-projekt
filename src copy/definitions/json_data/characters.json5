@@ -1,0 +1,113 @@
+{
+  // Definitionen der Charakterklassen
+  "character_classes": [
+    {
+      "id": "krieger",
+      "name": "Krieger",
+      "description": "Ein robuster Nahkämpfer, der sich auf Stärke und Ausdauer verlässt.",
+      "base_hp": 50, // Basislebenpunkte, vor Konstitutionsbonus
+      "primary_attributes": { // Basis-Primärattribute
+        "STR": 14, // Stärke
+        "DEX": 10, // Geschicklichkeit
+        "INT": 8,  // Intelligenz
+        "CON": 12, // Konstitution
+        "WIS": 8   // Weisheit
+      },
+      "combat_values": { // Basis-Kampfwerte
+        "base_stamina": 100, // Hauptressource für Krieger
+        "base_mana": 0,
+        "base_energy": 0,
+        "armor": 5,         // Physische Rüstung
+        "magic_resist": 1   // Magieresistenz
+      },
+      "starting_skills": [ // Start-Skills
+        "basic_strike_phys",
+        "power_strike",
+        "shield_bash",
+        "cleave"
+      ],
+      "resource_type": "STAMINA" // Hauptressource
+    },
+    {
+      "id": "magier",
+      "name": "Magier",
+      "description": "Ein Meister arkaner Energien, der mächtige Zauber aus der Ferne wirkt.",
+      "base_hp": 50,
+      "primary_attributes": {
+        "STR": 8,
+        "DEX": 10,
+        "INT": 14,
+        "CON": 9,
+        "WIS": 11
+      },
+      "combat_values": {
+        "base_stamina": 0,
+        "base_mana": 120, // Hauptressource für Magier
+        "base_energy": 0,
+        "armor": 1,
+        "magic_resist": 4
+      },
+      "starting_skills": [
+        "basic_magic_bolt",
+        "fireball",
+        "frostbolt",
+        "arcane_barrier"
+      ],
+      "resource_type": "MANA"
+    },
+    {
+      "id": "schurke",
+      "name": "Schurke",
+      "description": "Ein agiler Kämpfer, der List und Präzision über rohe Gewalt stellt.",
+      "base_hp": 50,
+      "primary_attributes": {
+        "STR": 10,
+        "DEX": 14,
+        "INT": 8,
+        "CON": 10,
+        "WIS": 8
+      },
+      "combat_values": {
+        "base_stamina": 0,
+        "base_mana": 0,
+        "base_energy": 100, // Hauptressource für Schurken
+        "armor": 3,
+        "magic_resist": 2
+      },
+      "starting_skills": [
+        "basic_strike_finesse",
+        "precise_stab",
+        "distraction",
+        "sprint"
+      ],
+      "resource_type": "ENERGY"
+    },
+    {
+      "id": "kleriker",
+      "name": "Kleriker",
+      "description": "Ein Diener göttlicher Mächte, der Verbündete heilt und Untote verbannt.",
+      "base_hp": 50,
+      "primary_attributes": {
+        "STR": 10,
+        "DEX": 8,
+        "INT": 10,
+        "CON": 11,
+        "WIS": 13
+      },
+      "combat_values": {
+        "base_stamina": 0,
+        "base_mana": 110, // Hauptressource für Kleriker
+        "base_energy": 0,
+        "armor": 4,
+        "magic_resist": 3
+      },
+      "starting_skills": [
+        "basic_holy_spark",
+        "heal",
+        "holy_light",
+        "protective_ward"
+      ],
+      "resource_type": "MANA"
+    }
+  ]
+}

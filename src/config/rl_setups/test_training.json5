@@ -1,0 +1,21 @@
+// src/config/rl_setups/test_training.json5
+{
+  "setup_type": "training",
+  "description": "Test PPO Training für Krieger gegen 1 Goblin.",
+  "agent_config": {
+    "agent_hero_id": "krieger",
+    "rl_algorithm": "PPO",
+    "learning_rate": 0.0003 
+  },
+  "environment_config": {
+    "opponent_setup": { 
+      "num_opponents": 1, 
+      "level_pool": "1-2", // StateManager wird versuchen, Goblins aus diesem Pool zu nehmen
+      "ids": ["goblin_lv1"]  // Oder spezifische IDs
+    },
+    "max_episode_steps": 50 
+  },
+  "run_config": {
+    "total_timesteps": 1000 // Sehr kurzer Testlauf
+  }
+}

@@ -1,0 +1,146 @@
+{
+  // Definitionen der Gegner-Templates
+  "opponents": [
+    {
+      "id": "goblin_lv1",
+      "name": "Goblin (Lv.1)",
+      "description": "Ein kleiner, gemeiner Goblin, bewaffnet mit einem rostigen Dolch.",
+      "level": 1,
+      "base_hp": 50, // Basislebenpunkte, vor Konstitutionsbonus
+      "primary_attributes": {
+        "STR": 8,
+        "DEX": 12,
+        "INT": 5,
+        "CON": 9,
+        "WIS": 6
+      },
+      "combat_values": {
+        "base_stamina": 0, // Gegner haben oft keine expliziten Ressourcen wie Spieler
+        "base_mana": 0,
+        "base_energy": 0,
+        "armor": 2,
+        "magic_resist": 0,
+        "initiative_bonus": 0 // Zusätzlicher Bonus zur Initiative
+      },
+      "skills": [ // IDs der Skills, die dieser Gegner nutzen kann
+        "basic_strike_phys"
+      ],
+      "tags": ["GOBLINOID", "HUMANOID"], // Kategorisierungs-Tags
+      "weaknesses": ["FIRE"], // Anfälligkeiten für bestimmte Schadenstypen
+      "resistances": [], // Resistenzen gegen bestimmte Schadenstypen
+      "xp_reward": 50, // Erfahrungspunkte bei Besiegen
+      "ai_strategy_id": "basic_melee" // ID der zu verwendenden KI-Strategie
+    },
+    {
+      "id": "goblin_archer_lv2",
+      "name": "Goblin Bogenschütze (Lv.2)",
+      "description": "Ein Goblin mit einem kurzen Bogen, der aus der Ferne angreift.",
+      "level": 2,
+      "base_hp": 50,
+      "primary_attributes": {
+        "STR": 7,
+        "DEX": 14, // Höher für Fernkampf
+        "INT": 5,
+        "CON": 8,
+        "WIS": 6
+      },
+      "combat_values": {
+        "armor": 1, // Weniger Rüstung als der Nahkampf-Goblin
+        "magic_resist": 0,
+        "initiative_bonus": 5
+      },
+      "skills": [
+        "basic_shot_phys" // Nutzt den Fernkampf-Basisskill
+      ],
+      "tags": ["GOBLINOID", "HUMANOID", "RANGED"],
+      "weaknesses": [],
+      "resistances": [],
+      "xp_reward": 75,
+      "ai_strategy_id": "basic_ranged"
+    },
+    {
+      "id": "goblin_shaman_lv3",
+      "name": "Goblin Schamane (Lv.3)",
+      "description": "Ein listiger Goblin, der primitive Magie wirkt, um seine Verbündeten zu unterstützen und Feinde zu schwächen.",
+      "level": 3,
+      "base_hp": 50,
+      "primary_attributes": {
+        "STR": 6,
+        "DEX": 8,
+        "INT": 14, // Höher für Magie
+        "CON": 9,
+        "WIS": 12 // Auch wichtig für Support-Magie
+      },
+      "combat_values": {
+        "base_mana": 100, // Schamanen nutzen Mana
+        "armor": 1,
+        "magic_resist": 3, // Etwas Magieresistenz
+        "initiative_bonus": 0
+      },
+      "skills": [
+        "basic_magic_bolt",
+        "weakening_curse",
+        "heal_lesser"
+      ],
+      "tags": ["GOBLINOID", "HUMANOID", "CASTER", "SUPPORT"],
+      "weaknesses": [],
+      "resistances": [],
+      "xp_reward": 100,
+      "ai_strategy_id": "support_caster"
+    },
+    {
+      "id": "skeleton_lv2",
+      "name": "Skelett (Lv.2)",
+      "description": "Ein klapperndes Skelett, das aus seinen Knochen wiedererweckt wurde.",
+      "level": 2,
+      "base_hp": 60, // Etwas mehr HP
+      "primary_attributes": {
+        "STR": 10,
+        "DEX": 8,
+        "INT": 1, // Sehr geringe Intelligenz
+        "CON": 10, // Konstitution aus Knochen :)
+        "WIS": 1
+      },
+      "combat_values": {
+        "armor": 3,
+        "magic_resist": 1,
+        "initiative_bonus": -5 // Langsam
+      },
+      "skills": [
+        "basic_strike_phys"
+      ],
+      "tags": ["UNDEAD", "SKELETON"],
+      "weaknesses": ["HOLY", "BLUDGEONING"], // Anfällig für Heilig und Wuchtwaffen (konzeptionell)
+      "resistances": ["PIERCING", "ICE"], // Resistent gegen Stichwaffen und Eis (konzeptionell)
+      "xp_reward": 75,
+      "ai_strategy_id": "basic_melee"
+    },
+    {
+      "id": "wolf_lv1",
+      "name": "Wolf (Lv.1)",
+      "description": "Ein hungriger Wolf auf der Jagd.",
+      "level": 1,
+      "base_hp": 40, // Weniger HP, aber agil
+      "primary_attributes": {
+        "STR": 9,
+        "DEX": 14, // Sehr geschickt
+        "INT": 2,
+        "CON": 8,
+        "WIS": 7
+      },
+      "combat_values": {
+        "armor": 1,
+        "magic_resist": 0,
+        "initiative_bonus": 10 // Sehr schnell
+      },
+      "skills": [
+        "basic_strike_phys" // Könnte einen spezifischeren "Biss"-Skill bekommen
+      ],
+      "tags": ["BEAST", "ANIMAL"],
+      "weaknesses": [],
+      "resistances": [],
+      "xp_reward": 40,
+      "ai_strategy_id": "basic_melee"
+    }
+  ]
+}

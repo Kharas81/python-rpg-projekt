@@ -1,0 +1,30 @@
+// src/config/rl_setups/default_training.json5
+{
+  "setup_type": "training",
+  "description": "Standard PPO Training für Krieger gegen einen Goblin.",
+  "agent_config": {
+    "agent_hero_id": "krieger",
+    "rl_algorithm": "PPO",
+    "learning_rate": 0.0003,
+    "gamma": 0.99,
+    "model_load_path": null 
+  },
+  "environment_config": {
+    "opponent_setup": { 
+      "num_opponents": 1, // Wird von RPGEnv noch nicht dynamisch genutzt, nur die IDs
+      "ids": ["goblin_lv1"] // RPGEnv erwartet `opponent_ids`
+    },
+    "max_episode_steps": 50
+  },
+  "run_config": {
+    "total_timesteps": 10000, 
+    "log_interval": 1000,
+    "checkpoint_interval": 2000,
+    "model_save_path_prefix": "models/ppo_krieger_default"
+  },
+  "advanced_rl_config": {
+    "use_curriculum_learning": false,
+    "curriculum_definition_file": null,
+    "num_parallel_runs": 1
+  }
+}
