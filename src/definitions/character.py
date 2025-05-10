@@ -1,145 +1,62 @@
+# src/definitions/character.py
 """
-Charakter-Definition
-
-Definiert die Struktur eines Charakter-Templates.
+Definiert die Datenstruktur für Charakter-Templates, die aus JSON5-Dateien geladen werden.
 """
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass
 
+from typing import List, Dict, Optional
 
-@dataclass
 class CharacterTemplate:
     """
-    Repräsentiert ein Charakter-Template mit allen Basiseigenschaften.
-    
-    Attribute:
-        id (str): Die eindeutige ID des Charakters/der Klasse
-        name (str): Der angezeigte Name
-        description (str): Die Beschreibung
-        primary_attributes (Dict[str, int]): Die Primärattribute (STR, DEX, etc.)
-        combat_values (Dict[str, int]): Kampfwerte (HP, Mana, etc.)
-        skills (List[str]): IDs der verfügbaren Skills
-        tags (List[str]): Tags für den Charakter (z.B. WARRIOR, MELEE)
+    Repräsentiert die Definition einer Charakterklasse (Template),
+    wie sie in characters.json5 definiert ist.
     """
-    id: str
-    name: str
-    description: str
-    primary_attributes: Dict[str, int]
-    combat_values: Dict[str, int]
-    skills: List[str]
-    tags: List[str]
-    
-    @staticmethod
-    def from_dict(char_id: str, data: Dict[str, Any]) -> 'CharacterTemplate':
-        """
-        Erstellt eine CharacterTemplate-Instanz aus einer Dictionary.
-        
-        Args:
-            char_id (str): Die ID des Charakters
-            data (Dict[str, Any]): Die Rohdaten aus der JSON5-Datei
-            
-        Returns:
-            CharacterTemplate: Eine neue CharacterTemplate-Instanz
-        """
-        return CharacterTemplate(
-            id=char_id,
-            name=data.get('name', char_id),
-            description=data.get('description', ''),
-            primary_attributes=data.get('primary_attributes', {}),
-            combat_values=data.get('combat_values', {}),
-            skills=data.get('skills', []),
-            tags=data.get('tags', []),
-        )
-    
-    def get_attribute(self, attribute: str) -> int:
-        """
-        Gibt den Wert eines Primärattributs zurück.
-        
-        Args:
-            attribute (str): Der Name des Attributs (z.B. 'STR')
-            
-        Returns:
-            int: Der Wert des Attributs oder 0, wenn nicht vorhanden
-        """
-        return self.primary_attributes.get(attribute, 0)
-    
-    def get_combat_value(self, value: str) -> int:
-        """
-        Gibt den Wert eines Kampfwerts zurück.
-        
-        Args:
-            value (str): Der Name des Kampfwerts (z.B. 'base_hp')
-            
-        Returns:
-            int: Der Wert oder 0, wenn nicht vorhanden
-        """
-        return self.combat_values.get(value, 0)
-    
-    def has_tag(self, tag: str) -> bool:
-        """
-        Prüft, ob der Charakter einen bestimmten Tag hat.
-        
-        Args:
-            tag (str): Der zu prüfende Tag
-            
-        Returns:
-            bool: True, wenn der Tag vorhanden ist, sonst False
-        """
-        return tag in self.tags
-
-
-class OpponentTemplate(CharacterTemplate):
-    """
-    Erweitert CharacterTemplate um gegner-spezifische Eigenschaften.
-    
-    Zusätzliche Attribute:
-        level (int): Das Level des Gegners
-        xp_reward (int): Die XP-Belohnung bei Besiegen des Gegners
-        ai_strategy (str): Die zu verwendende KI-Strategie-ID
-        weaknesses (List[str]): Schwächen gegen bestimmte Schadenstypen
-    """
-    
-    def __init__(self, 
+    def __init__(self,
                  id: str,
                  name: str,
                  description: str,
-                 primary_attributes: Dict[str, int],
-                 combat_values: Dict[str, int],
-                 skills: List[str],
-                 tags: List[str],
-                 level: int,
-                 xp_reward: int,
-                 ai_strategy: str,
-                 weaknesses: Optional[List[str]] = None):
-        super().__init__(id, name, description, primary_attributes, 
-                         combat_values, skills, tags)
-        self.level = level
-        self.xp_reward = xp_reward
-        self.ai_strategy = ai_strategy
-        self.weaknesses = weaknesses or []
-    
-    @staticmethod
-    def from_dict(opp_id: str, data: Dict[str, Any]) -> 'OpponentTemplate':
-        """
-        Erstellt eine OpponentTemplate-Instanz aus einer Dictionary.
+                 base_hp: int,
+                 primary_attributes: Dict[str, int], # z.B. {"STR": 10, "DEX": 12, ...}
+                 combat_values: Dict[str, int],      # z.B. {"base_stamina": 100, "armor": 5, ...}
+                 starting_skills: List[str],         # Liste von Skill-IDs
+                 resource_type: str):                # Hauptressource (z.B. "STAMINA", "MANA", "ENERGY")
         
-        Args:
-            opp_id (str): Die ID des Gegners
-            data (Dict[str, Any]): Die Rohdaten aus der JSON5-Datei
-            
-        Returns:
-            OpponentTemplate: Eine neue OpponentTemplate-Instanz
-        """
-        return OpponentTemplate(
-            id=opp_id,
-            name=data.get('name', opp_id),
-            description=data.get('description', ''),
-            primary_attributes=data.get('primary_attributes', {}),
-            combat_values=data.get('combat_values', {}),
-            skills=data.get('skills', []),
-            tags=data.get('tags', []),
-            level=data.get('level', 1),
-            xp_reward=data.get('xp_reward', 0),
-            ai_strategy=data.get('ai_strategy', 'basic_melee'),
-            weaknesses=data.get('weaknesses', []),
-        )
+        self.id: str = id
+        self.name: str = name
+        self.description: str = description
+        self.base_hp: int = base_hp # Basis-Lebenspunkte vor Modifikatoren
+
+        # Primärattribute (STR, DEX, INT, CON, WIS)
+        self.primary_attributes: Dict[str, int] = primary_attributes
+        
+        # Basis-Kampfwerte (Ressourcen, Rüstung, etc.)
+        # z.B. base_stamina, base_mana, base_energy, armor, magic_resist
+        self.combat_values: Dict[str, int] = combat_values
+
+        self.starting_skills: List[str] = starting_skills # Liste der IDs der Start-Skills
+        self.resource_type: str = resource_type # Typ der Hauptressource des Charakters
+
+    def __repr__(self) -> str:
+        return (f"CharacterTemplate(id='{self.id}', name='{self.name}', "
+                f"base_hp={self.base_hp}, attributes={self.primary_attributes}, "
+                f"resource='{self.resource_type}')")
+
+    # Zukünftige Methoden könnten hier hinzugefügt werden,
+    # z.B. Hilfsfunktionen, um bestimmte Werte abzurufen oder zu validieren.
+
+if __name__ == '__main__':
+    # Beispielhafte Erstellung eines CharacterTemplate-Objekts (nur zu Testzwecken)
+    krieger_template_data = {
+        "id": "krieger_test",
+        "name": "Test Krieger",
+        "description": "Ein Test-Krieger.",
+        "base_hp": 50,
+        "primary_attributes": {"STR": 14, "DEX": 10, "INT": 8, "CON": 12, "WIS": 8},
+        "combat_values": {"base_stamina": 100, "armor": 5, "magic_resist": 1},
+        "starting_skills": ["basic_strike_phys", "power_strike"],
+        "resource_type": "STAMINA"
+    }
+    
+    krieger = CharacterTemplate(**krieger_template_data)
+    print(krieger)
+    print(f"Stärke des Test-Kriegers: {krieger.primary_attributes.get('STR')}")
+    print(f"Rüstung des Test-Kriegers: {krieger.combat_values.get('armor')}")

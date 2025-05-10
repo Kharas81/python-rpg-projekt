@@ -1,0 +1,19 @@
+{
+  // Globale Spieleinstellungen
+  "game_settings": {
+    "min_damage": 1, // Minimaler Schaden, der immer verursacht wird
+    "base_weapon_damage": 5, // Basisschaden für Skills, wenn 'base_damage' null ist
+    "hit_chance_base": 90, // Basis-Trefferchance in Prozent
+    "hit_chance_accuracy_factor": 3, // Multiplikator für Genauigkeit auf Trefferchance
+    "hit_chance_evasion_factor": 2, // Multiplikator für Ausweichen auf Trefferchance
+    "hit_chance_min": 5, // Minimale Trefferchance in Prozent
+    "hit_chance_max": 95, // Maximale Trefferchance in Prozent
+    "xp_level_base": 100, // Basis-XP für Level 2
+    "xp_level_factor": 1.5 // Faktor, um den sich die benötigten XP pro Level erhöhen
+  },
+  // Logging Einstellungen (Platzhalter, wird später gefüllt)
+  "logging_settings": {
+    "log_level": "INFO",
+    "log_file": "logs/rpg_game.log"
+  }
+}

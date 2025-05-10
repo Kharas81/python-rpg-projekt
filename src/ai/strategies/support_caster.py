@@ -1,171 +1,304 @@
+# src/ai/strategies/support_caster.py
 """
-Support-Caster-Strategie
-
-Implementiert eine KI-Strategie für Unterstützungs-Zauberwirker.
+KI-Strategie für unterstützende Zauberwirker.
+Priorisiert Heilung, Buffs für Verbündete, Debuffs für Gegner, dann Angriff.
 """
 import random
-from typing import List, Optional, Dict, Any, Tuple
+import logging
+from typing import Optional, List, Dict, Any, Tuple
 
-from src.game_logic.entities import CharacterInstance
-from src.definitions.skill import SkillDefinition
-from src.ai.strategies.base_strategy import BaseStrategy
-from src.utils.logging_setup import get_logger
+# Importe für Typ-Annotationen und Zugriff auf Spielobjekte
+if True:
+    from src.game_logic.entities import CharacterInstance
+    from src.definitions.skill import SkillTemplate
+    from src.definitions.character import CharacterTemplate # Für Ressourcentyp-Prüfung
 
+logger = logging.getLogger(__name__)
 
-# Logger für dieses Modul
-logger = get_logger(__name__)
-
-
-class SupportCasterStrategy(BaseStrategy):
+class SupportCasterStrategy:
     """
-    KI-Strategie für Unterstützer und Heiler.
-    
-    Diese Strategie priorisiert:
-    1. Heilung von verletzten Verbündeten
-    2. Unterstützungszauber auf Verbündete
-    3. Schwächungszauber auf Gegner
-    4. Direkte Angriffe als letzte Wahl
+    Eine KI-Strategie für unterstützende Zauberwirker.
+    Prioritäten:
+    1. Heilung von Verbündeten mit niedrigen HP.
+    2. Buffs auf Verbündete (die noch nicht gebufft sind oder deren Buffs auslaufen).
+    3. Debuffs auf starke Gegner oder Caster-Gegner.
+    4. Offensive Angriffe als letzte Option.
     """
-    
-    def choose_action(self, allies: List[CharacterInstance], enemies: List[CharacterInstance], 
-                      available_skills: Dict[str, SkillDefinition]) -> Tuple[Optional[SkillDefinition], 
-                                                                            Optional[CharacterInstance], 
-                                                                            List[CharacterInstance]]:
-        """
-        Wählt eine Aktion basierend auf der aktuellen Kampfsituation aus.
+    def __init__(self, actor: 'CharacterInstance', 
+                 all_entities_in_combat: List['CharacterInstance'], # Um Verbündete/Gegner zu finden
+                 skill_definitions: Dict[str, 'SkillTemplate'], 
+                 character_definitions: Dict[str, 'CharacterTemplate']): # Unbenutzt, aber konsistent
+        self.actor = actor
+        self.all_entities_in_combat = all_entities_in_combat # Komplette Liste aller Charaktere im Kampf
+        self.skill_definitions = skill_definitions
+        # self.character_definitions = character_definitions
+
+    def _get_allies(self) -> List['CharacterInstance']:
+        """Gibt eine Liste der Verbündeten des Akteurs zurück (inklusive sich selbst)."""
+        # Annahme: Alle Instanzen, die nicht als "Gegner" des Akteurs gelten, sind Verbündete.
+        # Dies erfordert eine klare Definition von Teams oder Fraktionen.
+        # Für den Moment eine vereinfachte Annahme:
+        # Wenn der actor ein "opponent"-Template hat, sind andere "opponent"-Templates Verbündete
+        # und "character"-Templates sind Gegner. Vice versa.
+        # Für eine robustere Lösung bräuchte man ein Fraktionssystem.
         
-        Args:
-            allies (List[CharacterInstance]): Liste der verbündeten Charaktere
-            enemies (List[CharacterInstance]): Liste der feindlichen Charaktere
-            available_skills (Dict[str, SkillDefinition]): Verfügbare Skills mit ihren Definitionen
-            
-        Returns:
-            Tuple[Optional[SkillDefinition], Optional[CharacterInstance], List[CharacterInstance]]: 
-            Der gewählte Skill, das Hauptziel und sekundäre Ziele
-        """
-        if not self.character.can_act():
-            logger.debug(f"{self.character.name} kann nicht handeln")
-            return None, None, []
+        # Vereinfachung: Alle Instanzen, die nicht der Akteur selbst sind und NICHT zu den "üblichen" Gegnern gehören.
+        # Oder: Wenn Akteur ein Gegner ist, sind andere Gegner Verbündete.
+        # Hier implementieren wir es so, dass es für einen NPC-Support-Caster funktioniert, der andere NPCs unterstützt.
+        # Eine klarere Unterscheidung von Spieler-Team vs. Gegner-Team wäre besser.
+
+        # Annahme: Die `all_entities_in_combat` Liste enthält alle.
+        # Wir müssen entscheiden, wer ein Verbündeter ist.
+        # Für einen NPC-Support-Caster sind andere NPCs desselben "Teams" Verbündete.
+        # Für einen Spieler-Support-Caster sind andere Spieler Verbündete.
         
-        # Gültige Ziele finden
-        valid_enemies = self._get_valid_targets(enemies)
-        valid_allies = self._get_valid_targets(allies)
-        
-        if not valid_enemies and not valid_allies:
-            logger.debug(f"{self.character.name} hat keine gültigen Ziele")
-            return None, None, []
-        
-        # Verfügbare Skills kategorisieren
-        healing_skills = []
-        buff_skills = []
-        debuff_skills = []
-        attack_skills = []
-        
-        for skill_id, skill in available_skills.items():
-            if not self._can_use_skill(skill):
+        # TODO: Diese Logik muss verfeinert werden, sobald Fraktionen/Teams klar definiert sind.
+        # Für den Moment: Wenn der Akteur ein "opponent"-Template hat, sind andere mit "opponent"-Template Verbündete.
+        actor_is_opponent_type = hasattr(self.actor.base_template, 'xp_reward') # Heuristik: Gegner haben xp_reward
+
+        allies = []
+        for entity in self.all_entities_in_combat:
+            if entity.is_defeated:
                 continue
-                
-            if 'base_healing' in skill.effects:
-                healing_skills.append(skill)
-            elif skill.is_self_effect() or (skill.applies_effects and any(e.id.endswith('_UP') for e in skill.applies_effects)):
-                buff_skills.append(skill)
-            elif skill.applies_effects and any(e.id.endswith('_DOWN') or e.id in ('STUNNED', 'SLOWED', 'WEAKENED') for e in skill.applies_effects):
-                debuff_skills.append(skill)
-            elif 'base_damage' in skill.effects or skill.get_base_damage() is not None:
-                attack_skills.append(skill)
+            
+            entity_is_opponent_type = hasattr(entity.base_template, 'xp_reward')
+            if actor_is_opponent_type == entity_is_opponent_type: # Gleicher "Typ" (beide Gegner oder beide Spieler)
+                allies.append(entity)
+        return allies
+
+    def _get_opponents(self) -> List['CharacterInstance']:
+        """Gibt eine Liste der Gegner des Akteurs zurück."""
+        actor_is_opponent_type = hasattr(self.actor.base_template, 'xp_reward')
+        opponents = []
+        for entity in self.all_entities_in_combat:
+            if entity.is_defeated:
+                continue
+            entity_is_opponent_type = hasattr(entity.base_template, 'xp_reward')
+            if actor_is_opponent_type != entity_is_opponent_type: # Unterschiedlicher "Typ"
+                opponents.append(entity)
+        return opponents
+
+    def _is_skill_type(self, skill_id: str, skill_type: str) -> bool:
+        """
+        Prüft, ob ein Skill einem bestimmten Typ entspricht (HEAL, BUFF, DEBUFF, OFFENSIVE).
+        skill_type: "HEAL", "BUFF_ALLY", "DEBUFF_ENEMY", "OFFENSIVE_ENEMY"
+        """
+        skill = self.skill_definitions.get(skill_id)
+        if not skill: return False
+
+        if skill_type == "HEAL":
+            return skill.direct_effects is not None and skill.direct_effects.base_healing is not None
         
-        # Entscheidungslogik
-        chosen_skill = None
-        target = None
-        secondary_targets = []
+        if skill_type == "BUFF_ALLY": # Buffs sind positive Status-Effekte auf Verbündete
+            if skill.target_type in ["ALLY_SINGLE", "ALLY_ALL", "SELF"] and skill.applied_status_effects:
+                # Annahme: Positive Effekte werden als Buffs klassifiziert.
+                # Dies erfordert, dass wir das 'is_positive' Flag im StatusEffect oder eine ähnliche Logik haben.
+                # Für den Moment prüfen wir, ob es überhaupt angewandte Effekte gibt.
+                # Zukünftig: `any(eff_data.is_positive for eff_data in skill.applied_status_effects)`
+                return True # Vereinfachung
+            return False
+
+        if skill_type == "DEBUFF_ENEMY": # Debuffs sind negative Status-Effekte auf Gegner
+            if skill.target_type in ["ENEMY_SINGLE", "ENEMY_ALL", "ENEMY_CLEAVE", "ENEMY_SPLASH"] and skill.applied_status_effects:
+                return True # Vereinfachung
+            return False
+
+        if skill_type == "OFFENSIVE_ENEMY":
+            return skill.target_type.startswith("ENEMY_") and \
+                   skill.direct_effects is not None and \
+                   skill.direct_effects.base_damage is not None
         
-        # 1. Prüfen, ob ein Verbündeter stark verletzt ist (< 50% HP)
-        # und ob wir einen Heilzauber haben
-        wounded_allies = [ally for ally in valid_allies if ally.hp < ally.get_max_hp() * 0.5]
+        return False
+
+
+    def _can_actor_use_skill(self, skill_id: str) -> bool:
+        """Prüft, ob der Akteur den Skill ressourcentechnisch einsetzen kann."""
+        skill_template = self.skill_definitions.get(skill_id)
+        if not skill_template: return False
         
-        if wounded_allies and healing_skills:
-            # Healing-Priorität: am stärksten verletzter Verbündeter
-            chosen_skill = random.choice(healing_skills)
-            target = self._get_lowest_health_percentage_target(wounded_allies)
-            logger.debug(f"{self.character.name} heilt {target.name} mit {chosen_skill.name}")
+        cost_type_upper = skill_template.cost.type.upper()
+        if cost_type_upper == "NONE": return True
+        if cost_type_upper == "MANA" and self.actor.current_mana >= skill_template.cost.value: return True
+        if cost_type_upper == "STAMINA" and self.actor.current_stamina >= skill_template.cost.value: return True
+        if cost_type_upper == "ENERGY" and self.actor.current_energy >= skill_template.cost.value: return True
+        return False
+
+    def decide_action(self, potential_targets_unused: List['CharacterInstance']) -> Optional[Tuple[str, 'CharacterInstance']]:
+        """
+        Trifft eine Entscheidung basierend auf der Prioritätenliste.
+        `potential_targets_unused` wird hier ignoriert, da Ziele basierend auf Skill-Typ gewählt werden.
+        """
+        if not self.actor or self.actor.is_defeated or not self.actor.can_act:
+            return None
+
+        allies = self._get_allies()
+        opponents = self._get_opponents()
         
-        # 2. Prüfen, ob wir Buff-Skills haben und jemand diese gebrauchen könnte
-        elif buff_skills and valid_allies and random.random() < 0.7:  # 70% Chance für Buff-Priorisierung
-            chosen_skill = random.choice(buff_skills)
-            
-            # Ziel für Buff: Entweder self-effect oder stärkster Verbündeter
-            if chosen_skill.is_self_effect():
-                target = self.character
-            else:
-                # Einen starken Verbündeten auswählen (z.B. mit hohem Schaden)
-                target = self._get_strongest_target(valid_allies)
-            
-            logger.debug(f"{self.character.name} verstärkt {target.name} mit {chosen_skill.name}")
+        # 1. Heilung von Verbündeten
+        healing_skills = [s_id for s_id in self.actor.skills if self._is_skill_type(s_id, "HEAL") and self._can_actor_use_skill(s_id)]
+        if healing_skills:
+            # Finde verletzte Verbündete (sortiert nach niedrigsten prozentualen HP)
+            injured_allies = sorted(
+                [ally for ally in allies if ally.current_hp < ally.max_hp and not ally.is_defeated],
+                key=lambda a: (a.current_hp / a.max_hp) if a.max_hp > 0 else float('inf')
+            )
+            if injured_allies:
+                target_for_heal = injured_allies[0] # Am stärksten verletzter Verbündeter
+                # Wähle den besten verfügbaren Heilskill (z.B. stärkste Heilung, oder einfach der erste)
+                # Für Einfachheit: Erster verfügbarer Heilskill
+                chosen_skill_id = healing_skills[0] 
+                logger.info(f"'{self.actor.name}' (SupportCaster) entscheidet sich für Heilung: Skill '{chosen_skill_id}' auf '{target_for_heal.name}'.")
+                return chosen_skill_id, target_for_heal
+
+        # 2. Buffs auf Verbündete
+        buff_skills = [s_id for s_id in self.actor.skills if self._is_skill_type(s_id, "BUFF_ALLY") and self._can_actor_use_skill(s_id)]
+        if buff_skills:
+            # Finde Verbündete, die einen bestimmten Buff noch nicht haben (komplexer)
+            # Vereinfachung: Wirke einen zufälligen Buff auf einen zufälligen Verbündeten (oder sich selbst)
+            # der noch nicht "voll" gebufft ist.
+            # TODO: Bessere Logik, um zu prüfen, welche Buffs sinnvoll sind und wer sie braucht.
+            target_for_buff = random.choice(allies) if allies else None
+            if target_for_buff:
+                chosen_skill_id = random.choice(buff_skills)
+                logger.info(f"'{self.actor.name}' (SupportCaster) entscheidet sich für Buff: Skill '{chosen_skill_id}' auf '{target_for_buff.name}'.")
+                return chosen_skill_id, target_for_buff
         
-        # 3. Prüfen, ob wir Debuff-Skills haben und Gegner da sind
-        elif debuff_skills and valid_enemies and random.random() < 0.6:  # 60% Chance für Debuff-Priorisierung
-            chosen_skill = random.choice(debuff_skills)
-            
-            # Priorität für Debuff: starke Gegner oder Caster
-            caster_enemies = self._filter_targets_by_tag(valid_enemies, "CASTER")
-            
-            if caster_enemies and random.random() < 0.7:
-                target = self._get_strongest_target(caster_enemies)
-            else:
-                target = self._get_strongest_target(valid_enemies)
-            
-            logger.debug(f"{self.character.name} schwächt {target.name} mit {chosen_skill.name}")
-            
-            # Bei Flächeneffekten sekundäre Ziele hinzufügen
-            if chosen_skill.is_area_effect() and len(valid_enemies) > 1:
-                area_type = chosen_skill.get_area_type()
-                
-                if area_type == 'SPLASH':
-                    secondary_targets = [t for t in valid_enemies if t != target]
+        # 3. Debuffs auf Gegner
+        debuff_skills = [s_id for s_id in self.actor.skills if self._is_skill_type(s_id, "DEBUFF_ENEMY") and self._can_actor_use_skill(s_id)]
+        if debuff_skills and opponents:
+            # Zielauswahl für Debuffs: Starke Gegner oder Caster
+            # Vereinfachung: Zufälliger Gegner
+            target_for_debuff = random.choice(opponents)
+            chosen_skill_id = random.choice(debuff_skills)
+            logger.info(f"'{self.actor.name}' (SupportCaster) entscheidet sich für Debuff: Skill '{chosen_skill_id}' auf '{target_for_debuff.name}'.")
+            return chosen_skill_id, target_for_debuff
+
+        # 4. Offensive Angriffe
+        offensive_skills = [s_id for s_id in self.actor.skills if self._is_skill_type(s_id, "OFFENSIVE_ENEMY") and self._can_actor_use_skill(s_id)]
+        if offensive_skills and opponents:
+            # Zielauswahl: Zufälliger Gegner
+            target_for_attack = random.choice(opponents)
+            # Wähle stärksten Offensivskill
+            offensive_skills.sort(key=lambda s_id: self._get_skill_potential_damage(s_id), reverse=True)
+            chosen_skill_id = offensive_skills[0]
+            logger.info(f"'{self.actor.name}' (SupportCaster) entscheidet sich für Angriff: Skill '{chosen_skill_id}' auf '{target_for_attack.name}'.")
+            return chosen_skill_id, target_for_attack
+
+        logger.debug(f"'{self.actor.name}' (SupportCaster) konnte keine passende Aktion finden.")
+        return None # Keine Aktion gefunden
+
+    def _get_skill_potential_damage(self, skill_id: str) -> int: # Kopiert von BasicRanged
+        skill = self.skill_definitions.get(skill_id)
+        try: from src.config.config import CONFIG
+        except ImportError: CONFIG = None
+
+        if not skill or not skill.direct_effects or skill.direct_effects.base_damage is None:
+            if skill and skill.direct_effects and skill.direct_effects.base_damage is None and CONFIG:
+                base_damage = CONFIG.get("game_settings.base_weapon_damage", 5)
+            else: return 0
+        else: base_damage = skill.direct_effects.base_damage
         
-        # 4. Als letzte Option: Angriff, falls möglich
-        elif attack_skills and valid_enemies:
-            chosen_skill = random.choice(attack_skills)
-            
-            # Priorität für Angriff: schwache oder verletzliche Gegner
-            if random.random() < 0.6:
-                target = self._get_weakest_target(valid_enemies)
-            else:
-                target = self._get_random_target(valid_enemies)
-            
-            logger.debug(f"{self.character.name} greift {target.name} mit {chosen_skill.name} an")
-            
-            # Bei Flächeneffekten sekundäre Ziele hinzufügen
-            if chosen_skill.is_area_effect() and len(valid_enemies) > 1:
-                area_type = chosen_skill.get_area_type()
-                
-                if area_type == 'SPLASH':
-                    secondary_targets = [t for t in valid_enemies if t != target]
+        multiplier = skill.direct_effects.multiplier
+        attr_bonus = 0
+        if skill.direct_effects.scaling_attribute:
+            attr_bonus = self.actor.get_attribute_bonus(skill.direct_effects.scaling_attribute)
+        return int((base_damage + attr_bonus) * multiplier)
+
+
+if __name__ == '__main__':
+    from src.definitions.loader import load_character_templates, load_opponent_templates, load_skill_templates
+    from src.config.config import CONFIG
+
+    print("\n--- Teste SupportCasterStrategy ---")
+    try:
+        char_defs = load_character_templates()
+        opp_defs = load_opponent_templates()
+        skill_defs = load_skill_templates()
+
+        # Akteur (Support Caster - z.B. Goblin Schamane)
+        # Hat: basic_magic_bolt, weakening_curse, heal_lesser
+        ai_actor_template = opp_defs["goblin_shaman_lv3"]
+        ai_actor = CharacterInstance(base_template=ai_actor_template, name_override="AI Support Shaman")
+        ai_actor.current_mana = ai_actor.max_mana # Volles Mana für Tests
+
+        # Verbündeter des Schamanen (ein anderer Goblin)
+        ally_goblin_template = opp_defs["goblin_lv1"]
+        ally_goblin = CharacterInstance(base_template=ally_goblin_template, name_override="Ally Goblin")
         
-        # Wenn keine passende Aktion gefunden wurde
-        if not chosen_skill:
-            # Einfach irgendeinen verfügbaren Skill wählen
-            all_usable_skills = [s for s_id, s in available_skills.items() if self._can_use_skill(s)]
-            
-            if not all_usable_skills:
-                logger.debug(f"{self.character.name} hat keine verwendbaren Skills")
-                return None, None, []
-            
-            chosen_skill = random.choice(all_usable_skills)
-            
-            # Standard-Ziel basierend auf Skill-Typ wählen
-            if chosen_skill.is_self_effect():
-                target = self.character
-            elif 'base_healing' in chosen_skill.effects:
-                target = self._get_random_target([a for a in valid_allies if a.hp < a.get_max_hp()])
-                target = target or self.character  # Fallback auf selbst, wenn kein verletztes Ziel
-            else:
-                target = self._get_random_target(valid_enemies) if valid_enemies else None
-        
-        if target:
-            logger.debug(f"{self.character.name} (Support-KI) wählt {chosen_skill.name} mit Ziel {target.name}")
+        # Gegner (Spieler)
+        player_krieger = CharacterInstance(base_template=char_defs["krieger"], name_override="Player Krieger")
+        player_magier = CharacterInstance(base_template=char_defs["magier"], name_override="Player Magier")
+
+        # Kampfteilnehmerliste
+        # Wichtig: Die Reihenfolge oder genaue Zusammensetzung beeinflusst _get_allies/_get_opponents
+        # Hier nehmen wir an, AI Support Shaman und Ally Goblin sind ein Team, Spieler sind das andere.
+        # Da die Heuristik auf 'xp_reward' basiert, sollte das funktionieren.
+        combat_participants = [ai_actor, ally_goblin, player_krieger, player_magier]
+
+        strategy = SupportCasterStrategy(actor=ai_actor, 
+                                          all_entities_in_combat=combat_participants,
+                                          skill_definitions=skill_defs,
+                                          character_definitions=char_defs)
+
+        print(f"\nAI Akteur: {ai_actor.name} mit Skills: {ai_actor.skills}")
+        print("Verbündete des Akteurs:")
+        for ally_char in strategy._get_allies(): print(f" - {ally_char.name}")
+        print("Gegner des Akteurs:")
+        for opp_char in strategy._get_opponents(): print(f" - {opp_char.name}")
+
+
+        # Szenario 1: Verbündeter ist stark verletzt -> Erwarte Heilung
+        print("\n-- Szenario 1: Verbündeter stark verletzt --")
+        ally_goblin.current_hp = int(ally_goblin.max_hp * 0.2) # 20% HP
+        print(f"{ally_goblin.name} HP: {ally_goblin.current_hp}/{ally_goblin.max_hp}")
+        action1 = strategy.decide_action([]) # `potential_targets` wird von dieser Strategie ignoriert
+        if action1:
+            skill_chosen, target_chosen = action1
+            print(f"Aktion 1: Skill '{skill_chosen}' (erwarte 'heal_lesser') auf '{target_chosen.name}' (erwarte '{ally_goblin.name}').")
         else:
-            logger.warning(f"{self.character.name} hat Skill {chosen_skill.name} gewählt, aber kein gültiges Ziel gefunden")
-            return None, None, []
-        
-        return chosen_skill, target, secondary_targets
+            print("Aktion 1: Keine Aktion entschieden.")
+        ally_goblin.current_hp = ally_goblin.max_hp # Reset für nächstes Szenario
+
+        # Szenario 2: Kein Verbündeter verletzt, Gegner vorhanden -> Erwarte Debuff oder Angriff
+        print("\n-- Szenario 2: Kein Verbündeter verletzt, Gegner vorhanden --")
+        # Um Buff-Logik zu überspringen (da nicht gut implementiert), fügen wir temporär keine Buff-Skills hinzu.
+        # ai_actor.skills = [s for s in ai_actor.skills if not strategy._is_skill_type(s, "BUFF_ALLY")]
+
+        action2 = strategy.decide_action([])
+        if action2:
+            skill_chosen, target_chosen = action2
+            print(f"Aktion 2: Skill '{skill_chosen}' (erwarte Debuff 'weakening_curse' oder Angriff 'basic_magic_bolt') auf Gegner '{target_chosen.name}'.")
+        else:
+            print("Aktion 2: Keine Aktion entschieden.")
+            
+        # Szenario 3: Nur noch Gegner, keine Heil/Buff/Debuff-Optionen (oder keine Ressourcen dafür)
+        print("\n-- Szenario 3: Nur noch Angriffsoptionen --")
+        ai_actor.skills = ["basic_magic_bolt"] # Nur noch Angriffsskill
+        ai_actor.current_mana = ai_actor.max_mana
+        action3 = strategy.decide_action([])
+        if action3:
+            skill_chosen, target_chosen = action3
+            print(f"Aktion 3: Skill '{skill_chosen}' (erwarte 'basic_magic_bolt') auf Gegner '{target_chosen.name}'.")
+        else:
+            print("Aktion 3: Keine Aktion entschieden.")
+            
+        # Szenario 4: Keine Ressourcen für irgendwas
+        print("\n-- Szenario 4: Keine Ressourcen --")
+        ai_actor.skills = ["basic_magic_bolt", "weakening_curse", "heal_lesser"] # Alle Skills wieder da
+        ai_actor.current_mana = 0
+        action4 = strategy.decide_action([])
+        if action4:
+            skill_chosen, target_chosen = action4
+            print(f"Aktion 4: Skill '{skill_chosen}' auf '{target_chosen.name}'. (Sollte keine Aktion sein)")
+        else:
+            print("Aktion 4: Keine Aktion entschieden (korrekt, da keine Ressourcen).")
+
+
+    except ImportError as e:
+        print(f"FEHLER bei Imports für den Test in support_caster.py: {e}.")
+    except Exception as e:
+        print(f"Ein Fehler ist während des Testlaufs in support_caster.py aufgetreten: {e}")
+        import traceback
+        traceback.print_exc()
+
+    print("\n--- SupportCasterStrategy-Tests abgeschlossen ---")

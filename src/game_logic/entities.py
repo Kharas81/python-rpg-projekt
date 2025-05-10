@@ -1,546 +1,353 @@
+# src/game_logic/entities.py
 """
-Entitäten
-
-Enthält die Klasse CharacterInstance, die eine konkrete Instanz eines Charakters oder Gegners
-im Spiel repräsentiert, mit aktuellem Zustand wie HP, Statuseffekte, etc.
+Enthält die Klasse CharacterInstance, die eine konkrete Instanz eines Charakters
+oder Gegners im Spiel repräsentiert, inklusive aktuellem Zustand.
 """
-from typing import Dict, List, Any, Optional, Tuple, Set
-from dataclasses import dataclass, field
-import math
+import uuid # Für eindeutige Instanz-IDs
+import logging
+from typing import Dict, List, Optional, Any
 
-from src.definitions.character import CharacterTemplate, OpponentTemplate
-from src.definitions.skill import SkillDefinition
-from src.game_logic.formulas import (
-    calculate_attribute_bonus, calculate_max_hp, 
-    calculate_accuracy_modifier, calculate_evasion_modifier
-)
-from src.game_logic.effects import StatusEffect, create_status_effect
-from src.utils.logging_setup import get_logger
+# Importiere Template-Klassen und Formeln
+from src.definitions.character import CharacterTemplate
+from src.definitions.opponent import OpponentTemplate
+from src.definitions.skill import SkillTemplate # Wird für Skill-Listen etc. benötigt
+# from src.definitions.loader import load_skill_templates # Um Skill-Objekte zu erhalten
+from src.game_logic import formulas # Um Formeln für Berechnungen zu nutzen
+# from .effects import StatusEffect # Wird später für Status-Effekte benötigt
 
+# Erhalte einen Logger für dieses Modul
+logger = logging.getLogger(__name__)
 
-# Logger für dieses Modul
-logger = get_logger(__name__)
+# Importiere die globale Konfiguration
+try:
+    from src.config.config import CONFIG
+except ImportError:
+    logger.critical("FATAL: Konfigurationsmodul src.config.config konnte nicht importiert werden in entities.py.")
+    CONFIG = None # Sollte nicht passieren in normaler Ausführung
 
-
-@dataclass
 class CharacterInstance:
     """
-    Repräsentiert eine konkrete Instanz eines Charakters oder Gegners im Spiel.
-    
-    Diese Klasse enthält den aktuellen Zustand eines Charakters (Spieler oder Gegner),
-    einschließlich aktueller Lebenspunkte, Ressourcen und Status-Effekte.
+    Repräsentiert eine aktive Instanz eines Charakters oder Gegners im Spiel.
+    Diese Klasse hält den aktuellen Zustand (HP, Mana, Position, Status-Effekte etc.).
     """
-    # Basisinformationen
-    id: str
-    name: str
-    template_id: str
-    
-    # Primärattribute (aus Template + Statusmodifikatoren)
-    base_attributes: Dict[str, int]
-    
-    # Kampfwerte (aus Template + Statusmodifikatoren)
-    base_combat_values: Dict[str, int]
-    
-    # Verfügbare Skills
-    skill_ids: List[str]
-    
-    # Aktueller Zustand
-    hp: int
-    mana: int = 0
-    stamina: int = 0
-    energy: int = 0
-    shield_points: int = 0  # Für Schild-Effekte
-    
-    # Erfahrung und Level
-    xp: int = 0
-    level: int = 1
-    
-    # Status-Effekte und Modifikatoren
-    active_effects: Dict[str, StatusEffect] = field(default_factory=dict)
-    status_mods: Dict[str, int] = field(default_factory=dict)
-    status_flags: Dict[str, bool] = field(default_factory=dict)
-    
-    # Tags für den Charakter (z.B. WARRIOR, UNDEAD)
-    tags: Set[str] = field(default_factory=set)
-    
-    # Für Gegner: KI-Strategie und XP-Belohnung
-    ai_strategy: Optional[str] = None
-    xp_reward: int = 0
-    
-    def __post_init__(self):
-        """Wird nach der Initialisierung aufgerufen, um Standardwerte zu setzen."""
-        # Standardwerte für Status-Modifikatoren
-        default_mods = [
-            'STR', 'DEX', 'INT', 'CON', 'WIS',  # Primärattribute
-            'armor', 'magic_resist', 'initiative',  # Kampfwerte
-            'accuracy', 'evasion'  # Berechnete Werte
-        ]
-        for mod in default_mods:
-            if mod not in self.status_mods:
-                self.status_mods[mod] = 0
+    def __init__(self,
+                 base_template: CharacterTemplate | OpponentTemplate,
+                 instance_id: Optional[str] = None,
+                 name_override: Optional[str] = None):
         
-        # Standardwerte für Status-Flags
-        default_flags = ['can_act', 'can_be_targeted']
-        for flag in default_flags:
-            if flag not in self.status_flags:
-                self.status_flags[flag] = True
+        self.instance_id: str = instance_id if instance_id else str(uuid.uuid4())
+        self.base_template: CharacterTemplate | OpponentTemplate = base_template
         
-        # Sicherstellen, dass "basic_attack_free" vorhanden ist
-        if "basic_attack_free" not in self.skill_ids:
-            self.skill_ids.append("basic_attack_free")
-    
-    def __hash__(self) -> int:
-        """
-        Macht die CharacterInstance hashable, damit sie als Dictionary-Schlüssel verwendet werden kann.
+        self.name: str = name_override if name_override else self.base_template.name
         
-        Returns:
-            int: Der Hash-Wert basierend auf der id
-        """
-        return hash(self.id)
-    
-    def __eq__(self, other) -> bool:
-        """
-        Vergleicht zwei CharacterInstances auf Gleichheit.
+        # Primärattribute initialisieren (als Kopie, um Template nicht zu ändern)
+        self.attributes: Dict[str, int] = dict(self.base_template.primary_attributes)
         
-        Args:
-            other: Ein anderes Objekt zum Vergleich
-            
-        Returns:
-            bool: True, wenn die IDs übereinstimmen, sonst False
-        """
-        if not isinstance(other, CharacterInstance):
-            return False
-        return self.id == other.id
-    
-    @classmethod
-    def from_template(cls, template: CharacterTemplate, level: int = 1) -> 'CharacterInstance':
-        """
-        Erstellt eine CharacterInstance aus einem CharacterTemplate.
+        # Kampfwerte initialisieren
+        self._initialize_combat_stats()
+
+        # Aktuelle Ressourcen und HP
+        self.current_hp: int = self.max_hp
+        self.current_mana: int = self.max_mana
+        self.current_stamina: int = self.max_stamina
+        self.current_energy: int = self.max_energy
         
-        Args:
-            template (CharacterTemplate): Das zu verwendende Template
-            level (int): Das Startlevel des Charakters
-            
-        Returns:
-            CharacterInstance: Eine neue CharacterInstance
-        """
-        # Basis-HP und Ressourcen berechnen
-        base_hp = template.get_combat_value('base_hp')
-        base_mana = template.get_combat_value('base_mana')
-        base_stamina = template.get_combat_value('base_stamina')
-        base_energy = template.get_combat_value('base_energy')
-        
-        # Maximales HP mit Konstitutionsbonus berechnen
-        constitution = template.get_attribute('CON')
-        max_hp = calculate_max_hp(base_hp, constitution)
-        
-        # Skills kopieren und sicherstellen, dass basic_attack_free enthalten ist
-        skills = template.skills.copy()
-        if "basic_attack_free" not in skills:
-            skills.append("basic_attack_free")
-        
-        instance = cls(
-            id=f"{template.id}_{id(template)}",  # Eindeutige ID erstellen
-            name=template.name,
-            template_id=template.id,
-            base_attributes=template.primary_attributes.copy(),
-            base_combat_values=template.combat_values.copy(),
-            skill_ids=skills,
-            hp=max_hp,
-            mana=base_mana,
-            stamina=base_stamina,
-            energy=base_energy,
-            level=level,
-            tags=set(template.tags)
+        self.shield_points: int = 0 # Aktuelle Schildpunkte
+
+        # Status-Effekte (wird später mit StatusEffect-Objekten gefüllt)
+        self.status_effects: List[Any] = [] # TODO: Typ anpassen zu List[StatusEffect]
+
+        # Gelernte Skills (Liste von SkillTemplate-Objekten oder Skill-IDs)
+        # Für den Anfang speichern wir die Skill-IDs, tatsächliche Skill-Objekte können bei Bedarf geladen werden.
+        self.skills: List[str] = list(self.base_template.skills) if hasattr(self.base_template, 'skills') else \
+                                  list(self.base_template.starting_skills) if hasattr(self.base_template, 'starting_skills') else []
+
+
+        self.level: int = getattr(self.base_template, 'level', 1) # Gegner haben Level, Spieler starten auf Level 1
+        self.xp: int = 0 # Aktuelle Erfahrungspunkte
+        self.xp_for_next_level: int = formulas.calculate_xp_for_next_level(self.level)
+
+        self.is_defeated: bool = False
+        self.can_act: bool = True # Kann durch Effekte wie Stun modifiziert werden
+
+        logger.info(f"Charakter-Instanz '{self.name}' (ID: {self.instance_id}) erstellt "
+                    f"basiert auf Template '{self.base_template.id}'. "
+                    f"HP: {self.current_hp}/{self.max_hp}")
+
+    def _initialize_combat_stats(self):
+        """Initialisiert abgeleitete Kampfstatistiken basierend auf Attributen und Template."""
+        # Max HP
+        self.max_hp: int = formulas.calculate_max_hp(
+            base_hp=self.base_template.base_hp,
+            constitution_value=self.attributes.get("CON", 10) # Fallback CON 10
         )
         
-        # Wenn es ein Gegner-Template ist, zusätzliche Werte setzen
-        if isinstance(template, OpponentTemplate):
-            instance.ai_strategy = template.ai_strategy
-            instance.xp_reward = template.xp_reward
+        # Max Ressourcen (direkt aus Template-combat_values oder berechnet)
+        # Annahme: base_mana, base_stamina, base_energy sind in combat_values des Templates
+        template_cv = self.base_template.combat_values
+        self.max_mana: int = template_cv.get("base_mana", 0) # Default 0 wenn nicht vorhanden
+        self.max_stamina: int = template_cv.get("base_stamina", 0)
+        self.max_energy: int = template_cv.get("base_energy", 0)
         
-        return instance
-    
-    def get_attribute(self, attr_name: str) -> int:
-        """
-        Gibt den aktuellen Wert eines Primärattributs zurück, inklusive Statusmodifikatoren.
+        # Weitere Kampfwerte
+        self.armor: int = template_cv.get("armor", 0)
+        self.magic_resist: int = template_cv.get("magic_resist", 0)
         
-        Args:
-            attr_name (str): Der Name des Attributs (z.B. 'STR')
-            
-        Returns:
-            int: Der aktuelle Attributwert
+        # Initiative (Basis, ohne Status-Effekt-Modifikatoren)
+        # Initiative-Bonus kann von Gegner-Templates kommen
+        initiative_bonus_template = template_cv.get("initiative_bonus", 0)
+        self.base_initiative: int = formulas.calculate_initiative(
+            dexterity_value=self.attributes.get("DEX", 10), # Fallback DEX 10
+            initiative_bonus=initiative_bonus_template
+        )
+        self.current_initiative: int = self.base_initiative # Kann durch Effekte modifiziert werden
+
+        # Genauigkeit und Ausweichen (Basiswerte, könnten durch Attribute/Skills modifiziert werden)
+        # Für den Moment nehmen wir an, sie sind 0, wenn nicht explizit gesetzt.
+        # In einer komplexeren Implementierung würden sie von DEX, Skills, Items etc. abhängen.
+        self.accuracy: int = template_cv.get("accuracy", 0) # Basis-Genauigkeit
+        self.evasion: int = template_cv.get("evasion", 0)   # Basis-Ausweichen
+
+    def get_attribute_bonus(self, attribute_name: str) -> int:
+        """Gibt den Bonus für ein gegebenes Attribut zurück."""
+        attr_val = self.attributes.get(attribute_name.upper(), 10) # Default 10, falls Attribut nicht existiert
+        return formulas.calculate_attribute_bonus(attr_val)
+
+    def take_damage(self, amount: int, damage_type: str = "PHYSICAL") -> int:
         """
-        base_value = self.base_attributes.get(attr_name, 0)
-        mod_value = self.status_mods.get(attr_name, 0)
-        return base_value + mod_value
-    
-    def get_combat_value(self, value_name: str) -> int:
+        Verarbeitet eingehenden Schaden. Reduziert Schildpunkte zuerst, dann HP.
+        Gibt den tatsächlich an HP verursachten Schaden zurück.
         """
-        Gibt den aktuellen Wert eines Kampfwerts zurück, inklusive Statusmodifikatoren.
-        
-        Args:
-            value_name (str): Der Name des Kampfwerts (z.B. 'armor')
-            
-        Returns:
-            int: Der aktuelle Kampfwert
-        """
-        base_value = self.base_combat_values.get(value_name, 0)
-        mod_value = self.status_mods.get(value_name, 0)
-        return base_value + mod_value
-    
-    def get_max_hp(self) -> int:
-        """
-        Berechnet die maximalen Lebenspunkte basierend auf Basis-HP und Konstitution.
-        
-        Returns:
-            int: Die maximalen Lebenspunkte
-        """
-        base_hp = self.base_combat_values.get('base_hp', 0)
-        constitution = self.get_attribute('CON')
-        return calculate_max_hp(base_hp, constitution)
-    
-    def get_accuracy(self) -> int:
-        """
-        Berechnet den Genauigkeitsmodifikator basierend auf Geschicklichkeit und Statuseffekten.
-        
-        Returns:
-            int: Der aktuelle Genauigkeitsmodifikator
-        """
-        dexterity = self.get_attribute('DEX')
-        effects_mod = self.status_mods.get('accuracy', 0)
-        return calculate_accuracy_modifier(dexterity, effects_mod)
-    
-    def get_evasion(self) -> int:
-        """
-        Berechnet den Ausweichmodifikator basierend auf Geschicklichkeit und Statuseffekten.
-        
-        Returns:
-            int: Der aktuelle Ausweichmodifikator
-        """
-        dexterity = self.get_attribute('DEX')
-        effects_mod = self.status_mods.get('evasion', 0)
-        return calculate_evasion_modifier(dexterity, effects_mod)
-    
-    def get_initiative(self) -> int:
-        """
-        Berechnet die Initiative basierend auf Geschicklichkeit und Statuseffekten.
-        
-        Returns:
-            int: Der aktuelle Initiativewert
-        """
-        base_initiative = self.get_attribute('DEX') * 2
-        initiative_mod = self.status_mods.get('initiative', 0)
-        return base_initiative + initiative_mod
-    
-    def is_alive(self) -> bool:
-        """
-        Prüft, ob der Charakter noch lebt.
-        
-        Returns:
-            bool: True, wenn HP > 0, sonst False
-        """
-        return self.hp > 0
-    
-    def can_act(self) -> bool:
-        """
-        Prüft, ob der Charakter handeln kann (nicht betäubt, etc.).
-        
-        Returns:
-            bool: True, wenn der Charakter handeln kann, sonst False
-        """
-        return self.status_flags.get('can_act', True) and self.is_alive()
-    
-    def can_be_targeted(self) -> bool:
-        """
-        Prüft, ob der Charakter als Ziel ausgewählt werden kann.
-        
-        Returns:
-            bool: True, wenn der Charakter ein gültiges Ziel ist, sonst False
-        """
-        return self.status_flags.get('can_be_targeted', True) and self.is_alive()
-    
-    def has_tag(self, tag: str) -> bool:
-        """
-        Prüft, ob der Charakter einen bestimmten Tag hat.
-        
-        Args:
-            tag (str): Der zu prüfende Tag
-            
-        Returns:
-            bool: True, wenn der Tag vorhanden ist, sonst False
-        """
-        return tag in self.tags
-    
-    def has_enough_resource(self, skill: SkillDefinition) -> bool:
-        """
-        Prüft, ob der Charakter genug Ressourcen für den Skill hat.
-        
-        Args:
-            skill (SkillDefinition): Der zu prüfende Skill
-            
-        Returns:
-            bool: True, wenn genug Ressourcen vorhanden sind, sonst False
-        """
-        cost_value = skill.get_cost_value()
-        cost_type = skill.get_cost_type()
-        
-        if cost_type == 'NONE' or cost_value <= 0:
-            return True
-        
-        resource_map = {
-            'MANA': self.mana,
-            'STAMINA': self.stamina,
-            'ENERGY': self.energy,
-        }
-        
-        current_resource = resource_map.get(cost_type, 0)
-        return current_resource >= cost_value
-    
-    def spend_resource(self, skill: SkillDefinition) -> bool:
-        """
-        Verbraucht Ressourcen für einen Skill.
-        
-        Args:
-            skill (SkillDefinition): Der Skill, für den Ressourcen verbraucht werden
-            
-        Returns:
-            bool: True, wenn erfolgreich, False wenn nicht genug Ressourcen vorhanden waren
-        """
-        cost_value = skill.get_cost_value()
-        cost_type = skill.get_cost_type()
-        
-        if cost_type == 'NONE' or cost_value <= 0:
-            return True
-        
-        # Prüfen, ob genug Ressourcen vorhanden sind
-        if not self.has_enough_resource(skill):
-            return False
-        
-        # Ressourcen verbrauchen
-        if cost_type == 'MANA':
-            self.mana -= cost_value
-        elif cost_type == 'STAMINA':
-            self.stamina -= cost_value
-        elif cost_type == 'ENERGY':
-            self.energy -= cost_value
-        
-        return True
-    
-    def apply_status_effect(self, effect_id: str, duration: int, potency: int) -> None:
-        """
-        Wendet einen Statuseffekt auf den Charakter an.
-        
-        Args:
-            effect_id (str): Die ID des Statuseffekts
-            duration (int): Die Dauer in Runden
-            potency (int): Die Stärke des Effekts
-        """
-        # Statuseffekt erstellen
-        effect = create_status_effect(effect_id, duration, potency)
-        if not effect:
-            logger.warning(f"Konnte Statuseffekt {effect_id} nicht erstellen")
-            return
-        
-        # Prüfen, ob der Effekt bereits aktiv ist
-        if effect_id in self.active_effects:
-            existing_effect = self.active_effects[effect_id]
-            # Dauer auf das Maximum setzen (Refresh)
-            existing_effect.duration = max(existing_effect.duration, duration)
-            # Potenz überschreiben (kein Stacken)
-            existing_effect.potency = potency
-            logger.debug(f"Statuseffekt {effect_id} bei {self.name} erneuert/überschrieben")
-        else:
-            # Neuen Effekt anwenden
-            self.active_effects[effect_id] = effect
-            effect.on_apply(self)
-            logger.debug(f"Statuseffekt {effect_id} auf {self.name} angewendet")
-    
-    def remove_status_effect(self, effect_id: str) -> None:
-        """
-        Entfernt einen Statuseffekt vom Charakter.
-        
-        Args:
-            effect_id (str): Die ID des zu entfernenden Statuseffekts
-        """
-        if effect_id in self.active_effects:
-            effect = self.active_effects[effect_id]
-            effect.on_remove(self)
-            del self.active_effects[effect_id]
-            logger.debug(f"Statuseffekt {effect_id} von {self.name} entfernt")
-    
-    def process_status_effects(self) -> None:
-        """
-        Verarbeitet alle aktiven Statuseffekte für eine Runde.
-        """
-        effects_to_remove = []
-        
-        for effect_id, effect in self.active_effects.items():
-            # Effekt-Tick verarbeiten
-            is_active = effect.tick(self)
-            if not is_active:
-                effects_to_remove.append(effect_id)
-        
-        # Abgelaufene Effekte entfernen
-        for effect_id in effects_to_remove:
-            del self.active_effects[effect_id]
-    
-    def take_damage(self, damage: int, damage_type: str) -> Tuple[int, bool]:
-        """
-        Lässt den Charakter Schaden nehmen, unter Berücksichtigung von Rüstung/Resistenz.
-        
-        Args:
-            damage (int): Der Rohe Schaden
-            damage_type (str): Der Schadenstyp (PHYSICAL, MAGICAL, HOLY, etc.)
-            
-        Returns:
-            Tuple[int, bool]: Der tatsächlich zugefügte Schaden und ob der Charakter dadurch stirbt
-        """
-        # Schutzschild-Punkte zuerst anwenden, wenn vorhanden
-        if self.shield_points > 0:
-            absorbed = min(self.shield_points, damage)
-            self.shield_points -= absorbed
-            damage -= absorbed
-            logger.debug(f"{self.name}'s Schild absorbiert {absorbed} Schaden, {self.shield_points} Schildpunkte übrig")
-            if damage <= 0:
-                return absorbed, False
-        
-        # Passende Verteidigung basierend auf Schadenstyp wählen
-        defense = 0
-        if damage_type == 'PHYSICAL':
-            defense = self.get_combat_value('armor')
-        elif damage_type in ('MAGICAL', 'HOLY', 'DARK'):
-            defense = self.get_combat_value('magic_resist')
-        
-        # Schadenreduzierung durch Verteidigung
-        reduced_damage = max(1, damage - defense)  # Mindestens 1 Schaden
-        self.hp -= reduced_damage
-        
-        # Lebendstatus prüfen
-        is_dead = self.hp <= 0
-        if is_dead:
-            self.hp = 0
-            logger.info(f"{self.name} wurde besiegt!")
-        else:
-            logger.debug(f"{self.name} nimmt {reduced_damage} Schaden ({damage} - {defense}), verbleibende HP: {self.hp}")
-        
-        return reduced_damage, is_dead
-    
-    def take_raw_damage(self, damage: int) -> Tuple[int, bool]:
-        """
-        Lässt den Charakter direkten Schaden nehmen, der Rüstung und Resistenzen ignoriert.
-        
-        Args:
-            damage (int): Der Schaden
-            
-        Returns:
-            Tuple[int, bool]: Der tatsächlich zugefügte Schaden und ob der Charakter dadurch stirbt
-        """
-        self.hp -= damage
-        is_dead = self.hp <= 0
-        if is_dead:
-            self.hp = 0
-            logger.info(f"{self.name} wurde durch direkten Schaden besiegt!")
-        else:
-            logger.debug(f"{self.name} nimmt {damage} direkten Schaden, verbleibende HP: {self.hp}")
-        
-        return damage, is_dead
-    
-    def heal(self, amount: int) -> int:
-        """
-        Heilt den Charakter um die angegebene Menge.
-        
-        Args:
-            amount (int): Die Heilungsmenge
-            
-        Returns:
-            int: Die tatsächlich geheilte Menge
-        """
-        if not self.is_alive():
-            logger.debug(f"{self.name} ist tot und kann nicht geheilt werden")
+        if self.is_defeated:
             return 0
+
+        # Schadensreduktion durch Rüstung/Magieresistenz
+        resistance_value = self.armor if damage_type in ["PHYSICAL", "PIERCING", "BLUDGEONING"] else self.magic_resist # Vereinfachte Logik
+        # TODO: Detailliertere Schadens-Typ vs. Resistenz-Typ Logik
         
-        max_hp = self.get_max_hp()
-        old_hp = self.hp
-        self.hp = min(max_hp, self.hp + amount)
-        actual_healing = self.hp - old_hp
+        actual_damage_after_reduction = formulas.calculate_damage_reduction(amount, resistance_value)
         
-        if actual_healing > 0:
-            logger.debug(f"{self.name} wird um {actual_healing} HP geheilt, neue HP: {self.hp}/{max_hp}")
+        # Schildpunkte absorbieren Schaden zuerst
+        absorbed_by_shield = 0
+        if self.shield_points > 0:
+            absorbed_by_shield = min(self.shield_points, actual_damage_after_reduction)
+            self.shield_points -= absorbed_by_shield
+            actual_damage_after_reduction -= absorbed_by_shield
+            logger.debug(f"'{self.name}' absorbiert {absorbed_by_shield} Schaden mit Schild. Restschaden: {actual_damage_after_reduction}. Schild verbleibend: {self.shield_points}")
+
+        if actual_damage_after_reduction <= 0: # Kein Schaden nach Reduktion und Schild
+            logger.info(f"'{self.name}' erleidet keinen Schaden (abgewehrt/absorbiert).")
+            return 0
+
+        self.current_hp -= actual_damage_after_reduction
+        logger.info(f"'{self.name}' erleidet {actual_damage_after_reduction} {damage_type} Schaden. HP: {self.current_hp}/{self.max_hp}")
+
+        if self.current_hp <= 0:
+            self.current_hp = 0
+            self.is_defeated = True
+            self.can_act = False # Besiegte Charaktere können nicht handeln
+            logger.info(f"'{self.name}' wurde besiegt!")
         
-        return actual_healing
-    
-    def restore_resource(self, resource_type: str, amount: int) -> int:
-        """
-        Stellt eine Ressource (Mana, Stamina, Energy) wieder her.
-        
-        Args:
-            resource_type (str): Der Ressourcentyp ('MANA', 'STAMINA', 'ENERGY')
-            amount (int): Die Menge
+        return actual_damage_after_reduction # Der Schaden, der tatsächlich die HP reduziert hat
+
+    def heal(self, amount: int) -> int:
+        """Heilt die Instanz um einen bestimmten Betrag, bis maximal HP."""
+        if self.is_defeated: # Besiegte können nicht geheilt werden (optional, Regelentscheidung)
+            logger.info(f"'{self.name}' ist besiegt und kann nicht geheilt werden.")
+            return 0
             
-        Returns:
-            int: Die tatsächlich wiederhergestellte Menge
-        """
-        if resource_type == 'MANA':
-            max_value = self.base_combat_values.get('base_mana', 0)
-            old_value = self.mana
-            self.mana = min(max_value, self.mana + amount)
-            return self.mana - old_value
-        
-        elif resource_type == 'STAMINA':
-            max_value = self.base_combat_values.get('base_stamina', 0)
-            old_value = self.stamina
-            self.stamina = min(max_value, self.stamina + amount)
-            return self.stamina - old_value
-        
-        elif resource_type == 'ENERGY':
-            max_value = self.base_combat_values.get('base_energy', 0)
-            old_value = self.energy
-            self.energy = min(max_value, self.energy + amount)
-            return self.energy - old_value
-        
-        return 0
-    
-    def gain_xp(self, amount: int) -> bool:
-        """
-        Lässt den Charakter Erfahrungspunkte erhalten und prüft auf Level-Aufstieg.
-        
-        Args:
-            amount (int): Die Menge an XP
+        if amount <= 0:
+            return 0
             
-        Returns:
-            bool: True, wenn ein Level-Aufstieg stattfand, sonst False
-        """
-        if not self.is_alive():
-            return False
+        healed_amount = min(amount, self.max_hp - self.current_hp)
+        self.current_hp += healed_amount
+        logger.info(f"'{self.name}' wird um {healed_amount} HP geheilt. HP: {self.current_hp}/{self.max_hp}")
+        return healed_amount
+
+    def restore_resource(self, amount: int, resource_type: str) -> int:
+        """Stellt eine spezifische Ressource wieder her (Mana, Stamina, Energy)."""
+        if amount <= 0: return 0
         
-        self.xp += amount
-        logger.debug(f"{self.name} erhält {amount} XP, neue Gesamtsumme: {self.xp}")
+        restored_amount = 0
+        resource_type_upper = resource_type.upper()
+
+        if resource_type_upper == "MANA":
+            restored_amount = min(amount, self.max_mana - self.current_mana)
+            self.current_mana += restored_amount
+            logger.debug(f"'{self.name}' stellt {restored_amount} Mana wieder her. Mana: {self.current_mana}/{self.max_mana}")
+        elif resource_type_upper == "STAMINA":
+            restored_amount = min(amount, self.max_stamina - self.current_stamina)
+            self.current_stamina += restored_amount
+            logger.debug(f"'{self.name}' stellt {restored_amount} Stamina wieder her. Stamina: {self.current_stamina}/{self.max_stamina}")
+        elif resource_type_upper == "ENERGY":
+            restored_amount = min(amount, self.max_energy - self.current_energy)
+            self.current_energy += restored_amount
+            logger.debug(f"'{self.name}' stellt {restored_amount} Energy wieder her. Energy: {self.current_energy}/{self.max_energy}")
+        else:
+            logger.warning(f"Unbekannter Ressourcentyp '{resource_type}' für Wiederherstellung bei '{self.name}'.")
+            
+        return restored_amount
+
+    def consume_resource(self, amount: int, resource_type: str) -> bool:
+        """Verbraucht eine Ressource. Gibt True zurück, wenn erfolgreich, sonst False."""
+        if amount < 0: return True # Negativer Verbrauch ist wie Wiederherstellung, hier nicht behandelt
+        if amount == 0: return True # Kein Verbrauch, immer erfolgreich
+
+        resource_type_upper = resource_type.upper()
         
-        # Diese Funktion macht noch keinen Level-Up - das überlassen wir dem Leveling-Service,
-        # der über diese Funktion informiert wird und dann die level_up-Methode aufruft.
-        
-        # In einer späteren Implementierung würden wir hier ein Event auslösen,
-        # das vom Leveling-System abonniert wird.
+        if resource_type_upper == "MANA":
+            if self.current_mana >= amount:
+                self.current_mana -= amount
+                logger.debug(f"'{self.name}' verbraucht {amount} Mana. Verbleibend: {self.current_mana}")
+                return True
+        elif resource_type_upper == "STAMINA":
+            if self.current_stamina >= amount:
+                self.current_stamina -= amount
+                logger.debug(f"'{self.name}' verbraucht {amount} Stamina. Verbleibend: {self.current_stamina}")
+                return True
+        elif resource_type_upper == "ENERGY":
+            if self.current_energy >= amount:
+                self.current_energy -= amount
+                logger.debug(f"'{self.name}' verbraucht {amount} Energy. Verbleibend: {self.current_energy}")
+                return True
+        elif resource_type_upper == "NONE" or resource_type is None: # "NONE" Typ für kostenlose Skills
+            logger.debug(f"'{self.name}' führt eine Aktion ohne Ressourcenkosten aus.")
+            return True
+            
+        logger.warning(f"Nicht genügend {resource_type_upper} für '{self.name}' (benötigt {amount}, hat {getattr(self, 'current_' + resource_type_upper.lower(), 0)}).")
         return False
-    
-    def level_up(self) -> None:
-        """
-        Führt einen Level-Aufstieg durch.
-        Diese Funktion wird vom Leveling-Service aufgerufen.
-        """
+
+    def add_xp(self, amount: int):
+        """Fügt Erfahrungspunkte hinzu und prüft auf Level-Up."""
+        if self.is_defeated or amount <= 0:
+            return
+
+        self.xp += amount
+        logger.info(f"'{self.name}' erhält {amount} XP. Gesamt-XP: {self.xp}/{self.xp_for_next_level}")
+        
+        while self.xp >= self.xp_for_next_level:
+            self._level_up()
+
+    def _level_up(self):
+        """Führt die Aktionen für einen Levelaufstieg durch."""
         self.level += 1
-        logger.info(f"{self.name} ist auf Level {self.level} aufgestiegen!")
+        self.xp -= self.xp_for_next_level # XP-Übertrag, wenn mehr als nötig gesammelt wurde
+        if self.xp < 0: self.xp = 0 # Sollte nicht passieren, aber sicher ist sicher
         
+        self.xp_for_next_level = formulas.calculate_xp_for_next_level(self.level)
+        
+        logger.info(f"LEVEL UP! '{self.name}' hat Level {self.level} erreicht!")
+        
+        # Level-Up Boni (gemäß ANNEX_GAME_DEFINITIONS_SUMMARY)
         # Volle Heilung und Ressourcenwiederherstellung
-        max_hp = self.get_max_hp()
-        self.hp = max_hp
+        self.current_hp = self.max_hp
+        self.current_mana = self.max_mana
+        self.current_stamina = self.max_stamina
+        self.current_energy = self.max_energy
+        self.shield_points = 0 # Schild zurücksetzen
+        logger.info(f"'{self.name}' wurde vollständig geheilt und Ressourcen wiederhergestellt.")
         
-        for resource_type in ['MANA', 'STAMINA', 'ENERGY']:
-            max_resource = self.base_combat_values.get(f'base_{resource_type.lower()}', 0)
-            if resource_type == 'MANA':
-                self.mana = max_resource
-            elif resource_type == 'STAMINA':
-                self.stamina = max_resource
-            elif resource_type == 'ENERGY':
-                self.energy = max_resource
+        # TODO: Weitere Level-Up-Boni implementieren:
+        # - Attributpunkte zum Verteilen?
+        # - Skillpunkte?
+        # - Automatische Attributerhöhungen? (Müsste in Charakter-Template oder einer Wachstums-Kurve definiert sein)
+        # - Neue Skills freischalten?
+
+    def get_info(self) -> Dict[str, Any]:
+        """Gibt ein Dictionary mit den wichtigsten Informationen zur Instanz zurück."""
+        return {
+            "instance_id": self.instance_id,
+            "name": self.name,
+            "level": self.level,
+            "hp": f"{self.current_hp}/{self.max_hp}",
+            "mana": f"{self.current_mana}/{self.max_mana}",
+            "stamina": f"{self.current_stamina}/{self.max_stamina}",
+            "energy": f"{self.current_energy}/{self.max_energy}",
+            "shield": self.shield_points,
+            "attributes": self.attributes,
+            "is_defeated": self.is_defeated,
+            "can_act": self.can_act,
+            "status_effects": [str(se) for se in self.status_effects] # Platzhalter, bis StatusEffect Klasse existiert
+        }
+
+    def __str__(self) -> str:
+        return (f"{self.name} (Lvl {self.level}, HP: {self.current_hp}/{self.max_hp}, "
+                f"Schild: {self.shield_points}, {'Besiegt' if self.is_defeated else 'Aktiv'})")
+
+
+if __name__ == '__main__':
+    # Testen der CharacterInstance Klasse
+    # Benötigt geladene Templates und Konfiguration
+    
+    # Simuliere das Laden von Definitionen
+    try:
+        from src.definitions.loader import load_character_templates, load_opponent_templates, load_skill_templates
+        from src.config.config import CONFIG # Stellt sicher, dass CONFIG geladen ist
+        
+        print("\nLade Test-Definitionen...")
+        load_skill_templates() # Laden, damit Skill-Listen in Templates existieren
+        char_templates = load_character_templates()
+        opp_templates = load_opponent_templates()
+        
+        if not char_templates or not opp_templates:
+            raise Exception("Konnte keine Charakter- oder Gegner-Templates für den Test laden.")
+
+        # Hole ein Krieger-Template
+        krieger_template = char_templates.get("krieger")
+        goblin_template = opp_templates.get("goblin_lv1")
+
+        if not krieger_template or not goblin_template:
+            raise Exception("Krieger- oder Goblin-Template nicht in geladenen Daten gefunden.")
+
+        print("\n--- Erstelle Charakter-Instanzen ---")
+        spieler = CharacterInstance(base_template=krieger_template, name_override="Held Karras")
+        gegner_goblin = CharacterInstance(base_template=goblin_template)
+
+        print(spieler)
+        print(gegner_goblin)
+        
+        print(f"\n{spieler.name} Attribute: {spieler.attributes}")
+        print(f"{spieler.name} STR Bonus: {spieler.get_attribute_bonus('STR')}")
+        print(f"{gegner_goblin.name} CON Bonus: {gegner_goblin.get_attribute_bonus('CON')}")
+        print(f"{spieler.name} Initiative: {spieler.current_initiative}")
+        print(f"{gegner_goblin.name} Initiative: {gegner_goblin.current_initiative}")
+
+        print("\n--- Teste Kampfaktionen ---")
+        print(f"Goblin ({gegner_goblin.current_hp} HP) greift {spieler.name} ({spieler.current_hp} HP) an.")
+        # Direkter Schadensaufruf (vereinfacht, ohne Skill-Logik)
+        schaden_an_spieler = 15 # Angenommener Rohschaden des Goblins
+        spieler.take_damage(schaden_an_spieler, damage_type="PHYSICAL") 
+        print(spieler)
+
+        print(f"\n{spieler.name} ({spieler.current_hp} HP) heilt sich.")
+        spieler.heal(20)
+        print(spieler)
+
+        print(f"\n{spieler.name} verbraucht 10 Stamina. Erfolg: {spieler.consume_resource(10, 'STAMINA')}")
+        print(f"Verbleibende Stamina: {spieler.current_stamina}/{spieler.max_stamina}")
+        print(f"{spieler.name} versucht 200 Mana zu verbrauchen. Erfolg: {spieler.consume_resource(200, 'MANA')}") # Sollte fehlschlagen
+
+        print("\n--- Teste XP und Level Up ---")
+        print(f"{spieler.name} (Level {spieler.level}, XP: {spieler.xp}/{spieler.xp_for_next_level})")
+        spieler.add_xp(70) # Nicht genug für Level Up
+        print(f"{spieler.name} (Level {spieler.level}, XP: {spieler.xp}/{spieler.xp_for_next_level})")
+        spieler.add_xp(50) # Sollte für Level Up reichen (70+50=120 > 100 für Lvl 2)
+        print(f"{spieler.name} (Level {spieler.level}, XP: {spieler.xp}/{spieler.xp_for_next_level})")
+        print(f"HP nach Level Up: {spieler.current_hp}/{spieler.max_hp}") # Sollte voll sein
+
+        print("\n--- Teste Schildmechanik ---")
+        spieler.shield_points = 20
+        print(f"{spieler.name} hat {spieler.shield_points} Schildpunkte.")
+        spieler.take_damage(25, "PHYSICAL") # 20 vom Schild, 5 von HP (nach Rüstung)
+        print(spieler)
+        
+        print("\n--- Info-Dictionary ---")
+        print(spieler.get_info())
+
+
+    except ImportError as e:
+        print(f"FEHLER bei Imports für den Test in entities.py: {e}. Stelle sicher, dass alle Definitionen und Config geladen werden können.")
+    except Exception as e:
+        print(f"Ein Fehler ist während des Testlaufs in entities.py aufgetreten: {e}")
+        import traceback
+        traceback.print_exc()
