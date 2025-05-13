@@ -3,26 +3,34 @@
 Skript zum Trainieren eines Reinforcement Learning Agenten für das RPG-Spiel.
 Nimmt eine RL-Setup-Konfigurationsdatei als Eingabe.
 """
+import os
+import sys
+
+# --- PYTHONPATH Anpassung ---
+# Dies muss ganz am Anfang stehen, bevor andere Projektmodule importiert werden.
+SCRIPT_DIR_RL_TRAINING = os.path.dirname(os.path.abspath(__file__)) 
+SRC_ROOT_RL_TRAINING = os.path.dirname(SCRIPT_DIR_RL_TRAINING) 
+PROJECT_ROOT_RL_TRAINING = os.path.dirname(SRC_ROOT_RL_TRAINING) 
+if PROJECT_ROOT_RL_TRAINING not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT_RL_TRAINING)
+# --- Ende PYTHONPATH Anpassung ---
+
 import argparse
 import logging
 import json5 
-import os
-import sys
 import datetime 
 from typing import Optional, Dict, Any, List 
+import gymnasium as gym # KORREKTUR: Import für isinstance
 
-# PYTHONPATH Anpassung
+# Logging-Setup früh versuchen, falls __main__ direkt ausgeführt wird
 if __name__ == '__main__' and __package__ is None: 
-    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-    PROJECT_ROOT_FROM_RL_TRAINING = os.path.dirname(os.path.dirname(SCRIPT_DIR)) 
-    if PROJECT_ROOT_FROM_RL_TRAINING not in sys.path:
-        sys.path.append(PROJECT_ROOT_FROM_RL_TRAINING)
     try:
         from src.utils import logging_setup 
     except ImportError:
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - [%(module)s.%(funcName)s:%(lineno)d] - %(message)s')
         logging.info("Fallback-Logging für rl_training.py (vor Haupt-Imports) aktiviert.")
 
+# Haupt-Imports
 try:
     from src.environment.rpg_env import RPGEnv 
     from stable_baselines3 import PPO 
@@ -31,17 +39,15 @@ try:
     from stable_baselines3.common.monitor import Monitor 
     from stable_baselines3.common.vec_env import SubprocVecEnv
     from src.config.user_config_manager import UserConfigManager 
-    # Importiere den Context Extractor
-    try:
+    try: # Verschachtelter Try für den optionalen Extractor
         from tools.context_extractor import extract_and_save_context
     except ImportError as e_extractor:
-        logging.error(f"Context Extractor (tools/context_extractor.py) nicht gefunden oder Importfehler darin: {e_extractor}")
-        extract_and_save_context = None # Dummy, falls nicht verfügbar
-
+        logging.warning(f"Context Extractor (tools/context_extractor.py) nicht gefunden oder Importfehler darin: {e_extractor}")
+        extract_and_save_context = None 
     SB3_AVAILABLE = True
 except ImportError as e_sb3:
     # Logger ist hier noch nicht sicher initialisiert, daher print
-    print(f"FEHLER bei Stable Baselines3 oder anderen Imports in rl_training.py: {e_sb3}. ")
+    print(f"FEHLER bei Stable Baselines3 oder anderen Kern-Imports in rl_training.py: {e_sb3}. ")
     SB3_AVAILABLE = False
     PPO=None; make_vec_env=None; CheckpointCallback=None; EvalCallback=None; Monitor=None
     DummyVecEnv=None; SubprocVecEnv=None; UserConfigManager=None; extract_and_save_context=None
@@ -86,14 +92,14 @@ def train_agent(config_path: str):
 
     hero_id = agent_conf.get("agent_hero_id", "krieger")
     rl_algorithm_name = agent_conf.get("rl_algorithm", "PPO").upper()
-    opponent_setup_for_env = env_conf_from_file.get("opponent_setup", {"ids": ["goblin_lv1"]})
+    opponent_setup_for_env = env_conf_from_file.get("opponent_setup", {"ids": ["goblin_lv1"], "num_opponents": 1, "level_pool":"1-2"})
     max_episode_steps = env_conf_from_file.get("max_episode_steps", 50)
     reward_weights_for_env = env_conf_from_file.get("reward_weights")
     total_timesteps = run_conf.get("total_timesteps")
     
     if not total_timesteps:
         num_training_episodes = run_conf.get("num_training_episodes")
-        total_timesteps = (num_training_episodes * max_episode_steps) if num_training_episodes else 2048
+        total_timesteps = (num_training_episodes * max_episode_steps) if num_training_episodes else 2048 
         logger.info(f"total_timesteps aus Episoden und Steps berechnet: {total_timesteps}")
     if total_timesteps <= 0: logger.error("total_timesteps muss positiv sein."); return
         
@@ -104,17 +110,16 @@ def train_agent(config_path: str):
     use_monitor = adv_conf.get("use_sb3_monitor", True)
     use_subproc_vec_env = adv_conf.get("use_subproc_vec_env", False) 
 
-    # --- Experiment-Verzeichnisstruktur ---
+    # --- Experiment-Verzeichnisstruktur erstellen ---
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     experiment_name = f"{experiment_prefix_from_config}_{rl_algorithm_name.lower()}_{hero_id}_{timestamp}"
     
-    # Annahme: Dieses Skript ist in src/ai/, Projekt-Root ist zwei Ebenen höher
-    project_root_for_paths = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) 
-    base_run_dir = os.path.join(project_root_for_paths, "logs", "rl_runs_archive", experiment_name)
+    # PROJECT_ROOT_FROM_RL_TRAINING ist oben definiert
+    base_run_dir = os.path.join(PROJECT_ROOT_FROM_RL_TRAINING, "logs", "rl_runs_archive", experiment_name)
     os.makedirs(base_run_dir, exist_ok=True)
     logger.info(f"Alle Artefakte für diesen Lauf werden in '{base_run_dir}' gespeichert.")
 
-    tensorboard_log_path = os.path.join(base_run_dir, "tensorboard") # SB3 fügt Experimentnamen oft selbst hinzu
+    tensorboard_log_path = os.path.join(base_run_dir, "tensorboard")
     monitor_log_path = os.path.join(base_run_dir, "monitor") 
     checkpoint_path = os.path.join(base_run_dir, "checkpoints")
     final_model_dir = os.path.join(base_run_dir, "models") 
@@ -130,19 +135,16 @@ def train_agent(config_path: str):
         logger.info("Starte Context Extractor...")
         abs_config_path = os.path.abspath(config_path)
         # Der Extractor erwartet Pfade relativ zu seinem PROJECT_ROOT.
-        # Wir müssen den relativen Pfad von seinem PROJECT_ROOT zur Konfig-Datei ermitteln.
-        # Annahme: extract_and_save_context.PROJECT_ROOT ist korrekt gesetzt.
-        # Für Einfachheit übergeben wir den absoluten Pfad, und der Extractor kann ihn handhaben
-        # oder wir machen ihn hier relativ zum Extractor's PROJECT_ROOT.
-        # Da der Extractor PROJECT_ROOT selbst definiert, ist es am besten, wenn er relative Pfade
-        # von dort erwartet oder absolute Pfade direkt verarbeiten kann.
-        # Wir übergeben den absoluten Pfad der Konfigurationsdatei.
-        additional_files_for_ctx = [abs_config_path]
+        # Wir stellen sicher, dass der Extractor diesen PROJECT_ROOT auch kennt (ist in seiner Datei definiert).
+        # Hier übergeben wir den *absoluten* Pfad zur RL-Konfig, der Extractor kann damit umgehen
+        # oder intern einen relativen Pfad machen, falls er ihn so speichern will.
+        additional_files_for_ctx = [abs_config_path] 
         try:
+            # Die PROJECT_ROOT Variable im Extractor wird von ihm selbst gesetzt
             extracted_path = extract_and_save_context(
                 run_identifier=experiment_name, 
                 output_filepath=context_file_path,
-                additional_full_content_files=additional_files_for_this_run # Verwendet die lokale Variable
+                additional_full_content_files=additional_files_for_ctx
             )
             if extracted_path: logger.info(f"Kontext erfolgreich nach '{extracted_path}' extrahiert.")
             else: logger.warning("Context Extractor konnte Kontext nicht erstellen.")
@@ -167,35 +169,33 @@ def train_agent(config_path: str):
         if num_parallel > 1 and make_vec_env:
             vec_env_cls_to_use = SubprocVecEnv if use_subproc_vec_env and SubprocVecEnv else DummyVecEnv
             logger.info(f"Verwende {num_parallel} parallele Umgebungen ({vec_env_cls_to_use.__name__}).")
-            # monitor_dir wird von make_vec_env verwendet, um Monitore um jede Sub-Env zu legen
             env = make_vec_env(
                 create_env_fn, 
                 n_envs=num_parallel, 
                 vec_env_cls=vec_env_cls_to_use,
                 monitor_dir=monitor_log_path if use_monitor and Monitor else None,
-                monitor_kwargs=({"allow_early_resets": True, "info_keywords": ("is_success",)},) 
+                monitor_kwargs=({"allow_early_resets": True, "info_keywords": ("is_success",)},) if use_monitor and Monitor else None
             )
         else: 
             logger.info("Verwende eine einzelne Umgebung.")
             env = create_env_fn()
-            if use_monitor and Monitor and not isinstance(env, gym.vector.VecEnv):
-                 # Eindeutiger Dateiname für den Monitor bei einzelner Env
-                 monitor_file = os.path.join(monitor_log_path, f"monitor_{experiment_name}_0.csv")
-                 env = Monitor(env, filename=monitor_file, allow_early_resets=True, info_keywords=("is_success",))
+            # KORREKTUR: isinstance check mit gym.vector.VecEnv
+            if use_monitor and Monitor and not isinstance(env, gym.vector.VecEnv): 
+                 monitor_file_for_single_env = os.path.join(monitor_log_path, f"monitor_{experiment_name}_0.csv")
+                 env = Monitor(env, filename=monitor_file_for_single_env, allow_early_resets=True, info_keywords=("is_success",))
         
         logger.info("RL-Umgebung(en) erfolgreich erstellt.")
 
-        if EvalCallback: # Nur wenn EvalCallback importiert werden konnte
+        if EvalCallback and Monitor: 
             eval_env_for_callback = create_env_fn(is_eval=True) 
-            if Monitor: 
-                eval_monitor_log_dir = os.path.join(base_run_dir, "eval_monitor_logs")
-                os.makedirs(eval_monitor_log_dir, exist_ok=True)
-                eval_env_for_callback = Monitor(eval_env_for_callback, os.path.join(eval_monitor_log_dir, "monitor_eval"))
+            eval_monitor_log_dir_cb = os.path.join(base_run_dir, "eval_monitor_logs_callback")
+            os.makedirs(eval_monitor_log_dir_cb, exist_ok=True)
+            eval_env_for_callback = Monitor(eval_env_for_callback, os.path.join(eval_monitor_log_dir_cb, "monitor_eval_cb"))
         else:
             eval_env_for_callback = None
 
 
-        if CheckpointCallback is None: raise ImportError("SB3 CheckpointCallback nicht verfügbar.")
+        if CheckpointCallback is None : raise ImportError("SB3 CheckpointCallback nicht verfügbar.")
         actual_checkpoint_save_freq = max(1, checkpoint_interval_sb3_model_save // num_parallel if num_parallel > 0 else checkpoint_interval_sb3_model_save)
         checkpoint_callback = CheckpointCallback(
             save_freq=actual_checkpoint_save_freq, 
@@ -207,7 +207,7 @@ def train_agent(config_path: str):
         if eval_env_for_callback and EvalCallback:
             eval_freq_steps = max(1, run_conf.get("eval_freq_sb3_learn", 5000) // num_parallel if num_parallel > 0 else run_conf.get("eval_freq_sb3_learn", 5000))
             eval_log_path_cb = os.path.join(base_run_dir, "eval_callback_logs") 
-            best_model_save_cb_path = os.path.join(final_model_dir, "best_model") # Relativ zu final_model_dir
+            best_model_save_cb_path = os.path.join(final_model_dir, "best_model") 
             
             eval_callback_instance = EvalCallback(
                 eval_env_for_callback, 
@@ -238,7 +238,7 @@ def train_agent(config_path: str):
         else: logger.error(f"Algorithmus {rl_algorithm_name} nicht implementiert."); return
 
         logger.info(f"Starte Training des {rl_algorithm_name}-Agenten für {total_timesteps} Timesteps...")
-        logger.info(f"TensorBoard Logs werden hier gespeichert: {model.tensorboard_log}") # SB3 fügt den Algo-Namen hinzu
+        logger.info(f"TensorBoard Logs werden hier gespeichert: {model.tensorboard_log}") # SB3 fügt Experimentnamen an tensorboard_log_path an
         
         model.learn(
             total_timesteps=int(total_timesteps), 
@@ -252,9 +252,8 @@ def train_agent(config_path: str):
         model.save(final_model_path)
         logger.info(f"Training abgeschlossen. Finale Modell gespeichert unter: {final_model_path}")
 
-        # Speichere Pfad zum besten/finalen Modell in user_preferences.json5
-        if UserConfigManager: # Nur wenn der Manager importiert werden konnte
-            ucm = UserConfigManager() # Erzeuge eine neue Instanz zum Schreiben
+        if UserConfigManager:
+            ucm = UserConfigManager() 
             path_to_save_in_prefs = ""
             best_model_zip = os.path.join(final_model_dir, "best_model", "best_model.zip")
             if os.path.exists(best_model_zip):
@@ -263,7 +262,6 @@ def train_agent(config_path: str):
             else: 
                 path_to_save_in_prefs = os.path.abspath(final_model_path)
                 logger.info(f"Bestes Modell nicht gefunden, verwende finales Modell: {path_to_save_in_prefs}")
-            
             ucm.set_preference("last_trained_model_path", path_to_save_in_prefs)
             logger.info(f"Pfad zum trainierten Modell in user_preferences.json5 gespeichert: {path_to_save_in_prefs}")
 
@@ -284,8 +282,7 @@ if __name__ == "__main__":
     if not logging.getLogger().hasHandlers(): 
         try:
             from src.utils import logging_setup 
-            # Der Loglevel wird durch logging_setup.py (und ggf. user_preferences) gesetzt
-            logger.info("Zentrales Logging-Setup für rl_training.py (direkter Aufruf) wurde bereits ausgeführt oder wird jetzt geladen.")
+            logger.info("Zentrales Logging-Setup für rl_training.py (direkter Aufruf) geladen.")
         except ImportError:
             logging.basicConfig(level=logging.DEBUG, 
                                 format='%(asctime)s - %(name)s - %(levelname)s - [%(module)s.%(funcName)s:%(lineno)d] - %(message)s')
