@@ -1,0 +1,50 @@
+// src/config/rl_setups/magier_vs_goblin_test.json5
+// Testkonfiguration für Magier mit MaskablePPO.
+{
+  "setup_type": "training",
+  "description": "MaskablePPO Testlauf für Magier gegen 1 Goblin (Lv.1). Fokus auf korrekte Aktionsmaskierung und grundlegendes Lernverhalten.",
+  
+  "output_base_directory": "rl_test_outputs", // Oder ein spezifischerer Pfad für Magier-Tests
+
+  "agent_config": {
+    "agent_hero_id": "magier", // Geändert auf Magier
+    "rl_algorithm": "MaskablePPO",
+    "learning_rate": 0.0003,
+    "gamma": 0.99,
+    "n_steps_ppo": 512, 
+    "batch_size_ppo": 64,
+    "ent_coef": 0.01,
+    "vf_coef": 0.5
+  },
+  "environment_config": {
+    "opponent_setup": { 
+      "num_opponents": 1,
+      "level_pool": "1-2", // Beibehaltung des einfachen Gegners für den Test
+      "ids": ["goblin_lv1"]
+    },
+    "max_episode_steps": 75, // Kann für Magier ggf. angepasst werden, falls Kämpfe länger/kürzer dauern
+    "reward_weights": { // Vorerst beibehalten, kann später für Magier optimiert werden
+        "step_penalty": -0.02,
+        "damage_to_opponent_mult": 0.25,
+        "opponent_defeated_bonus": 15.0,
+        "hero_defeated_penalty": -60.0,
+        "all_opponents_defeated_bonus": 60.0,
+        "invalid_action_penalty": -1.5 
+    }
+  },
+  "run_config": {
+    "total_timesteps": 20000, // Angepasst für einen etwas längeren Testlauf
+    "experiment_name_prefix": "MagierVsGoblin_MaskPPO_Test", // Geändert für Magier
+    "log_interval_sb3_learn": 1, // Beibehalten für detailliertes Logging
+    "checkpoint_interval_sb3_model_save": 2048, // Ggf. anpassen
+    "eval_freq_sb3_learn": 2048, // Ggf. anpassen
+    "n_eval_episodes_callback": 5 // Erhöht für stabilere Evaluierung
+  },
+  "advanced_rl_config": {
+    "use_curriculum_learning": false,
+    "curriculum_definition_file": null,
+    "num_parallel_runs": 1, 
+    "use_sb3_monitor": true,
+    "use_subproc_vec_env": false
+  }
+}

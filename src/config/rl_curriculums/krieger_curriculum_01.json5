@@ -1,0 +1,30 @@
+// src/config/rl_curriculums/krieger_curriculum_01.json5
+{
+  "description": "Ein 3-stufiger Lehrplan für den Krieger. Beginnt einfach und steigert die Komplexität bis zum Ziel-Szenario.",
+  "stages": [
+    {
+      // Phase 1: Agent lernt die Grundlagen gegen einen einzelnen, schwachen Gegner.
+      "timesteps": 50000,
+      "opponent_setup": {
+        "num_opponents": 1,
+        "ids": ["goblin_lv1"]
+      }
+    },
+    {
+      // Phase 2: Agent lernt, mit mehreren Zielen umzugehen.
+      "timesteps": 100000,
+      "opponent_setup": {
+        "num_opponents": 2,
+        "ids": ["goblin_lv1", "goblin_lv1"]
+      }
+    },
+    {
+      // Phase 3: Agent meistert das finale, komplexe Szenario.
+      "timesteps": 150000,
+      "opponent_setup": {
+        "num_opponents": 2,
+        "ids": ["goblin_lv1", "goblin_anfuehrer_lv3"]
+      }
+    }
+  ]
+}

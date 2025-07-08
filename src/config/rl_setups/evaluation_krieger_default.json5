@@ -1,0 +1,28 @@
+// src/config/rl_setups/evaluation_krieger_default.json5
+{
+  "setup_type": "evaluation",
+  "description": "Evaluierung eines trainierten Krieger-Modells gegen eine anspruchsvolle Gegnergruppe.",
+  
+  "agent_config": {
+    "agent_hero_id": "krieger",
+    "rl_algorithm": "MaskablePPO",
+    // WICHTIG: Pfad zum Modell, das evaluiert werden soll.
+    // Dieser Pfad stammt als Beispiel aus deiner user_preferences.json5.
+    "model_load_path": "/content/drive/MyDrive/python-rpg-projekt/rl_test_outputs/2025-06-13/11-44-02_KriegerTest_AntiPassiv_V7_maskableppo_krieger/models/best_model_via_callback/best_model.zip"
+  },
+  
+  "environment_config": {
+    // Hier definieren wir, gegen welche Gegner der trainierte Agent antreten soll.
+    "opponent_setup": { 
+      "num_opponents": 2, 
+      "level_pool": "2-3", // Eine härtere Herausforderung
+      "ids": ["goblin_archer_lv2", "goblin_shaman_lv3"] 
+    },
+    "max_episode_steps": 50
+  },
+  
+  "run_config": {
+    "num_evaluation_episodes": 20,
+    "deterministic_actions": true
+  }
+}

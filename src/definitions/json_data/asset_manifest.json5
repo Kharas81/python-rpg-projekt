@@ -1,0 +1,70 @@
+// src/definitions/json_data/asset_manifest.json5
+{
+  // Dieses Manifest ordnet logische Asset-Schlüssel (Keys) den tatsächlichen
+  // Dateipfaden und Darstellungs-Eigenschaften zu.
+  // Der Code wird diese Schlüssel verwenden, um die richtigen Grafiken zu laden.
+
+  "meta": {
+    "description": "Zentrales Manifest für alle visuellen Spiel-Assets.",
+    "version": "1.1"
+  },
+
+  // Abschnitt für Schriftarten
+  "fonts": {
+    "MAIN_FONT": {
+      "path": "assets/fonts/Kenney_Pixel.ttf"
+    }
+  },
+
+  "sprites": {
+    // --- Helden ---
+    "HERO_KRIEGER": {
+      "path": "assets/images/sprites/heroes/hero_krieger.png",
+      "scale": 1.5 // Skalierungsfaktor, kann je nach Bildgröße angepasst werden
+    },
+    "HERO_MAGIER": {
+      "path": "assets/images/sprites/heroes/hero_magier.png",
+      "scale": 1.5
+    },
+    "HERO_SCHURKE": {
+      "path": "assets/images/sprites/heroes/hero_schurke.png",
+      "scale": 1.5
+    },
+    "HERO_KLERIKER": {
+      "path": "assets/images/sprites/heroes/hero_kleriker.png",
+      "scale": 1.5
+    },
+
+    // --- Gegner ---
+    "OPPONENT_GOBLIN": {
+      "path": "assets/images/sprites/opponents/opponent_goblin.png",
+      "scale": 1.5
+    },
+    "OPPONENT_GOBLIN_ARCHER": {
+      "path": "assets/images/sprites/opponents/opponent_goblin_archer.png",
+      "scale": 1.5
+    },
+    "OPPONENT_GOBLIN_SHAMAN": {
+      "path": "assets/images/sprites/opponents/opponent_goblin_shaman.png",
+      "scale": 1.5
+    },
+    "OPPONENT_SKELETON": {
+      "path": "assets/images/sprites/opponents/opponent_skeleton.png",
+      "scale": 1.5
+    },
+    "OPPONENT_WOLF": {
+      "path": "assets/images/sprites/opponents/opponent_wolf.png",
+      "scale": 1.5
+    }
+  },
+
+  "backgrounds": {
+    "BATTLE_DUNGEON_1": {
+      "path": "assets/images/backgrounds/battle_background_1.png"
+    }
+  },
+
+  "ui": {
+    // Platzhalter für zukünftige UI-Elemente
+  }
+}

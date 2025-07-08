@@ -1,0 +1,52 @@
+// src/config/rl_setups/training_schurke_default.json5
+{
+  "setup_type": "training",
+  "description": "Standard-Trainingskonfiguration für den Schurken.",
+  
+  "output_base_directory": "rl_test_outputs",
+  
+  "agent_config": { 
+    "agent_hero_id": "schurke", 
+    "rl_algorithm": "MaskablePPO", 
+    "learning_rate": 0.0001, "gamma": 0.99, "n_steps_ppo": 512, 
+    "batch_size_ppo": 64, "ent_coef": 0.02, "vf_coef": 0.5 
+  },
+  
+  "environment_config": {
+    "opponent_setup": { "num_opponents": 1, "level_pool": "1-2", "ids": ["goblin_lv1"] }, 
+    "max_episode_steps": 40,
+    "reward_weights": {
+        // Allgemeine Belohnungen
+        "step_penalty": -0.01,
+        "damage_to_opponent_mult": 0.35,
+        "all_opponents_defeated_bonus": 100.0,
+        "hero_defeated_penalty": -60.0,
+        "unnecessary_pass_penalty": -10.0,
+        "executed_action_bonus": 2.0,
+        "free_attack_hit_bonus_on_low_resource": 0.8,
+        "execute_kill_bonus": 25.0,
+        
+        // Schurken-spezifische Belohnungen
+        "distraction_success_bonus": 0.4,
+        "sprint_success_bonus": 0.3,
+        "schurke_fokus_sammeln_bonus": 0.5
+    }
+  },
+  
+  "run_config": { 
+    "total_timesteps": 20000, 
+    "experiment_name_prefix": "SchurkeTest_Default_V8", 
+    "log_interval_sb3_learn": 1, 
+    "checkpoint_interval_sb3_model_save": 5000, 
+    "eval_freq_sb3_learn": 5000, 
+    "n_eval_episodes_callback": 10
+  },
+  
+  "advanced_rl_config": {
+    "use_curriculum_learning": false, 
+    "curriculum_definition_file": null, 
+    "num_parallel_runs": 1, 
+    "use_sb3_monitor": true, 
+    "use_subproc_vec_env": false 
+  }
+}

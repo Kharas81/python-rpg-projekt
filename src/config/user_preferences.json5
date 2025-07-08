@@ -3,10 +3,26 @@
     "num_encounters": 1,
     "player_hero_id": "krieger",
     "opponent_config": {
-      "num_opponents": 2,
+      "num_opponents": 1,
       "level_pool": "1-2"
     }
   },
-  "preferred_loglevel": "WARNING",
-  "last_selected_rl_setup_file": "/workspaces/python-rpg-projekt/src/config/rl_setups/test_training.json5"
+  "rl_training_settings": {
+    "agent_hero_id": "schurke",
+    "training_opponent_config": {
+      "num_opponents": 1,
+      "level_pool": "1-2"
+    },
+    "num_training_episodes": 10000,
+    "use_curriculum_learning": false,
+    "curriculum_definition_file": null,
+    "num_parallel_runs": 1
+  },
+  "logging_preferences": {
+    "loglevel_console": "DEBUG",
+    "loglevel_main_file": "DEBUG",
+    "enable_combat_log_file": true,
+    "loglevel_combat_file": "INFO"
+  },
+  "last_selected_rl_setup_file": "/content/drive/MyDrive/python-rpg-projekt/src/config/rl_setups/training_krieger_curriculum.json5"
 }

@@ -1,0 +1,57 @@
+// src/config/rl_setups/training_krieger_curriculum.json5
+{
+  "setup_type": "training",
+  "description": "V7: Training des Krieger-Agenten mit einem 3-stufigen Curriculum.",
+  
+  "agent_config": {
+    "agent_hero_id": "krieger",
+    "rl_algorithm": "MaskablePPO",
+    "learning_rate": 0.0003,
+    "gamma": 0.99,
+    "n_steps_ppo": 2048,
+    "batch_size_ppo": 64
+  },
+  
+  "environment_config": {
+    // Das opponent_setup hier dient nur als Fallback, es wird vom Curriculum überschrieben.
+    "opponent_setup": {
+      "num_opponents": 1,
+      "ids": ["goblin_lv1"] 
+    },
+    "max_episode_steps": 150,
+    
+    // Wir behalten die bewährten Reward-Gewichte bei.
+    "reward_weights": {
+      "step_penalty": -0.05,
+      "unnecessary_pass_penalty": -30.0,
+      "executed_action_bonus": 2.5,
+      "damage_to_opponent_mult": 0.1,
+      "all_opponents_defeated_bonus": 50.0,
+      "hero_defeated_penalty": -50.0,
+      "no_resource_penalty": -2.0,
+      "krieger_kampfrausch_bonus": 10.0,
+      "heal_bonus_under_50_percent": 15.0,
+      "stun_opponent_bonus": 5.0
+    },
+    
+    "game_settings_overrides": {
+      "resource_skill_beneficial_threshold": 0.3,
+      "healing_item_beneficial_threshold": 0.5
+    }
+  },
+  
+  "run_config": {
+    // Die total_timesteps werden von der Summe der Curriculum-Stufen (75000) bestimmt.
+    "total_timesteps": 200000, 
+    "experiment_name_prefix": "KriegerTest_Curriculum_V7",
+    "eval_freq_sb3_learn": 5000,
+    "n_eval_episodes_callback": 20
+  },
+  
+  "advanced_rl_config": {
+    "use_sb3_monitor": true,
+    // Hier aktivieren wir das Curriculum Learning
+    "use_curriculum_learning": true,
+    "curriculum_definition_file": "src/config/rl_curriculums/krieger_curriculum_01.json5"
+  }
+}

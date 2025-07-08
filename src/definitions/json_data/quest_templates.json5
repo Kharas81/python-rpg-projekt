@@ -1,0 +1,39 @@
+// src/definitions/json_data/quest_templates.json5
+{
+  "meta": {
+    "description": "Ein Baukasten für die dynamische Erstellung von Quests.",
+    "version": "1.0"
+  },
+
+  "objective_templates": [
+    {
+      // Vorlage für 'töte X Gegner eines bestimmten Typs'
+      "type": "kill",
+      "config": {
+        // Mögliche Ziele für Tötungs-Quests
+        "possible_targets": [
+          { "target_tag": "GOBLINOID", "name_singular": "Goblin", "name_plural": "Goblins" },
+          { "target_tag": "UNDEAD", "name_singular": "Untoter", "name_plural": "Untote" },
+          { "target_tag": "BEAST", "name_singular": "Bestie", "name_plural": "Bestien" }
+        ],
+        // Wie viele sollen getötet werden? Wir würfeln eine Zahl in diesem Bereich.
+        "amount_range": [2, 4],
+        // Text-Vorlage
+        "description_template": "Besiege #AMOUNT# #TARGET_NAME#."
+      }
+    },
+    // {
+    //   // Zukünftige Vorlage für 'sammle X Items'
+    //   "type": "collect",
+    //   "config": { ... }
+    // },
+    {
+      // Feste Vorlage für 'erreiche den Ausgang'
+      "type": "reach",
+      "config": {
+        "target_id": "tile_type_goal",
+        "description_template": "Finde und erreiche den Ausgang."
+      }
+    }
+  ]
+}

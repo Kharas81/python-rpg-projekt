@@ -1,0 +1,38 @@
+// src/config/rl_setups/training_krieger_default.json5
+{
+  "setup_type": "training",
+  "description": "V8: Krieger mit Curriculum Learning. Startet mit 1 Goblin, dann 2, dann 1 Archer.",
+  
+  "output_base_directory": "rl_test_outputs",
+  
+  "agent_config": { 
+    "agent_hero_id": "krieger", "rl_algorithm": "MaskablePPO", 
+    "learning_rate": 0.0001, "gamma": 0.99, "n_steps_ppo": 512, 
+    "batch_size_ppo": 64, "ent_coef": 0.015, "vf_coef": 0.5 
+  },
+  
+  "environment_config": {
+    "opponent_setup": { "num_opponents": 1, "level_pool": "1-2", "ids": ["goblin_lv1"] }, 
+    "max_episode_steps": 40,
+    "reward_weights": {
+        "step_penalty": -0.01, "damage_to_opponent_mult": 0.35, "opponent_defeated_bonus": 50.0,
+        "all_opponents_defeated_bonus": 100.0, "hero_defeated_penalty": -60.0,
+        "unnecessary_pass_penalty": -10.0, "executed_action_bonus": 2.0,
+        "free_attack_hit_bonus_on_low_resource": 0.8, "krieger_kampfrausch_bonus": 0.5, 
+        "execute_kill_bonus": 25.0
+    }
+  },
+  
+  "run_config": { 
+    "total_timesteps": 50000, // Wird vom Curriculum überschrieben
+    "experiment_name_prefix": "KriegerTest_Curriculum_V8", 
+    "log_interval_sb3_learn": 1, "checkpoint_interval_sb3_model_save": 10000, 
+    "eval_freq_sb3_learn": 5000, "n_eval_episodes_callback": 20 
+  },
+  
+  "advanced_rl_config": {
+    "use_curriculum_learning": true,
+    "curriculum_definition_file": "src/config/rl_curriculums/default_curriculum.json5",
+    "num_parallel_runs": 1, "use_sb3_monitor": true, "use_subproc_vec_env": false
+  }
+}

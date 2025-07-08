@@ -1,0 +1,26 @@
+// src/config/rl_setups/evaluation_magier_default.json5
+{
+  "setup_type": "evaluation",
+  "description": "Evaluierung eines trainierten Magier-Modells.",
+  
+  "agent_config": {
+    "agent_hero_id": "magier",
+    "rl_algorithm": "MaskablePPO",
+    // HINWEIS: Dieser Pfad muss auf ein trainiertes Magier-Modell zeigen,
+    // sobald wir eines haben. Vorerst als Platzhalter.
+    "model_load_path": "/content/drive/MyDrive/python-rpg-projekt/rl_test_outputs/PFAD_ZU_EINEM_MAGIER_MODELL/best_model.zip"
+  },
+  
+  "environment_config": {
+    "opponent_setup": { 
+      "num_opponents": 2, 
+      "level_pool": "2-3"
+    },
+    "max_episode_steps": 50
+  },
+  
+  "run_config": {
+    "num_evaluation_episodes": 20,
+    "deterministic_actions": true
+  }
+}

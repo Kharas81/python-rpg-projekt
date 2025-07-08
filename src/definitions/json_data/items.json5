@@ -1,0 +1,46 @@
+// src/definitions/json_data/items.json5
+{
+  "meta": {
+    "description": "Zentrale Datenbank für alle Gegenstände (Items) im Spiel.",
+    "version": "1.0"
+  },
+
+  // Die Items werden als Objekt definiert, wobei der Schlüssel die eindeutige ID des Items ist.
+  "items": {
+    "potion_health_small": {
+      "name": "Kleiner Heiltrank",
+      "description": "Ein einfacher Trank, der eine geringe Menge Lebenspunkte wiederherstellt.",
+      "item_type": "POTION", // Kategorie des Items [cite: 53]
+      "rarity": "common", // Seltenheit [cite: 56]
+      "usable_in_combat": true, // Kann im Kampf verwendet werden [cite: 55]
+      "max_stack": 20, // Maximale Stapelgröße im Inventar [cite: 57]
+      "buy_price": 50, // Preis beim Händler (Kauf) [cite: 58]
+      "sell_price": 10, // Preis beim Händler (Verkauf) [cite: 58]
+      "effects": { // Die Effekte des Items, analog zu Skills [cite: 54]
+        "direct_effects": {
+          // Stellt 25 HP direkt wieder her.
+          "base_healing": 25
+        },
+        "applied_status_effects": [] // Dieser Trank wendet keine Statuseffekte an
+      }
+    },
+    "potion_mana_small": {
+      "name": "Kleiner Manatrank",
+      "description": "Ein einfacher Trank, der eine geringe Menge Mana wiederherstellt.",
+      "item_type": "POTION",
+      "rarity": "common",
+      "usable_in_combat": true,
+      "max_stack": 20,
+      "buy_price": 75,
+      "sell_price": 15,
+      "effects": {
+        "direct_effects": {
+          // HINWEIS: Dies ist ein benutzerdefiniertes Feld. Unser ItemExecutor muss so
+          // programmiert werden, dass er 'base_mana_restore' erkennt und verarbeitet.
+          "base_mana_restore": 20
+        },
+        "applied_status_effects": []
+      }
+    }
+  }
+}

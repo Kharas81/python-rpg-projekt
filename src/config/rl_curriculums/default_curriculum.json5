@@ -1,0 +1,36 @@
+// src/config/rl_curriculums/default_curriculum.json5
+{
+  "description": "Standard-Lehrplan: Beginnt mit einem einfachen Gegner, steigert dann die Anzahl und wechselt schließlich den Gegnertyp.",
+  "stages": [
+    {
+      // Stufe 1: 10,000 Lernschritte gegen einen einzelnen, schwachen Goblin.
+      // Ziel: Der Agent soll die Grundlagen des Kampfes lernen.
+      "timesteps": 10000, 
+      "opponent_setup": { 
+        "num_opponents": 1, 
+        "level_pool": "1-1", 
+        "ids": ["goblin_lv1"] 
+      }
+    },
+    {
+      // Stufe 2: Weitere 15,000 Lernschritte gegen zwei schwache Goblins.
+      // Ziel: Der Agent soll lernen, mit mehreren Zielen umzugehen.
+      "timesteps": 15000, 
+      "opponent_setup": { 
+        "num_opponents": 2, 
+        "level_pool": "1-1", 
+        "ids": ["goblin_lv1", "goblin_lv1"] 
+      }
+    },
+    {
+      // Stufe 3: Letzte 25,000 Lernschritte gegen einen stärkeren Fernkämpfer.
+      // Ziel: Der Agent soll seine erlernte Strategie auf neue Gegnertypen anwenden.
+      "timesteps": 25000, 
+      "opponent_setup": { 
+        "num_opponents": 1, 
+        "level_pool": "2-2", 
+        "ids": ["goblin_archer_lv2"] 
+      }
+    }
+  ]
+}

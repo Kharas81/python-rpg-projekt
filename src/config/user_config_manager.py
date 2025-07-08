@@ -10,13 +10,11 @@ from typing import Dict, Any, Optional
 
 logger = logging.getLogger(__name__)
 
-# Standardpfad zur Konfigurationsdatei des Benutzers
 DEFAULT_USER_PREFS_FILENAME = "user_preferences.json5"
-CONFIG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config") # Annahme: Dieses Modul ist in src/config/
-USER_PREFS_FILE_PATH = os.path.join(CONFIG_DIR, DEFAULT_USER_PREFS_FILENAME)
+_THIS_MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
+USER_PREFS_FILE_PATH = os.path.join(_THIS_MODULE_DIR, DEFAULT_USER_PREFS_FILENAME)
 
-
-# Standardwerte, falls die Datei nicht existiert oder unvollständig ist
+# NEUE DEFAULT_PREFERENCES Struktur für granulare Logging-Einstellungen
 DEFAULT_PREFERENCES = {
   "simulation_settings": {
     "num_encounters": 1,
@@ -26,8 +24,21 @@ DEFAULT_PREFERENCES = {
       "level_pool": "1-2"
     }
   },
-  "preferred_loglevel": "INFO",
-  "last_selected_rl_setup_file": None
+  "rl_training_settings": { # Beibehalten für Konsistenz, auch wenn noch nicht voll genutzt
+    "agent_hero_id": "schurke", 
+    "training_opponent_config": { "num_opponents": 1, "level_pool": "1-2" },
+    "num_training_episodes": 10000,
+    "use_curriculum_learning": False,
+    "curriculum_definition_file": None,
+    "num_parallel_runs": 1
+  },
+  "logging_preferences": { # NEUER Block für granulare Logging-Einstellungen
+      "loglevel_console": "INFO",      # DEBUG, INFO, WARNING, ERROR, CRITICAL
+      "loglevel_main_file": "DEBUG",   # Haupt-Logdatei (rpg_app.log) ist oft detaillierter
+      "enable_combat_log_file": True, # True/False
+      "loglevel_combat_file": "INFO"  # Dediziertes Kampfprotokoll, meist INFO
+  },
+  "last_selected_rl_setup_file": None 
 }
 
 class UserConfigManager:
@@ -35,145 +46,129 @@ class UserConfigManager:
         self.file_path = file_path
         self.preferences: Dict[str, Any] = self._load_preferences()
 
+    def _recursive_copy_defaults(self, default_dict: Dict[str, Any]) -> Dict[str, Any]:
+        copied_dict = {}
+        for key, value in default_dict.items():
+            if isinstance(value, dict): copied_dict[key] = self._recursive_copy_defaults(value)
+            elif isinstance(value, list): copied_dict[key] = [self._recursive_copy_defaults(item) if isinstance(item, dict) else item for item in value]
+            else: copied_dict[key] = value
+        return copied_dict
+
+    def _ensure_default_keys(self, loaded_prefs: Dict[str, Any], defaults: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Stellt rekursiv sicher, dass alle Default-Schlüssel in den geladenen Präferenzen vorhanden sind."""
+        # Starte mit einer tiefen Kopie der Defaults
+        final_prefs = self._recursive_copy_defaults(defaults if defaults is not None else DEFAULT_PREFERENCES)
+        
+        # Iteriere über die Schlüssel der Default-Struktur
+        for key, default_value in (defaults if defaults is not None else DEFAULT_PREFERENCES).items():
+            if key in loaded_prefs:
+                if isinstance(default_value, dict) and isinstance(loaded_prefs[key], dict):
+                    # Rekursiver Aufruf für verschachtelte Dictionaries
+                    final_prefs[key] = self._ensure_default_keys(loaded_prefs[key], default_value)
+                else:
+                    # Überschreibe Default mit geladenem Wert, wenn Typ nicht Dict ist oder nicht übereinstimmt
+                    final_prefs[key] = loaded_prefs[key]
+            # Wenn key nicht in loaded_prefs, bleibt der Wert aus final_prefs (der Default) erhalten.
+        return final_prefs
+
+
     def _load_preferences(self) -> Dict[str, Any]:
-        """Lädt die Benutzereinstellungen aus der Datei."""
         try:
             if os.path.exists(self.file_path):
                 with open(self.file_path, 'r', encoding='utf-8') as f:
                     prefs = json5.load(f)
                 logger.info(f"Benutzereinstellungen aus '{self.file_path}' geladen.")
-                # Stelle sicher, dass alle Default-Schlüssel vorhanden sind
-                return self._ensure_default_keys(prefs)
+                return self._ensure_default_keys(prefs) # Stelle Defaults sicher
             else:
-                logger.info(f"Keine Benutzereinstellungsdatei unter '{self.file_path}' gefunden. Erstelle mit Standardwerten.")
-                self._save_preferences(DEFAULT_PREFERENCES) # Erstelle Datei mit Defaults
-                return dict(DEFAULT_PREFERENCES) # Wichtig: Kopie zurückgeben
+                logger.info(f"Keine Benutzereinstellungsdatei '{self.file_path}'. Erstelle mit Standardwerten.")
+                default_copy = self._recursive_copy_defaults(DEFAULT_PREFERENCES)
+                self._save_preferences(default_copy) 
+                return default_copy
         except Exception as e:
-            logger.error(f"Fehler beim Laden der Benutzereinstellungen aus '{self.file_path}': {e}. Verwende Standardwerte.", exc_info=True)
-            # Bei Fehler mit Defaults arbeiten und versuchen, Defaults zu speichern, um eine valide Datei zu haben
-            clean_defaults = dict(DEFAULT_PREFERENCES)
-            try:
-                self._save_preferences(clean_defaults)
-            except Exception as save_e:
-                logger.error(f"Konnte auch keine Standard-Benutzereinstellungen in '{self.file_path}' speichern: {save_e}")
-            return clean_defaults
-
-    def _ensure_default_keys(self, loaded_prefs: Dict[str, Any]) -> Dict[str, Any]:
-        """Stellt sicher, dass alle Schlüssel aus DEFAULT_PREFERENCES in den geladenen Prefs vorhanden sind."""
-        updated_prefs = dict(DEFAULT_PREFERENCES) # Starte mit Defaults
-        
-        # Überschreibe Defaults mit geladenen Werten, wenn die Struktur passt
-        for key, default_value in DEFAULT_PREFERENCES.items():
-            if key in loaded_prefs:
-                if isinstance(default_value, dict) and isinstance(loaded_prefs[key], dict):
-                    # Für verschachtelte Dictionaries (wie simulation_settings)
-                    # auch die inneren Schlüssel sicherstellen
-                    inner_updated = dict(default_value)
-                    inner_updated.update(loaded_prefs[key])
-                    # Und für opponent_config noch eine Ebene tiefer
-                    if key == "simulation_settings" and "opponent_config" in default_value:
-                        default_opp_conf = default_value["opponent_config"]
-                        loaded_opp_conf = loaded_prefs[key].get("opponent_config", {})
-                        final_opp_conf = dict(default_opp_conf)
-                        final_opp_conf.update(loaded_opp_conf)
-                        inner_updated["opponent_config"] = final_opp_conf
-                    updated_prefs[key] = inner_updated
-                else:
-                    updated_prefs[key] = loaded_prefs[key]
-        return updated_prefs
-
+            logger.error(f"Fehler Laden Benutzereinstellungen '{self.file_path}': {e}. Verwende Standardwerte.", exc_info=True)
+            default_copy = self._recursive_copy_defaults(DEFAULT_PREFERENCES)
+            try: self._save_preferences(default_copy)
+            except Exception as save_e: logger.error(f"Konnte Standard-Benutzereinstellungen nicht in '{self.file_path}' speichern: {save_e}")
+            return default_copy
 
     def _save_preferences(self, prefs_to_save: Optional[Dict[str, Any]] = None):
-        """Speichert die aktuellen Benutzereinstellungen in die Datei."""
         data_to_save = prefs_to_save if prefs_to_save is not None else self.preferences
         try:
-            # Stelle sicher, dass das config-Verzeichnis existiert
             os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
             with open(self.file_path, 'w', encoding='utf-8') as f:
                 json5.dump(data_to_save, f, indent=2, quote_keys=True, trailing_commas=False)
             logger.info(f"Benutzereinstellungen in '{self.file_path}' gespeichert.")
         except Exception as e:
-            logger.error(f"Fehler beim Speichern der Benutzereinstellungen in '{self.file_path}': {e}", exc_info=True)
+            logger.error(f"Fehler Speichern Benutzereinstellungen '{self.file_path}': {e}", exc_info=True)
 
-    def get_preference(self, key_path: str, default: Any = None) -> Any:
-        """
-        Holt einen Wert aus den Einstellungen. Unterstützt Punktnotation für Pfade.
-        Beispiel: get_preference("simulation_settings.num_encounters")
-        """
+    def get_preference(self, key_path: str, default_return: Any = None) -> Any:
         keys = key_path.split('.')
         value = self.preferences
         try:
-            for key in keys:
-                value = value[key]
+            for key in keys: value = value[key]
             return value
         except (KeyError, TypeError):
-            logger.warning(f"Einstellung '{key_path}' nicht in user_preferences gefunden. Gebe Default '{default}' zurück.")
-            return default
+            # Hole Default aus der DEFAULT_PREFERENCES Struktur
+            default_val_struct = DEFAULT_PREFERENCES
+            try:
+                for key in keys: default_val_struct = default_val_struct[key]
+                return default_val_struct # Gib Default aus Struktur zurück
+            except (KeyError, TypeError):
+                return default_return # Äußerster Fallback
 
     def set_preference(self, key_path: str, value: Any):
-        """
-        Setzt einen Wert in den Einstellungen. Unterstützt Punktnotation für Pfade.
-        Speichert die Änderungen danach automatisch.
-        """
         keys = key_path.split('.')
         data_ptr = self.preferences
         try:
-            for i, key in enumerate(keys[:-1]): # Navigiere bis zum vorletzten Schlüssel
-                if key not in data_ptr or not isinstance(data_ptr[key], dict):
-                    data_ptr[key] = {} # Erstelle verschachteltes Dict, falls nicht vorhanden
-                data_ptr = data_ptr[key]
-            
-            last_key = keys[-1]
-            data_ptr[last_key] = value
+            for key in keys[:-1]: 
+                data_ptr = data_ptr.setdefault(key, {}) # Erstelle Pfad, falls nicht vorhanden
+            data_ptr[keys[-1]] = value
             logger.debug(f"Benutzereinstellung '{key_path}' auf '{value}' gesetzt.")
-            self._save_preferences() # Änderungen sofort speichern
+            self._save_preferences() 
         except Exception as e:
-            logger.error(f"Fehler beim Setzen der Benutzereinstellung '{key_path}': {e}")
+            logger.error(f"Fehler Setzen Benutzereinstellung '{key_path}': {e}")
 
-
+# ... (if __name__ == '__main__' Block bleibt gleich)
 if __name__ == '__main__':
     print("--- Teste UserConfigManager ---")
-    # Erstelle eine temporäre Testdatei
-    test_file_path = os.path.join(CONFIG_DIR, "test_user_prefs.json5")
-    if os.path.exists(test_file_path):
-        os.remove(test_file_path)
+    _TEST_CONFIG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_config_data")
+    os.makedirs(_TEST_CONFIG_DIR, exist_ok=True)
+    test_file_path_ucm = os.path.join(_TEST_CONFIG_DIR, "test_user_prefs.json5")
+    if os.path.exists(test_file_path_ucm): os.remove(test_file_path_ucm)
 
-    manager = UserConfigManager(file_path=test_file_path)
-    print(f"Geladene/Standard-Präferenzen: {manager.preferences}")
-    assert manager.get_preference("preferred_loglevel") == "INFO" # Default
+    manager = UserConfigManager(file_path=test_file_path_ucm)
+    print(f"Initial geladen/Defaults: {manager.preferences}")
+    assert manager.get_preference("logging_preferences.loglevel_console") == "INFO"
+    assert manager.get_preference("logging_preferences.loglevel_main_file") == "DEBUG"
+    assert manager.get_preference("logging_preferences.enable_combat_log_file") is True
+    assert manager.get_preference("simulation_settings.num_encounters") == 1
 
-    manager.set_preference("preferred_loglevel", "DEBUG")
-    assert manager.get_preference("preferred_loglevel") == "DEBUG"
-    print(f"Loglevel nach set: {manager.get_preference('preferred_loglevel')}")
-
+    manager.set_preference("logging_preferences.loglevel_console", "DEBUG")
+    assert manager.get_preference("logging_preferences.loglevel_console") == "DEBUG"
     manager.set_preference("simulation_settings.num_encounters", 5)
     assert manager.get_preference("simulation_settings.num_encounters") == 5
-    print(f"Num Encounters nach set: {manager.get_preference('simulation_settings.num_encounters')}")
     
-    manager.set_preference("simulation_settings.opponent_config.level_pool", "all")
-    assert manager.get_preference("simulation_settings.opponent_config.level_pool") == "all"
-    print(f"Opponent Level Pool nach set: {manager.get_preference('simulation_settings.opponent_config.level_pool')}")
-
-    manager.set_preference("last_selected_rl_setup_file", "configs/rl_setups/my_test.json5")
-    print(f"RL Setup File: {manager.get_preference('last_selected_rl_setup_file')}")
-
-    # Teste Laden einer existierenden Datei
-    manager2 = UserConfigManager(file_path=test_file_path) # Sollte jetzt aus der Datei laden
+    manager2 = UserConfigManager(file_path=test_file_path_ucm) 
     print(f"\nGeladen aus existierender Datei: {manager2.preferences}")
-    assert manager2.get_preference("preferred_loglevel") == "DEBUG"
+    assert manager2.get_preference("logging_preferences.loglevel_console") == "DEBUG"
     assert manager2.get_preference("simulation_settings.num_encounters") == 5
-    assert manager2.get_preference("simulation_settings.opponent_config.level_pool") == "all"
+    
+    # Test: Teilweise fehlende Schlüssel in der Datei (z.B. opponent_config fehlt)
+    faulty_prefs = {
+        "simulation_settings": {"num_encounters": 10}, 
+        "logging_preferences": {"loglevel_console": "WARNING"}
+    } 
+    with open(test_file_path_ucm, 'w') as f: json5.dump(faulty_prefs, f)
+    manager3 = UserConfigManager(file_path=test_file_path_ucm)
+    print(f"\nGeladen aus Datei mit teilweise fehlenden Keys: {manager3.preferences}")
+    assert manager3.get_preference("logging_preferences.loglevel_console") == "WARNING" # Geladen
+    assert manager3.get_preference("simulation_settings.num_encounters") == 10 # Geladen
+    # Diese sollten von Defaults kommen:
+    assert manager3.get_preference("simulation_settings.player_hero_id") == DEFAULT_PREFERENCES["simulation_settings"]["player_hero_id"]
+    assert manager3.get_preference("simulation_settings.opponent_config.num_opponents") == DEFAULT_PREFERENCES["simulation_settings"]["opponent_config"]["num_opponents"]
+    assert manager3.get_preference("logging_preferences.loglevel_main_file") == DEFAULT_PREFERENCES["logging_preferences"]["loglevel_main_file"]
 
-    # Test mit fehlendem Schlüssel in der Datei (sollte Default verwenden)
-    faulty_prefs = {"preferred_loglevel": "WARNING"} # num_encounters fehlt
-    with open(test_file_path, 'w', encoding='utf-8') as f:
-        json5.dump(faulty_prefs, f, indent=2)
-    manager3 = UserConfigManager(file_path=test_file_path)
-    print(f"\nGeladen aus fehlerhafter Datei (num_encounters sollte Default sein): {manager3.preferences}")
-    assert manager3.get_preference("preferred_loglevel") == "WARNING"
-    assert manager3.get_preference("simulation_settings.num_encounters") == DEFAULT_PREFERENCES["simulation_settings"]["num_encounters"]
 
-
-    if os.path.exists(test_file_path):
-        os.remove(test_file_path) # Aufräumen
+    if os.path.exists(test_file_path_ucm): os.remove(test_file_path_ucm) 
+    if os.path.exists(_TEST_CONFIG_DIR) and not os.listdir(_TEST_CONFIG_DIR): os.rmdir(_TEST_CONFIG_DIR)
     print("\n--- UserConfigManager-Tests abgeschlossen ---")
